@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Moderno</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos CSS del Juego */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #104f2e, #062f1c);
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            /* Evitar selección de texto */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .game-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 30px 40px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+             color: #fefce8;
+             text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        }
+        h2 {
+            color: #a7f3d0;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .hand {
+            min-height: 125px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+        .card {
+            background-color: #f8fafc;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 12px 10px;
+            width: 75px;
+            height: 110px;
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease-out;
+        }
+        .card:hover {
+             transform: translateY(-5px);
+        }
+        .card .value {
+            line-height: 1;
+        }
+        .card .suit {
+            font-size: 24px;
+            line-height: 1;
+        }
+        .card.hearts, .card.diamonds {
+            color: #ef4444;
+        }
+        .card.clubs, .card.spades {
+            color: #1e293b;
+        }
+        .card.hidden {
+            background-color: #475569;
+            background-image: linear-gradient(45deg, #64748b 25%, transparent 25%, transparent 50%, #64748b 50%, #64748b 75%, transparent 75%, transparent);
+            background-size: 30px 30px;
+            border-color: #334155;
+        }
+        .card.hidden .value, .card.hidden .suit {
+             visibility: hidden;
+        }
+        button {
+            font-family: 'Inter', sans-serif;
+            background-image: linear-gradient(to bottom, #22c55e, #15803d);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 8px 5px;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        button:hover {
+            background-image: linear-gradient(to bottom, #4ade80, #16a34a);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        button:disabled {
+            background-image: none;
+            background-color: #64748b;
+            color: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+         #stand-button {
+             background-image: linear-gradient(to bottom, #f97316, #c2410c);
+         }
+          #stand-button:hover {
+             background-image: linear-gradient(to bottom, #fb923c, #ea580c);
+         }
+         #new-round-button {
+             background-image: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+         }
+          #new-round-button:hover {
+             background-image: linear-gradient(to bottom, #60a5fa, #2563eb);
+         }
+        #message-box {
+            margin-top: 25px;
+            padding: 18px;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            min-height: 60px;
+            font-size: 18px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #f1f5f9;
+            line-height: 1.5;
+        }
+        #betting-area {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        #betting-area label {
+            margin-right: 10px;
+            font-weight: 600;
+        }
+        #bet-input {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #94a3b8;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            width: 100px;
+            text-align: right;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        /* Color original de la apuesta */
+        #player-money, #current-bet-display {
+            font-weight: bold;
+            color: #fefcbf; /* Amarillo pálido */
+            transition: color 0.3s ease-in-out; /* Transición suave de color */
+        }
+        #deck-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        /* Ya no se usa el fondo amarillo
+        .cheat-active-feedback {
+            transition: background-color 0.2s ease-in-out;
+            background-color: rgba(250, 204, 21, 0.3);
+            border-radius: 4px;
+        }
+        */
+
+        /* --- Estilos para Animación de Barajado --- */
+        #shuffle-animation { /* ... (sin cambios) ... */ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out, visibility 0s linear 0.3s; overflow: hidden; }
+        #shuffle-animation.visible { /* ... (sin cambios) ... */ opacity: 1; visibility: visible; transition: opacity 0.3s ease-in-out; }
+        .card-back { /* ... (sin cambios) ... */ width: 80px; height: 120px; background: linear-gradient(135deg, #4a5568, #2d3748); border: 3px solid #a0aec0; border-radius: 8px; position: absolute; box-shadow: 0 4px 8px rgba(0,0,0,.3); transform-origin: center center; opacity: 1; visibility: visible; }
+        @keyframes shuffle { /* ... (sin cambios) ... */ 0%, 100% { transform: translate(var(--tx-start), var(--ty-start)) rotate(var(--r-start)); opacity: 1; } 50% { transform: translate(var(--tx-mid), var(--ty-mid)) rotate(var(--r-mid)); opacity: 1; } }
+        #shuffle-animation.visible .card-back { /* ... (sin cambios) ... */ animation-name: shuffle; animation-duration: 0.7s; animation-iteration-count: 2; animation-timing-function: cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        #shuffle-animation .card-back:nth-child(1) { /* ... (sin cambios) ... */ --tx-start: -120px; --ty-start: -30px; --r-start: -15deg; --tx-mid: 60px;   --ty-mid: 40px;   --r-mid: 20deg; animation-delay: 0s; }
+        #shuffle-animation .card-back:nth-child(2) { /* ... (sin cambios) ... */ --tx-start: -60px;  --ty-start: 20px;  --r-start: -5deg;  --tx-mid: -30px;  --ty-mid: -50px;  --r-mid: -10deg; animation-delay: 0.05s; }
+        #shuffle-animation .card-back:nth-child(3) { /* ... (sin cambios) ... */ --tx-start: 0px;    --ty-start: 40px;  --r-start: 0deg;   --tx-mid: -80px;  --ty-mid: 20px;   --r-mid: 15deg; animation-delay: 0.1s; }
+        #shuffle-animation .card-back:nth-child(4) { /* ... (sin cambios) ... */ --tx-start: 60px;   --ty-start: 20px;  --r-start: 5deg;   --tx-mid: 90px;   --ty-mid: -30px;  --r-mid: -20deg; animation-delay: 0.15s; }
+        #shuffle-animation .card-back:nth-child(5) { /* ... (sin cambios) ... */ --tx-start: 120px;  --ty-start: -30px; --r-start: 15deg;  --tx-mid: -100px; --ty-mid: 0px;    --r-mid: 25deg; animation-delay: 0.2s; }
+         @media (max-width: 767px) { /* ... (sin cambios) ... */ .card-back { width: 60px; height: 90px; } #shuffle-animation .card-back:nth-child(1) { --tx-start: -80px; --ty-start: -20px; --tx-mid: 40px; --ty-mid: 30px; } #shuffle-animation .card-back:nth-child(2) { --tx-start: -40px; --ty-start: 15px; --tx-mid: -20px; --ty-mid: -35px; } #shuffle-animation .card-back:nth-child(3) { --tx-start: 0px; --ty-start: 30px; --tx-mid: -50px; --ty-mid: 15px; } #shuffle-animation .card-back:nth-child(4) { --tx-start: 40px; --ty-start: 15px; --tx-mid: 60px; --ty-mid: -20px; } #shuffle-animation .card-back:nth-child(5) { --tx-start: 80px; --ty-start: -20px; --tx-mid: -70px; --ty-mid: 0px; } }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="text-4xl font-bold mb-4">Blackjack Moderno</h1>
+        <div class="flex justify-around mb-6 text-lg">
+            <span id="player-money-container">Dinero: <span id="player-money">...</span>€</span>
+            <span id="deck-info">Cartas restantes: 52</span>
+        </div>
+        <div class="mb-6">
+            <h2 class="text-2xl">Mano del Crupier (<span id="dealer-score">0</span>)</h2>
+            <div id="dealer-cards" class="hand"></div>
+        </div>
+        <div class="mb-6">
+            <h2 class="text-2xl">Tu Mano (<span id="player-score">0</span>)</h2>
+            <div id="player-cards" class="hand"></div>
+        </div>
+         <div id="betting-area">
+            <label for="bet-input">Tu Apuesta:</label>
+            <input type="number" id="bet-input" min="10" step="10" value="50">
+            <button id="place-bet-button">Apostar y Jugar</button>
+            <div class="mt-2">Apuesta Actual: <span id="current-bet-display">0</span>€</div>
+        </div>
+        <div id="action-buttons" class="mb-6 hidden">
+            <button id="hit-button">Pedir Carta</button>
+            <button id="stand-button">Plantarse</button>
+        </div>
+        <div id="new-round-area" class="hidden">
+             <button id="new-round-button">Siguiente Ronda</button>
+        </div>
+        <div id="message-box">Cargando saldo...</div>
+    </div>
+
+    <div id="shuffle-animation" class="hidden">
+        <div class="card-back"></div> <div class="card-back"></div> <div class="card-back"></div> <div class="card-back"></div> <div class="card-back"></div>
+    </div>
+
+    <script>
+        // --- Constantes y Variables Globales ---
+        const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
+        const DEFAULT_INITIAL_BALANCE = 1000;
+        const MIN_BET = 10;
+        const SHUFFLE_ANIMATION_DURATION_MS = 1500;
+        const CHEAT_FEEDBACK_COLOR = '#22c55e'; // Verde para feedback
+        const ORIGINAL_BET_COLOR = '#fefcbf'; // Amarillo pálido original
+
+        let deck = [];
+        let playerCards = []; let dealerCards = [];
+        let playerScore = 0; let dealerScore = 0;
+        let playerAceCount = 0; let dealerAceCount = 0;
+        let hiddenCard = null; let canHit = false;
+        let playerMoney = DEFAULT_INITIAL_BALANCE; let currentBet = 0;
+        let cheatModeActive = false;
+        let cheatFeedbackTimeout = null; // Para controlar el temporizador del color
+
+        // --- Elementos del DOM ---
+        const dealerCardsElement = document.getElementById('dealer-cards');
+        const playerCardsElement = document.getElementById('player-cards');
+        const dealerScoreElement = document.getElementById('dealer-score');
+        const playerScoreElement = document.getElementById('player-score');
+        const messageBox = document.getElementById('message-box');
+        const hitButton = document.getElementById('hit-button');
+        const standButton = document.getElementById('stand-button');
+        const newRoundButton = document.getElementById('new-round-button');
+        const actionButtons = document.getElementById('action-buttons');
+        const newRoundArea = document.getElementById('new-round-area');
+        const bettingArea = document.getElementById('betting-area');
+        const betInput = document.getElementById('bet-input');
+        const placeBetButton = document.getElementById('place-bet-button');
+        const playerMoneyElement = document.getElementById('player-money');
+        const playerMoneyContainer = document.getElementById('player-money-container');
+        const currentBetDisplay = document.getElementById('current-bet-display'); // Referencia al span del valor de la apuesta
+        const deckInfoElement = document.getElementById('deck-info');
+        const shuffleAnimationOverlay = document.getElementById('shuffle-animation');
+
+        // --- Definición de la Baraja ---
+        const suits = ["hearts", "diamonds", "clubs", "spades"];
+        const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+        const suitSymbols = { "hearts": "♥", "diamonds": "♦", "clubs": "♣", "spades": "♠" };
+
+        // --- Funciones de Gestión del Dinero (LocalStorage) ---
+        function loadPlayerMoney() { /* ... (sin cambios) ... */ try { const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY); if (savedBalance !== null) { const parsedBalance = parseInt(savedBalance); if (!isNaN(parsedBalance)) { return parsedBalance; } else { console.warn('Saldo guardado inválido, usando defecto.'); localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_INITIAL_BALANCE.toString()); return DEFAULT_INITIAL_BALANCE; } } else { console.log('No se encontró saldo, usando defecto y guardándolo.'); localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_INITIAL_BALANCE.toString()); return DEFAULT_INITIAL_BALANCE; } } catch (error) { console.error("Error al leer/guardar saldo:", error); return DEFAULT_INITIAL_BALANCE; } }
+        function updatePlayerMoney(newBalance) { /* ... (sin cambios) ... */ try { playerMoney = newBalance; localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, newBalance.toString()); playerMoneyElement.textContent = newBalance; betInput.max = newBalance; console.log(`Saldo actualizado a: ${newBalance}`); } catch (error) { console.error("Error al actualizar el saldo:", error); } }
+
+        // --- Funciones del Juego ---
+        function createDeck() { /* ... (sin cambios) ... */ deck = []; for (let suit of suits) { for (let value of values) { deck.push({ suit, value }); } } }
+        function shuffleDeckCore() { /* ... (sin cambios) ... */ if (deck.length === 0) { createDeck(); } for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; } console.log("Baraja barajada (núcleo)."); updateDeckInfo(); }
+        function animateAndShuffleDeck() { /* ... (sin cambios) ... */ return new Promise(resolve => { shuffleAnimationOverlay.classList.add('visible'); const originalMessage = messageBox.textContent; messageBox.textContent = "Barajando..."; setTimeout(() => { shuffleDeckCore(); shuffleAnimationOverlay.classList.remove('visible'); setTimeout(() => { if (originalMessage && !originalMessage.includes("Barajando")) { messageBox.textContent = originalMessage + " (Baraja barajada)"; } else { messageBox.textContent = "Baraja barajada. " + messageBox.textContent.replace("Barajando...", ""); } }, 100); resolve(); }, SHUFFLE_ANIMATION_DURATION_MS); }); }
+        function getCardValue(value) { /* ... (sin cambios) ... */ if (value === "A") return 11; if (["K", "Q", "J", "10"].includes(value)) return 10; return parseInt(value); }
+        function calculateScore(hand, aceCount) { /* ... (sin cambios) ... */ let score = hand.reduce((sum, card) => sum + getCardValue(card.value), 0); while (score > 21 && aceCount > 0) { score -= 10; aceCount--; } return score; }
+        function createCardElement(card, isHidden = false) { /* ... (sin cambios) ... */ const cardElement = document.createElement('div'); cardElement.classList.add('card', card.suit); if (isHidden) { cardElement.classList.add('hidden'); cardElement.innerHTML = `<span class="value">?</span><span class="suit">?</span>`; } else { cardElement.innerHTML = ` <span class="value">${card.value}</span> <span class="suit">${suitSymbols[card.suit]}</span> `; } return cardElement; }
+        function updateUI() { /* ... (sin cambios) ... */ playerMoneyElement.textContent = playerMoney; currentBetDisplay.textContent = currentBet; dealerCardsElement.innerHTML = ''; playerCardsElement.innerHTML = ''; dealerCards.forEach((card, index) => { dealerCardsElement.appendChild(createCardElement(card, index === 0 && hiddenCard)); }); playerCards.forEach(card => { playerCardsElement.appendChild(createCardElement(card)); }); playerScoreElement.textContent = playerScore; dealerScoreElement.textContent = hiddenCard ? '?' : dealerScore; updateDeckInfo(); }
+        function updateDeckInfo() { /* ... (sin cambios) ... */ deckInfoElement.textContent = `Cartas restantes: ${deck.length}`; }
+
+        function initializeGame() { /* ... (sin cambios) ... */ playerMoney = loadPlayerMoney(); createDeck(); shuffleDeckCore(); updateUI(); betInput.max = playerMoney; messageBox.textContent = `Tienes ${playerMoney}€. Introduce tu apuesta (mín. ${MIN_BET}€).`; }
+        function placeBetAndStartRound() { /* ... (sin cambios) ... */ const betAmount = parseInt(betInput.value); if (isNaN(betAmount) || betAmount <= 0) { messageBox.textContent = "Por favor, introduce una apuesta válida."; return; } if (betAmount < MIN_BET) { messageBox.textContent = `La apuesta mínima es ${MIN_BET}€.`; return; } if (betAmount > playerMoney) { messageBox.textContent = "No tienes suficiente dinero para esa apuesta."; return; } currentBet = betAmount; updatePlayerMoney(playerMoney - currentBet); currentBetDisplay.textContent = currentBet; /* Actualiza el valor de la apuesta */ betInput.disabled = true; placeBetButton.disabled = true; bettingArea.classList.add('hidden'); startRound(); }
+        function findAndForce21() { /* ... (sin cambios) ... */ let aceIndex = -1; let tenIndex = -1; for (let i = deck.length - 1; i >= 0; i--) { if (deck[i].value === 'A') { aceIndex = i; break; } } if (aceIndex !== -1) { for (let i = deck.length - 1; i >= 0; i--) { if (i !== aceIndex && ['10', 'J', 'Q', 'K'].includes(deck[i].value)) { tenIndex = i; break; } } } if (aceIndex !== -1 && tenIndex !== -1) { const card1 = deck.splice(Math.max(aceIndex, tenIndex), 1)[0]; const card2 = deck.splice(Math.min(aceIndex, tenIndex), 1)[0]; return card1.value === 'A' ? [card1, card2] : [card2, card1]; } return null; }
+
+        function startRound() { /* ... (Lógica interna sin cambios, solo llamada a dealCard async) ... */ playerCards = []; dealerCards = []; playerScore = 0; dealerScore = 0; playerAceCount = 0; dealerAceCount = 0; hiddenCard = null; canHit = true; (async () => { let playerCard1, playerCard2; let forced21 = false; if (cheatModeActive) { console.log("Intentando activar cheat 'Forzar 21'..."); let forcedCards = findAndForce21(); if (forcedCards) { playerCard1 = forcedCards[0]; playerCard2 = forcedCards[1]; playerCards = [playerCard1, playerCard2]; forced21 = true; console.log("Cheat activado: ¡21 forzado!"); messageBox.textContent = "Modo Trampa: ¡21 Forzado!"; } else { console.log("Cheat activado, pero no se pudieron encontrar cartas para forzar 21."); messageBox.textContent = "Modo Trampa: No se pudo forzar 21."; } cheatModeActive = false; /* Ya no se usa: playerMoneyContainer.classList.remove('cheat-active-feedback'); */ } if (!forced21) { await dealCard(playerCards, 'player'); await dealCard(playerCards, 'player'); } await dealCard(dealerCards, 'dealer'); await dealCard(dealerCards, 'dealer'); hiddenCard = dealerCards[0]; dealerScore = getCardValue(dealerCards[1].value); if (dealerCards[1].value === 'A') dealerAceCount = 1; playerAceCount = playerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0); playerScore = calculateScore(playerCards, playerAceCount); updateUI(); actionButtons.classList.remove('hidden'); newRoundArea.classList.add('hidden'); hitButton.disabled = false; standButton.disabled = false; if (!forced21) { messageBox.textContent = "Tu turno. ¿Pedir carta o plantarse?"; } if (playerScore === 21) { if (!forced21) { messageBox.textContent = "¡Blackjack!"; } const dealerRealScore = calculateScore(dealerCards, dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0)); let winAmount = 0; if (dealerRealScore === 21) { messageBox.textContent += " ¡Ambos tenéis Blackjack! ¡Empate!"; winAmount = currentBet; } else { messageBox.textContent += " ¡Has ganado!"; winAmount = Math.floor(currentBet * 2.5); } canHit = false; endRound(winAmount); } })(); }
+        async function dealCard(hand, recipient) { /* ... (sin cambios) ... */ if (deck.length === 0) { await animateAndShuffleDeck(); } if (deck.length === 0) { console.error("¡Error crítico! La baraja sigue vacía después de barajar."); messageBox.textContent = "Error crítico de baraja. Recarga la página."; return null; } const card = deck.pop(); hand.push(card); if (card.value === "A") { if (recipient === 'player') playerAceCount++; else if (recipient === 'dealer' && (!hiddenCard || hand.length > 1)) dealerAceCount++; } if (recipient === 'player') { playerScore = calculateScore(playerCards, playerAceCount); } else if (!hiddenCard) { dealerScore = calculateScore(dealerCards, dealerAceCount); } updateDeckInfo(); return card; }
+        function revealDealerAndPlayTurn() { /* ... (sin cambios) ... */ hiddenCard = null; dealerAceCount = dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0); dealerScore = calculateScore(dealerCards, dealerAceCount); updateUI(); messageBox.textContent = "Turno del crupier..."; setTimeout(dealerTurn, 1000); }
+        async function hit() { /* ... (sin cambios) ... */ if (!canHit) return; const dealtCard = await dealCard(playerCards, 'player'); if (!dealtCard) return; updateUI(); if (playerScore > 21) { messageBox.textContent = `¡Te has pasado (${playerScore})! Has perdido ${currentBet}€.`; canHit = false; endRound(0); } else if (playerScore === 21) { messageBox.textContent = "¡21! Turno del crupier."; canHit = false; hitButton.disabled = true; standButton.disabled = true; revealDealerAndPlayTurn(); } else { messageBox.textContent = "¿Pedir otra carta o plantarse?"; } }
+        function stand() { /* ... (sin cambios) ... */ if (!canHit) return; canHit = false; hitButton.disabled = true; standButton.disabled = true; revealDealerAndPlayTurn(); }
+        async function dealerTurn() { /* ... (sin cambios) ... */ dealerScoreElement.textContent = dealerScore; while (dealerScore < 17) { if (deck.length === 0) { await animateAndShuffleDeck(); continue; } messageBox.textContent = "Crupier pide carta..."; await dealCard(dealerCards, 'dealer'); updateUI(); await new Promise(resolve => setTimeout(resolve, 800)); dealerScore = calculateScore(dealerCards, dealerAceCount); dealerScoreElement.textContent = dealerScore; } determineWinner(); }
+        function determineWinner() { /* ... (sin cambios) ... */ dealerScoreElement.textContent = dealerScore; let winAmount = 0; if (playerScore > 21) { /* Ya perdido */ } else if (dealerScore > 21) { messageBox.textContent = `¡El crupier se ha pasado (${dealerScore})! ¡Has ganado ${currentBet * 2}€!`; winAmount = currentBet * 2; } else if (playerScore > dealerScore) { messageBox.textContent = `¡Has ganado (${playerScore} vs ${dealerScore})! Ganas ${currentBet * 2}€!`; winAmount = currentBet * 2; } else if (playerScore < dealerScore) { messageBox.textContent = `Has perdido (${playerScore} vs ${dealerScore}). Pierdes ${currentBet}€.`; } else { messageBox.textContent = `¡Empate (${playerScore})! Recuperas tu apuesta de ${currentBet}€.`; winAmount = currentBet; } endRound(winAmount); }
+        function endRound(winAmount = 0) { /* ... (sin cambios) ... */ hitButton.disabled = true; standButton.disabled = true; actionButtons.classList.add('hidden'); newRoundArea.classList.remove('hidden'); if (hiddenCard) { hiddenCard = null; dealerAceCount = dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0); dealerScore = calculateScore(dealerCards, dealerAceCount); dealerScoreElement.textContent = dealerScore; } updatePlayerMoney(playerMoney + winAmount); currentBet = 0; currentBetDisplay.textContent = currentBet; /* Asegura que la apuesta actual se muestre como 0 */ if (playerMoney < MIN_BET) { messageBox.textContent += " ¡Te has quedado sin dinero! Fin del juego."; newRoundButton.disabled = true; } else { if (!messageBox.textContent.includes("Ganado") && !messageBox.textContent.includes("Perdido") && !messageBox.textContent.includes("Empate") && !messageBox.textContent.includes("Forzado")) { messageBox.textContent += " Pulsa 'Siguiente Ronda' para volver a apostar."; } else { messageBox.textContent += " Pulsa 'Siguiente Ronda'."; } } }
+        function prepareNextRound() { /* ... (sin cambios) ... */ bettingArea.classList.remove('hidden'); betInput.disabled = false; placeBetButton.disabled = false; newRoundArea.classList.add('hidden'); playerCardsElement.innerHTML = ''; dealerCardsElement.innerHTML = ''; playerScoreElement.textContent = '0'; dealerScoreElement.textContent = '0'; messageBox.textContent = `Tienes ${playerMoney}€. Introduce tu apuesta (mín. ${MIN_BET}€).`; /* Asegura que el color de la apuesta sea el original */ currentBetDisplay.style.color = ORIGINAL_BET_COLOR; }
+
+        // --- Event Listeners ---
+        placeBetButton.addEventListener('click', placeBetAndStartRound);
+        hitButton.addEventListener('click', hit);
+        standButton.addEventListener('click', stand);
+        newRoundButton.addEventListener('click', prepareNextRound);
+
+        // Listener para activar/desactivar el modo "Forzar 21"
+        playerMoneyContainer.addEventListener('dblclick', () => {
+            cheatModeActive = !cheatModeActive;
+            // Limpia cualquier temporizador pendiente si se hace doble clic de nuevo rápido
+            if (cheatFeedbackTimeout) {
+                clearTimeout(cheatFeedbackTimeout);
+                cheatFeedbackTimeout = null;
+            }
+
+            if (cheatModeActive) {
+                console.log("Cheat 'Forzar 21' ACTIVADO para la próxima ronda.");
+                // Cambia color de la apuesta actual a verde
+                currentBetDisplay.style.color = CHEAT_FEEDBACK_COLOR;
+                // Programa que vuelva al color original después de 2 segundos
+                cheatFeedbackTimeout = setTimeout(() => {
+                    currentBetDisplay.style.color = ORIGINAL_BET_COLOR;
+                    cheatFeedbackTimeout = null; // Limpia la referencia al temporizador
+                }, 2000);
+            } else {
+                console.log("Cheat 'Forzar 21' DESACTIVADO.");
+                // Asegura que el color vuelva al original inmediatamente si se desactiva
+                currentBetDisplay.style.color = ORIGINAL_BET_COLOR;
+            }
+        });
+
+        // --- Inicio del Juego ---
+        window.onload = initializeGame;
+
+        // --- Listeners para Cambios Externos (LocalStorage/Focus) ---
+        window.addEventListener('storage', (event) => { /* ... (sin cambios) ... */ if (event.key === BALANCE_LOCAL_STORAGE_KEY) { console.log('Detectado cambio en el saldo desde otra pestaña/ventana.'); if (bettingArea.classList.contains('hidden')) { console.log('Ronda activa, el saldo se actualizará al finalizar.'); } else { playerMoney = loadPlayerMoney(); updateUI(); messageBox.textContent = `Saldo actualizado a ${playerMoney}€. Introduce tu apuesta.`; } } });
+        window.addEventListener('focus', () => { /* ... (sin cambios) ... */ console.log('Ventana enfocada, actualizando saldo si no hay ronda activa.'); if (!bettingArea.classList.contains('hidden')) { playerMoney = loadPlayerMoney(); updateUI(); messageBox.textContent = `Tienes ${playerMoney}€. Introduce tu apuesta (mín. ${MIN_BET}€).`; } });
+
+    </script>
+</body>
+</html>
