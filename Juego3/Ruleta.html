@@ -9,18 +9,17 @@
         /* --- Reset Básico y Estilos Globales --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
-        body { font-family: 'Press Start 2P', cursive; background-color: #1a1a2e; color: #e0e0e0; line-height: 1.5; min-height: 100%; padding: 10px; }
+        body {
+            font-family: 'Press Start 2P', cursive; background-color: #1a1a2e; color: #e0e0e0;
+            line-height: 1.5; min-height: 100%; padding: 10px;
+            user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+        }
         #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto; }
 
         /* --- Sección de la Ruleta --- */
         .roulette-section { width: 100%; display: flex; justify-content: center; align-items: center; padding: 15px 0; margin-bottom: 15px; }
         .roulette-area { position: relative; display: flex; justify-content: center; align-items: center; }
-        canvas {
-            display: block; border: 4px solid #f4a261; border-radius: 50%;
-            background-color: #e0e0e0; box-shadow: 0 0 15px rgba(244, 162, 97, 0.5);
-            max-width: 100%; max-height: 100%; aspect-ratio: 1 / 1;
-            cursor: pointer; transition: transform 0.2s ease;
-        }
+        canvas { display: block; border: 4px solid #f4a261; border-radius: 50%; background-color: #e0e0e0; box-shadow: 0 0 15px rgba(244, 162, 97, 0.5); max-width: 100%; max-height: 100%; aspect-ratio: 1 / 1; cursor: pointer; transition: transform 0.2s ease; }
         canvas:hover { transform: scale(1.02); }
         .pointer { width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 20px solid #e76f51; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%) translateY(-180px); z-index: 10; transition: transform 0.3s ease; }
 
@@ -28,8 +27,6 @@
         .controls-section { width: 100%; max-width: 500px; background-color: #162447; padding: 15px; border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
         .controls-section h1 { color: #f4a261; margin-bottom: 15px; font-size: 1.2em; text-align: center; }
         .balance-info { margin-bottom: 10px; text-align: center; width: 100%; font-size: 0.85em;}
-        /* Estilo para indicar modo guiado activo ELIMINADO */
-        /* .balance-info span#balance.cheat-active-indicator { ... } */
         .current-round-bets { width: 95%; margin-bottom: 15px; padding: 10px; background-color: rgba(0,0,0,0.2); border-radius: 8px; text-align: center; }
         .total-bet-amount { font-size: 0.8em; margin-bottom: 8px;}
         #betsList { list-style: none; padding: 0; margin: 0; max-height: 120px; overflow-y: auto; font-size: 0.65em; text-align: left; border: 1px solid #1f4068; border-radius: 5px; padding: 5px; background-color: #1a1a2e; }
@@ -37,7 +34,7 @@
         #betsList li:last-child { border-bottom: none; }
         .controls { width: 100%; display: flex; flex-direction: column; align-items: center;}
         label { margin-right: 10px; color: #f4a261; display: block; margin-bottom: 5px; font-size: 0.8em; text-align: center;}
-        input[type="number"] { padding: 8px; border: 2px solid #1f4068; border-radius: 8px; background-color: #e0e0e0; color: #1a1a2e; font-family: 'Press Start 2P', cursive; width: 60%; max-width: 100px; text-align: center; margin-bottom: 10px; font-size: 0.8em;}
+        input[type="number"] { padding: 8px; border: 2px solid #1f4068; border-radius: 8px; background-color: #e0e0e0; color: #1a1a2e; font-family: 'Press Start 2P', cursive; width: 60%; max-width: 100px; text-align: center; margin-bottom: 10px; font-size: 0.8em; user-select: text; -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; }
         .bet-options { display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 10px; }
         .bet-group { display: flex; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; width: 100%; }
         .bet-group label { width: 100%; text-align: center; margin-bottom: 3px; font-size: 0.7em; color: #f4a261; }
@@ -45,11 +42,24 @@
         .bet-button:hover { background-color: #f4a261; border-color: #f4a261; color: #162447; }
         .bet-button.active-bet { background-color: #e76f51; border-color: #ffffff; color: #ffffff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
         .bet-button[data-bet-type="color-red"] { background-color: #e74c3c; color: white; border-color: #e74c3c;}
-        .bet-button[data-bet-type="color-red"]:hover { background-color: #c0392b; border-color: #c0392b;}
-        .bet-button[data-bet-type="color-red"].active-bet { background-color: #c0392b; border-color: white; box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);}
+        .bet-button[data-bet-type="color-red"]:hover:not(.cheat-swap-red) { background-color: #c0392b; border-color: #c0392b;} /* Evitar override hover durante swap */
+        .bet-button[data-bet-type="color-red"].active-bet:not(.cheat-swap-red) { background-color: #c0392b; border-color: white; box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);}
         .bet-button[data-bet-type="color-black"] { background-color: #34495e; color: white; border-color: #34495e;}
-        .bet-button[data-bet-type="color-black"]:hover { background-color: #2c3e50; border-color: #2c3e50;}
-        .bet-button[data-bet-type="color-black"].active-bet { background-color: #2c3e50; border-color: white; box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);}
+        .bet-button[data-bet-type="color-black"]:hover:not(.cheat-swap-black) { background-color: #2c3e50; border-color: #2c3e50;} /* Evitar override hover durante swap */
+        .bet-button[data-bet-type="color-black"].active-bet:not(.cheat-swap-black) { background-color: #2c3e50; border-color: white; box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);}
+
+        /* --- NUEVAS CLASES para el swap visual del modo guiado --- */
+        .bet-button.cheat-swap-red {
+            background-color: #34495e !important; /* Color Negro */
+            color: white !important;
+            border-color: #34495e !important;
+        }
+        .bet-button.cheat-swap-black {
+            background-color: #e74c3c !important; /* Color Rojo */
+            color: white !important;
+            border-color: #e74c3c !important;
+        }
+
         .number-bet-section { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 95%; margin-top: 5px; padding: 8px; border: 2px dashed #1f4068; border-radius: 8px; }
         .number-bet-section label { margin-bottom: 5px; margin-right: 0; width: auto; font-size: 0.75em; }
         .number-bet-section input[type="number"] { margin-bottom: 0; max-width: 70px; width: auto; border-color: #f4a261; font-size: 0.75em; padding: 6px;}
@@ -168,6 +178,7 @@
         let canvasSize = canvas.width; let centerX = canvasSize / 2; let centerY = canvasSize / 2; let radius = canvasSize / 2 - 10; let pointerHeight = 20; let borderWidth = 4; let currentAngle = 0; let spinAngleStart = 0; let spinTime = 0; let spinTimeTotal = 0; let isSpinning = false;
         let balance; let currentBets = []; let selectedBetType = null;
         let cheatModeActive = false; // Estado del Modo Guiado
+        let cheatTimeoutId = null; // Para controlar el timeout del indicador visual
 
         // --- Funciones Saldo (localStorage) ---
         function loadBalance() { try { const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY); let balanceToUse = DEFAULT_BALANCE; if (savedBalance !== null) { const parsedBalance = parseInt(savedBalance); if (!isNaN(parsedBalance)) { balanceToUse = parsedBalance; } else { console.warn('Saldo guardado no válido'); localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_BALANCE.toString()); } } else { console.log('No se encontró saldo, iniciando con defecto.'); localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_BALANCE.toString()); } balance = balanceToUse; } catch (error) { console.error("Error al leer saldo:", error); balance = DEFAULT_BALANCE; } updateBalanceDisplay(); }
@@ -227,7 +238,7 @@
 
             // --- Lógica Modo Guiado ---
             if (cheatModeActive) {
-                console.warn("MODO GUIADO ACTIVADO!"); // Mantenemos log de consola
+                console.warn("MODO GUIADO ACTIVADO!");
                 const targetBet = currentBets[0];
                 let targetWinningNumber = -1;
                 switch (targetBet.type) {
@@ -258,7 +269,13 @@
                     spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI);
                 }
                 cheatModeActive = false; // Desactivar después de usar
-                // Ya no se manipula la clase CSS 'cheat-active-indicator'
+                // Quitar indicador visual si se desactivó antes de tiempo
+                const redBtn = document.querySelector('.bet-button[data-bet-type="color-red"]');
+                const blackBtn = document.querySelector('.bet-button[data-bet-type="color-black"]');
+                if (redBtn) redBtn.classList.remove('cheat-swap-red');
+                if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
+                if(cheatTimeoutId) clearTimeout(cheatTimeoutId); // Limpiar timeout si existe
+
 
             } else {
                 // --- Giro Aleatorio Normal ---
@@ -287,15 +304,39 @@
         window.addEventListener('storage', (event) => { if (event.key === BALANCE_LOCAL_STORAGE_KEY) { console.log('Saldo cambiado externamente.'); loadBalance(); } });
         window.addEventListener('focus', () => { console.log('Ventana enfocada, actualizando saldo.'); loadBalance(); });
 
-        // --- LISTENER MODO GUIADO (Sin indicador visual) ---
+        // --- LISTENER MODO GUIADO (Intercambio colores botones) ---
         balanceDisplay.addEventListener('dblclick', () => {
             cheatModeActive = !cheatModeActive; // Alternar estado
+
+            // Limpiar timeout anterior si existe
+            if (cheatTimeoutId) {
+                clearTimeout(cheatTimeoutId);
+                cheatTimeoutId = null;
+            }
+             // Quitar clases siempre al desactivar o antes de activar
+            const redBtn = document.querySelector('.bet-button[data-bet-type="color-red"]');
+            const blackBtn = document.querySelector('.bet-button[data-bet-type="color-black"]');
+            if (redBtn) redBtn.classList.remove('cheat-swap-red');
+            if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
+
+
             if (cheatModeActive) {
                 console.warn("MODO GUIADO ACTIVADO (Próximo giro será forzado)");
-                // Ya no se añade clase visual
+                // Aplicar clases de swap
+                if (redBtn) redBtn.classList.add('cheat-swap-red');
+                if (blackBtn) blackBtn.classList.add('cheat-swap-black');
+
+                // Quitar las clases después de un tiempo
+                cheatTimeoutId = setTimeout(() => {
+                     if (redBtn) redBtn.classList.remove('cheat-swap-red');
+                     if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
+                     cheatTimeoutId = null; // Limpiar ID del timeout
+                }, 1500); // 1.5 segundos
+
             } else {
                 console.log("MODO GUIADO DESACTIVADO");
-                // Ya no se quita clase visual
+                // Asegurarse de que las clases se quitan al desactivar manualmente
+                // (Ya se hace al inicio del listener)
             }
         });
 
