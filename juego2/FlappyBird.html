@@ -321,7 +321,7 @@
             lastTimestamp = timestamp;
             // Limitar delta para evitar saltos grandes si la pestaña estuvo inactiva
             const clampedDelta = Math.min(delta, 50); // Max delta de 50ms (~20fps min)
-            const factor = clampedDelta / 16.67;
+            const factor = clampedDelta / 9.67;
 
             // --- Física del Pájaro ---
             birdVelocity += gravity * factor;
