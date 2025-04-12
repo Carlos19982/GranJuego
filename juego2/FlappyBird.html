@@ -15,6 +15,10 @@
             background-color: #f0f0f0; /* Un color de fondo suave */
             font-family: sans-serif;
             overflow: hidden; /* Evita barras de scroll */
+            /* Evitar selección de texto en móviles */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none;
         }
 
         /* Contenedor principal del juego */
@@ -156,6 +160,13 @@
             liveScoreElement = document.getElementById("live-score");
             const flappyGame = document.getElementById("flappy-game");
 
+            // Comprobar si los elementos esenciales existen
+            if (!flappyBird || !flappyGameArea || !flappyStartOverlay || !flappyGame) {
+                console.error("Error: No se encontraron uno o más elementos esenciales del juego.");
+                return; // Detener la ejecución si falta algo crítico
+            }
+
+
             // Ajustar parámetros según tamaño de pantalla (móvil vs escritorio)
             if (window.innerWidth < 600 || window.innerHeight < 600) {
                 gravity = 0.3;
@@ -173,12 +184,33 @@
             // Listener para iniciar el juego al hacer clic/tocar la superposición
             flappyStartOverlay.addEventListener("click", startGameListener);
 
-            // Listener para hacer saltar al pájaro
-            flappyGame.addEventListener("mousedown", flappyFlap);
-            flappyGame.addEventListener("touchstart", (e) => {
-                e.preventDefault();
-                flappyFlap();
+            // Listener para hacer saltar al pájaro (click)
+            flappyGame.addEventListener("mousedown", (e) => {
+                 // Solo procesar si el click NO fue en el overlay de inicio/fin
+                if (flappyStartOverlay.style.display !== 'flex') {
+                     flappyFlap();
+                }
             });
+
+             // Listener para hacer saltar al pájaro (touch) - CON DEBUG LOGS
+            flappyGame.addEventListener("touchstart", (e) => {
+                console.log("[DEBUG] Touchstart event detected on flappyGame");
+                 // Solo procesar si el toque NO fue en el overlay de inicio/fin
+                 // Comprobamos si el overlay está oculto (style.display === 'none')
+                if (flappyStartOverlay.style.display === 'none') {
+                    console.log("[DEBUG] Overlay is hidden. Game running:", flappyGameRunning);
+                    if (flappyGameRunning) {
+                        console.log("[DEBUG] Game is running, preventing default and flapping...");
+                        e.preventDefault(); // Prevent default touch actions like scrolling
+                        flappyFlap();       // Trigger the bird flap
+                    } else {
+                        console.log("[DEBUG] Game not running (but overlay hidden), touch ignored for flap.");
+                    }
+                } else {
+                     console.log("[DEBUG] Touch on overlay detected, ignoring flap.");
+                     // Si el overlay está visible, el click/touch en él es manejado por startGameListener
+                }
+            }, { passive: false }); // Necesario para poder usar preventDefault
 
             // Posicionar el pájaro y actualizar score inicial
             resetGameVariables();
@@ -190,13 +222,18 @@
         // --- Funciones del Juego ---
 
         function startGameListener() {
-            flappyStartOverlay.style.display = "none";
+            console.log("[DEBUG] startGameListener called");
+            flappyStartOverlay.style.display = "none"; // Ocultar overlay
             flappyStartOverlay.removeEventListener("click", startGameListener); // Evita múltiples listeners
             startFlappyGame();
         }
 
         function startFlappyGame() {
-            if (flappyGameRunning) return;
+            console.log("[DEBUG] startFlappyGame called");
+            if (flappyGameRunning) {
+                console.log("[DEBUG] startFlappyGame aborted: game already running");
+                return;
+            }
 
             resetGameVariables();
             updateLiveScore();
@@ -206,18 +243,21 @@
             flappyGameRunning = true;
             flappyEnded = false;
             lastTimestamp = null;
+            // Asegurarse de que la animación no esté ya solicitada
+            if(flappyGameRequest) cancelAnimationFrame(flappyGameRequest);
             flappyGameRequest = requestAnimationFrame(flappyGameLoop);
+            console.log("[DEBUG] Game loop started with request ID:", flappyGameRequest);
         }
 
         function resetGameVariables() {
+            console.log("[DEBUG] resetGameVariables called");
             flappyScore = 0;
             flappyObstacles = [];
             flappyLastObstacleTime = Date.now();
-             // Ensure flappyGameArea is defined before accessing offsetHeight
             if (flappyGameArea) {
                 birdY = flappyGameArea.offsetHeight / 2;
             } else {
-                birdY = window.innerHeight / 2; // Fallback if area not ready
+                birdY = window.innerHeight / 2; // Fallback
             }
             birdVelocity = 0;
             flappyEnded = false;
@@ -233,7 +273,6 @@
         }
 
         function removeExistingObstacles() {
-             // Ensure flappyGameArea is defined
             if (flappyGameArea) {
                 const existingObstacles = flappyGameArea.querySelectorAll(".obstacle-flappy");
                 existingObstacles.forEach(obs => obs.remove());
@@ -257,26 +296,32 @@
                     if (!isNaN(parsed)) {
                         currentBalance = parsed;
                     } else {
-                        console.warn(`Valor inválido en localStorage para ${BALANCE_LOCAL_STORAGE_KEY}. Se usará 0 como base.`);
+                        console.warn(`[DEBUG] Invalid balance in localStorage: ${currentBalanceStr}. Using 0.`);
                     }
                 }
 
                 const newBalance = currentBalance + POINTS_PER_SCORE;
                 localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, newBalance.toString());
+                 console.log(`[DEBUG] Global balance updated to: ${newBalance}`);
 
             } catch (error) {
-                console.error("Error al actualizar el saldo global en localStorage:", error);
+                console.error("[DEBUG] Error updating global balance in localStorage:", error);
             }
         }
 
 
         function flappyGameLoop(timestamp) {
-            if (!flappyGameRunning || !flappyBird || !flappyGameArea) return; // Add checks for elements
+            if (!flappyGameRunning || !flappyBird || !flappyGameArea) {
+                 console.log("[DEBUG] Game loop aborted: missing elements or game not running.");
+                 return;
+            }
 
             if (!lastTimestamp) lastTimestamp = timestamp;
             const delta = timestamp - lastTimestamp;
             lastTimestamp = timestamp;
-            const factor = delta / 9.67;
+            // Limitar delta para evitar saltos grandes si la pestaña estuvo inactiva
+            const clampedDelta = Math.min(delta, 50); // Max delta de 50ms (~20fps min)
+            const factor = clampedDelta / 16.67;
 
             // --- Física del Pájaro ---
             birdVelocity += gravity * factor;
@@ -286,7 +331,9 @@
             flappyBird.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
             // --- Límites ---
-            if (birdY < 0 || birdY + flappyBird.offsetHeight > flappyGameArea.offsetHeight) {
+             // Asegurarse de que flappyBird tiene dimensiones antes de comprobar
+            if (flappyBird.offsetHeight > 0 && (birdY < 0 || birdY + flappyBird.offsetHeight > flappyGameArea.offsetHeight)) {
+                console.log("[DEBUG] Bird out of bounds. Ending game.");
                 endFlappyGame();
                 return;
             }
@@ -301,11 +348,12 @@
             let shouldEndGame = false;
             let scoreUpdatedThisFrame = false;
             flappyObstacles = flappyObstacles.filter((obs) => {
-                if (!obs.element) return false; // Skip if element is missing
+                if (!obs.element) return false;
                 obs.x -= obstacleSpeed * factor;
                 obs.element.style.left = obs.x + "px";
 
                 if (checkFlappyCollision(obs)) {
+                    console.log("[DEBUG] Collision detected!");
                     shouldEndGame = true;
                 }
 
@@ -332,16 +380,23 @@
                 return;
             }
 
-            flappyGameRequest = requestAnimationFrame(flappyGameLoop);
+            // Solicitar el próximo frame solo si el juego sigue corriendo
+            if (flappyGameRunning) {
+                flappyGameRequest = requestAnimationFrame(flappyGameLoop);
+            }
         }
 
         function flappyFlap() {
-            if (!flappyGameRunning) return;
+            if (!flappyGameRunning) {
+                 console.log("[DEBUG] flappyFlap ignored: game not running");
+                 return;
+            }
+            console.log("[DEBUG] flappyFlap called!");
             birdVelocity = jumpImpulse;
         }
 
         function createFlappyObstacles() {
-            if (!flappyGameArea) return; // Ensure game area exists
+            if (!flappyGameArea) return;
 
             const gap = VERTICAL_GAP;
             const gameHeight = flappyGameArea.offsetHeight;
@@ -349,10 +404,9 @@
             const minHeight = 50;
             const maxTopHeight = gameHeight - gap - minHeight;
 
-             // Ensure maxTopHeight is not negative if gameHeight is too small
             if (maxTopHeight < minHeight) {
-                console.warn("Game height too small for obstacles and gap.");
-                return; // Optionally skip obstacle creation
+                console.warn("[DEBUG] Game height too small for obstacles.");
+                return;
             }
 
             const topObstacleHeight = Math.floor(Math.random() * (maxTopHeight - minHeight + 1)) + minHeight;
@@ -377,27 +431,33 @@
         }
 
         function checkFlappyCollision(obs) {
-            if (!flappyBird || !obs || !obs.element) return false; // Add check for obs
+            if (!flappyBird || !obs || !obs.element) return false;
             const birdRect = flappyBird.getBoundingClientRect();
             const obsRect = obs.element.getBoundingClientRect();
 
+            // Añadir un pequeño margen para detectar colisiones un poco antes si es necesario
+            // const collisionMargin = 2;
             return (
-                birdRect.right > obsRect.left &&
-                birdRect.left < obsRect.right &&
-                birdRect.bottom > obsRect.top &&
-                birdRect.top < obsRect.bottom
+                birdRect.right > obsRect.left // + collisionMargin
+                && birdRect.left < obsRect.right // - collisionMargin
+                && birdRect.bottom > obsRect.top // + collisionMargin
+                && birdRect.top < obsRect.bottom // - collisionMargin
             );
         }
 
-        // --- Función Modificada para Terminar el Juego ---
         function endFlappyGame() {
-            if (flappyEnded) return;
-            flappyEnded = true;
-            flappyGameRunning = false;
-            if (flappyGameRequest) { // Check if request exists
-              cancelAnimationFrame(flappyGameRequest);
+            console.log("[DEBUG] endFlappyGame called");
+            if (flappyEnded) {
+                console.log("[DEBUG] endFlappyGame aborted: already ended");
+                return;
             }
-
+            flappyEnded = true;
+            flappyGameRunning = false; // Marcar juego como no corriendo
+            if (flappyGameRequest) {
+                cancelAnimationFrame(flappyGameRequest);
+                console.log("[DEBUG] Game loop cancelled with request ID:", flappyGameRequest);
+                flappyGameRequest = null; // Limpiar el ID
+            }
 
             // Update high score if needed
             if (flappyScore > highScore) {
@@ -405,11 +465,9 @@
                 localStorage.setItem('flappyHighScore', highScore);
             }
 
-            // Calculate coins earned this session
             const coinsEarned = flappyScore * POINTS_PER_SCORE;
 
-            // Read the final updated balance from localStorage
-            let finalBalanceStr = 'Error'; // Default display value
+            let finalBalanceStr = 'Error';
             try {
                 const balanceFromStorage = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
                 if (balanceFromStorage !== null) {
@@ -417,35 +475,34 @@
                     if (!isNaN(parsedBalance)) {
                         finalBalanceStr = parsedBalance.toString();
                     } else {
-                         console.warn(`Valor final inválido en localStorage para ${BALANCE_LOCAL_STORAGE_KEY}.`);
+                         console.warn(`[DEBUG] Invalid final balance in localStorage: ${balanceFromStorage}.`);
                          finalBalanceStr = 'Inválido';
                     }
                 } else {
-                     // If balance key never existed, show coins earned as potential total
-                     console.warn(`No se encontró valor final en localStorage para ${BALANCE_LOCAL_STORAGE_KEY}. Mostrando monedas ganadas.`);
-                     finalBalanceStr = coinsEarned.toString(); // Show what was earned at least
+                     console.warn(`[DEBUG] Final balance key not found in localStorage. Displaying earned coins.`);
+                     finalBalanceStr = coinsEarned.toString();
                 }
             } catch (error) {
-                console.error("Error al leer el saldo final desde localStorage:", error);
+                console.error("[DEBUG] Error reading final balance from localStorage:", error);
             }
 
-             // Ensure overlay elements exist before updating
             if (startMessage && scoreMessage && flappyStartOverlay) {
-                // Display game over message with score, coins earned, and final balance
                 startMessage.textContent = "¡Has perdido!";
                 scoreMessage.innerHTML = `Puntuación: ${flappyScore}<br>
                                           Monedas Ganadas: ${coinsEarned}<br>
                                           Saldo Total: ${finalBalanceStr} €<br>
                                           Mejor Puntuación: ${highScore}<br><br>
                                           Haz clic para volver a jugar`;
-                flappyStartOverlay.style.display = "flex";
+                flappyStartOverlay.style.display = "flex"; // Mostrar overlay
 
-                // Add listener to restart the game (ensure it's added only once)
-                flappyStartOverlay.removeEventListener("click", startGameListener); // Remove previous listener if any
+                // Re-attach listener to restart the game
+                flappyStartOverlay.removeEventListener("click", startGameListener); // Limpiar anterior por si acaso
                 flappyStartOverlay.addEventListener("click", startGameListener);
+                 console.log("[DEBUG] Game over screen displayed. Listener attached.");
+             } else {
+                  console.error("[DEBUG] Error displaying game over screen: overlay elements not found.");
              }
         }
-
 
     </script>
 </body>
