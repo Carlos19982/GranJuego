@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta v8 - Mejor Diseño Móvil</title>
+    <title>Ruleta v8 </title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -17,30 +17,86 @@
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
             position: relative;
-            /* Ancho mínimo del body para que contenga al game-container */
-            min-width: 390px; /* Ligeramente mayor que game-container */
+            min-width: 390px;
         }
         #game-container {
             display: flex; flex-direction: column; align-items: center; width: 100%;
             max-width: 900px; margin: 10px auto;
-            /* --- Ancho mínimo para el contenedor del juego --- */
-            min-width: 380px; /* Aumentado ligeramente */
+            min-width: 380px;
         }
 
         /* --- Botón Salir --- */
         #exit-button-roulette-user { position: absolute; top: 15px; right: 15px; padding: 8px 12px; background-color: #4a5568; color: #f7fafc; text-decoration: none; border-radius: 6px; font-size: 0.8em; font-weight: 600; border: 1px solid #718096; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 100; transition: all 0.2s ease; user-select: none; }
         #exit-button-roulette-user:hover { background-color: #718096; border-color: #a0aec0; }
 
-        /* --- Sección Ruleta --- */
-        .roulette-section { width: 100%; display: flex; justify-content: center; align-items: center; padding: 20px 0; margin-bottom: 20px; background-color: rgba(0,0,0,0.1); border-radius: 15px; }
+        /* --- Sección Ruleta y Historial --- */
+        .roulette-section {
+            width: 100%; display: flex;
+            justify-content: center; align-items: flex-start;
+            padding: 20px 0; margin-bottom: 20px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* --- Panel de Historial --- */
+        #history-panel {
+            width: 80px;
+            max-height: 400px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            order: 1; /* Historial primero en el orden flex por defecto */
+        }
+        #history-panel h3 {
+            color: #f4a261;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        #historyList {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            max-height: calc(400px - 50px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        #historyList li {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: white;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+        #historyList li.history-red { background-color: #c53030; }
+        #historyList li.history-black { background-color: #1A202C; }
+        #historyList li.history-green { background-color: #2ecc71; }
+
         .roulette-area {
             position: relative; display: flex; justify-content: center; align-items: center;
             max-width: min(85vw, 700px);
             max-height: min(70vh, 700px);
-            /* Tamaño mínimo del área de la ruleta */
-            min-width: calc(380px * 0.75); /* Ajustar proporcionalmente */
+            min-width: calc(380px * 0.75);
             min-height: calc(380px * 0.75);
+            order: 2; /* Ruleta después del historial */
         }
+
         canvas { display: block; border: 4px solid #f4a261; border-radius: 50%; background-color: #e0e0e0; box-shadow: 0 0 15px rgba(244, 162, 97, 0.5); width: 100%; height: 100%; aspect-ratio: 1 / 1; cursor: pointer; transition: transform 0.2s ease; }
         canvas:hover { transform: scale(1.02); }
         .pointer { width: 0; height: 0; --pointer-size: max(12px, min(2.5vw, 20px)); border-left: calc(var(--pointer-size) * 0.6) solid transparent; border-right: calc(var(--pointer-size) * 0.6) solid transparent; border-top: var(--pointer-size) solid #e76f51; position: absolute; top: 50%; left: 50%; z-index: 10; transition: transform 0.3s ease; }
@@ -67,23 +123,63 @@
         /* --- Layout del Tapete de Apuestas (bet-options) --- */
         .bet-options {
             display: grid;
-            grid-template-areas:
-                "zero numbers column"
-                "dozen dozen column"
-                "outside outside column";
-            grid-template-columns: auto 1fr auto;
-            grid-template-rows: auto auto auto;
+            /* --- CAMBIO: Definición explícita de columnas --- */
+            /* 1 columna para el 0, 12 para los números, 1 para las columnas 2:1 */
+            /* Usamos minmax para dar flexibilidad pero asegurar tamaño mínimo */
+            grid-template-columns: minmax(40px, auto) repeat(12, minmax(30px, 1fr)) minmax(40px, auto);
+            /* 5 filas: 3 para números/columnas, 1 para docenas, 1 para exteriores */
+            grid-template-rows: repeat(3, auto) auto auto;
+            /* --- FIN CAMBIO --- */
             gap: 4px; width: 100%;
             max-width: 700px;
-            margin-top: 10px; background-color: #1c5f3a; padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.2); justify-content: center;
+            margin-top: 10px; background-color: #1c5f3a; padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.2);
+            /* Quitar justify-content, el grid controla el tamaño */
         }
-        .number-button.zero { grid-area: zero; }
-        .number-grid { grid-area: numbers; display: grid; grid-template-columns: repeat(12, minmax(30px, auto)); grid-template-rows: repeat(3, auto); gap: 3px; align-items: stretch; }
-        .column-bets { grid-area: column; display: grid; grid-template-rows: repeat(3, 1fr); gap: 3px; }
-        .dozen-bets { grid-area: dozen; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-        .outside-bets-bottom { grid-area: outside; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
 
-        /* Estilos de botones del tapete */
+        /* --- CAMBIO: Asignación explícita de grid-column/row --- */
+        .number-button.zero {
+            grid-column: 1 / 2; /* Columna 1 */
+            grid-row: 1 / 4;    /* Filas 1 a 3 */
+            /* Asegurar que el botón llene la celda */
+            height: 100%;
+            aspect-ratio: auto; /* Permitir que no sea cuadrado */
+        }
+        .number-grid {
+            grid-column: 2 / 14; /* Columnas 2 a 13 (12 columnas) */
+            grid-row: 1 / 4;     /* Filas 1 a 3 */
+            display: grid; /* Mantiene su grid interno */
+            grid-template-columns: repeat(12, 1fr); /* Ajustar a 1fr aquí */
+            grid-template-rows: repeat(3, 1fr); /* Ajustar a 1fr aquí */
+            gap: 3px; align-items: stretch;
+        }
+        .column-bets {
+            grid-column: 14 / 15; /* Columna 14 */
+            grid-row: 1 / 4;      /* Filas 1 a 3 */
+            display: grid; /* Mantiene su grid interno */
+            grid-template-columns: 1fr; /* Una columna interna */
+            grid-template-rows: repeat(3, 1fr); /* Tres filas internas */
+            gap: 3px;
+        }
+        .dozen-bets {
+            grid-column: 2 / 14; /* Columnas 2 a 13 (abarca los números) */
+            grid-row: 4 / 5;     /* Fila 4 */
+            display: grid; /* Mantiene su grid interno */
+            /* Dividir las 12 columnas padre en 3 secciones (4 columnas cada una) */
+            grid-template-columns: repeat(3, minmax(0, 1fr)); /* Tres columnas iguales */
+            gap: 4px;
+        }
+        .outside-bets-bottom {
+            grid-column: 2 / 14; /* Columnas 2 a 13 (abarca los números) */
+            grid-row: 5 / 6;     /* Fila 5 */
+            display: grid; /* Mantiene su grid interno */
+            /* Dividir las 12 columnas padre en 6 secciones (2 columnas cada una) */
+            grid-template-columns: repeat(6, minmax(0, 1fr)); /* Seis columnas iguales */
+            gap: 4px;
+        }
+        /* --- FIN CAMBIO --- */
+
+
+        /* Estilos de botones del tapete (sin cambios relevantes) */
         .bet-table-button {
             font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.7em;
             padding: 5px; border: 1px solid rgba(0,0,0,0.6); border-radius: 3px;
@@ -91,7 +187,7 @@
             background-color: #1a472a; color: white;
             display: flex; align-items: center; justify-content: center;
             min-height: 30px; line-height: 1.2;
-            word-break: break-word; /* Evitar que texto largo rompa el botón */
+            word-break: break-word;
         }
         .bet-table-button:hover:not(:disabled) { background-color: #2f855a; }
         .bet-table-button:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -103,11 +199,13 @@
         .number-button.black { background-color: #1A202C; border-color: #000; }
         .number-button.black:hover:not(:disabled) { background-color: #2D3748; }
         .number-button.black.active-bet { background-color: #f4a261; color: #1A202C; border-color: #fff; }
-        .number-button.zero { background-color: #276749; border-color: #1a472a; aspect-ratio: auto; font-size: 0.9em; }
+        /* Estilo específico del botón 0 ya se maneja en la asignación de grid */
+        .number-button.zero { background-color: #276749; border-color: #1a472a; font-size: 0.9em; }
         .number-button.zero:hover:not(:disabled) { background-color: #2f855a; }
         .number-button.zero.active-bet { background-color: #f4a261; color: #276749; border-color: #fff; }
-        .dozen-bets .bet-table-button { grid-column: span 1; }
-        .outside-bets-bottom .bet-table-button { grid-column: span 1; }
+        /* Quitar spans innecesarios de los botones internos */
+        .dozen-bets .bet-table-button { /* grid-column: span 1; */ }
+        .outside-bets-bottom .bet-table-button { /* grid-column: span 1; */ }
         .column-bets .bet-table-button { aspect-ratio: auto; height: 100%; }
         .bet-table-button-red { background-color: #c53030; border-color: #9B2C2C; }
         .bet-table-button-red:hover:not(:disabled) { background-color: #e53e3e; }
@@ -131,9 +229,14 @@
         /* --- Mensaje --- */
         #message { margin-top: 15px; font-size: 0.9em; min-height: 1.5em; line-height: 1.4; color: #f0e68c; text-align: center; width: 100%; font-weight: 600; text-shadow: 1px 1px 1px #000;}
 
-        /* --- Media Query para ajustar tapete en pantallas medianas --- */
+        /* --- Media Queries (Sin cambios aquí, ya definen layouts diferentes) --- */
         @media (max-width: 700px) {
-            .bet-options {
+             .roulette-section { justify-content: space-around; align-items: center; }
+             #history-panel { max-height: 300px; width: 65px; }
+             #historyList li { width: 30px; height: 30px; font-size: 0.8em; }
+             /* El layout del tapete cambia completamente aquí, no hereda el grid de escritorio */
+             .bet-options {
+                display: grid; /* Asegurar que sigue siendo grid aquí */
                 grid-template-areas:
                     "zero numbers numbers"
                     "column column column"
@@ -141,82 +244,63 @@
                     "outside outside outside";
                 grid-template-columns: auto 1fr;
                 grid-template-rows: auto auto auto auto;
-                gap: 6px;
-                padding: 8px;
-            }
-            .number-grid {
-                grid-template-columns: repeat(6, 1fr);
-            }
-            .column-bets {
-                grid-template-columns: repeat(3, 1fr);
-                grid-template-rows: auto;
-            }
-             .outside-bets-bottom {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            .bet-table-button { font-size: 0.65em; padding: 5px 3px; min-height: 30px;} /* Aumentar min-height */
-            .number-button { font-size: 0.7em; min-width: 25px; }
-            .action-button { font-size: 0.85em; padding: 9px 12px; }
+                gap: 6px; padding: 8px;
+             }
+             /* Resetear grid-column/row para los elementos dentro de esta media query */
+             .number-button.zero, .number-grid, .column-bets, .dozen-bets, .outside-bets-bottom {
+                 grid-column: auto; grid-row: auto;
+             }
+             /* Reasignar áreas */
+             .number-button.zero { grid-area: zero; height: auto; aspect-ratio: 1 / 1;} /* Volver a aspecto cuadrado si se quiere */
+             .number-grid { grid-area: numbers; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(3, auto); }
+             .column-bets { grid-area: column; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto; border: none; padding: 0; background: none; } /* Quitar estilos de grupo */
+             .dozen-bets { grid-area: dozen; grid-template-columns: repeat(3, 1fr); border: none; padding: 0; background: none; } /* Quitar estilos de grupo */
+             .outside-bets-bottom { grid-area: outside; grid-template-columns: repeat(3, 1fr); }
+
+             .bet-table-button { font-size: 0.65em; padding: 5px 3px; min-height: 30px;}
+             .number-button { font-size: 0.7em; min-width: 25px; }
+             .action-button { font-size: 0.85em; padding: 9px 12px; }
         }
 
-        /* --- Media Query para ajustar tapete en pantallas pequeñas --- */
         @media (max-width: 480px) {
+             .roulette-section { flex-direction: column; align-items: center; gap: 15px; }
+             #history-panel { order: 1; width: 90%; max-height: 80px; flex-direction: row; justify-content: center; padding: 5px; }
+             #history-panel h3 { display: none; }
+             #historyList { flex-direction: row; overflow-x: auto; overflow-y: hidden; max-height: 40px; width: auto; padding: 0 5px; justify-content: flex-start; }
+             #historyList li { width: 30px; height: 30px; font-size: 0.8em; margin-right: 5px; }
+             .roulette-area { order: 2; min-width: calc(320px * 0.8); min-height: calc(320px * 0.8); }
+
+             /* El layout del tapete cambia completamente aquí */
              .bet-options {
+                display: grid; /* Asegurar que sigue siendo grid */
                 grid-template-areas:
                     "zero"
                     "numbers"
-                    "column"  /* Área para grupo columnas */
-                    "dozen"   /* Área para grupo docenas */
-                    "outside";/* Área para grupo exteriores */
-                grid-template-columns: 1fr; /* Todo a una columna */
+                    "column"
+                    "dozen"
+                    "outside";
+                grid-template-columns: 1fr;
                 grid-template-rows: auto auto auto auto auto;
-                gap: 10px; /* Más espacio vertical entre secciones */
-            }
-            .number-grid {
-                grid-template-columns: repeat(4, 1fr); /* 4 números por fila */
-            }
-            /* --- NUEVO: Estilos para agrupar visualmente columnas y docenas --- */
-            .column-bets, .dozen-bets {
-                border: 1px solid rgba(255, 255, 255, 0.15); /* Borde sutil alrededor */
-                border-radius: 5px;
-                padding: 5px;
-                background-color: rgba(0, 0, 0, 0.1); /* Fondo ligero para destacar */
-            }
-            /* --- FIN NUEVO --- */
-
-            .column-bets {
-                grid-template-columns: 1fr; /* Apilar botones de columna */
-                grid-template-rows: auto auto auto;
-                gap: 5px;
-            }
-            .dozen-bets {
-                 grid-template-columns: 1fr; /* Apilar botones de docena */
-                 grid-template-rows: auto auto auto;
-                 gap: 5px;
-            }
-             .outside-bets-bottom {
-                grid-template-columns: 1fr; /* Apilar también las apuestas exteriores */
-                gap: 5px;
-            }
-            /* Tamaño consistente para todos los botones del tapete en esta vista */
-            .bet-table-button {
-                 font-size: 0.7em; /* Un poco más grande para leer mejor */
-                 min-height: 32px; /* Más altura */
-                 padding: 6px 5px;
-            }
-            .number-button { font-size: 0.75em; } /* Ligeramente más grande */
-            .controls-section { padding: 10px; }
-            .controls input[type="number"] { width: 100px; font-size: 0.9em; }
-            .action-button { font-size: 0.8em; padding: 8px 10px; }
-            .add-clear-buttons {
-                 flex-direction: column;
-                 align-items: center;
-                 gap: 10px;
-            }
-             .action-button {
-                 width: 80%;
-                 max-width: 250px;
+                gap: 10px;
              }
+              /* Resetear grid-column/row para los elementos dentro de esta media query */
+             .number-button.zero, .number-grid, .column-bets, .dozen-bets, .outside-bets-bottom {
+                 grid-column: auto; grid-row: auto;
+             }
+             /* Reasignar áreas */
+             .number-button.zero { grid-area: zero; height: auto; aspect-ratio: auto; }
+             .number-grid { grid-area: numbers; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, auto); } /* 9 filas en total */
+             .column-bets { grid-area: column; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 5px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 5px; padding: 5px; background-color: rgba(0, 0, 0, 0.1); }
+             .dozen-bets { grid-area: dozen; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 5px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 5px; padding: 5px; background-color: rgba(0, 0, 0, 0.1); }
+             .outside-bets-bottom { grid-area: outside; display: grid; grid-template-columns: 1fr; gap: 5px; }
+
+             .bet-table-button { font-size: 0.7em; min-height: 32px; padding: 6px 5px; }
+             .number-button { font-size: 0.75em; }
+             .controls-section { padding: 10px; }
+             .controls input[type="number"] { width: 100px; font-size: 0.9em; }
+             .action-button { font-size: 0.8em; padding: 8px 10px; }
+             .add-clear-buttons { flex-direction: column; align-items: center; gap: 10px; }
+             .action-button { width: 80%; max-width: 250px; }
         }
 
         /* Estilos para modo guiado (visual) */
@@ -235,6 +319,12 @@
     <div id="game-container">
 
         <section class="roulette-section">
+            <div id="history-panel">
+                <h3>Historial</h3>
+                <ul id="historyList">
+                    </ul>
+            </div>
+
             <div class="roulette-area">
                  <div class="pointer"></div>
                  <canvas id="rouletteCanvas" width="550" height="550"></canvas>
@@ -262,15 +352,23 @@
                  <div class="number-grid">
                      </div>
                  <div class="column-bets">
-                     <button class="bet-table-button" data-bet-type="column-3">Columna 3 (2:1)</button> <button class="bet-table-button" data-bet-type="column-2">Columna 2 (2:1)</button> <button class="bet-table-button" data-bet-type="column-1">Columna 1 (2:1)</button> </div>
+                     <button class="bet-table-button" data-bet-type="column-3">Columna 3 (2:1)</button>
+                     <button class="bet-table-button" data-bet-type="column-2">Columna 2 (2:1)</button>
+                     <button class="bet-table-button" data-bet-type="column-1">Columna 1 (2:1)</button>
+                 </div>
                  <div class="dozen-bets">
-                     <button class="bet-table-button" data-bet-type="dozen-1">1ª Docena (1-12)</button> <button class="bet-table-button" data-bet-type="dozen-2">2ª Docena (13-24)</button><button class="bet-table-button" data-bet-type="dozen-3">3ª Docena (25-36)</button></div>
+                     <button class="bet-table-button" data-bet-type="dozen-1">1ª Docena (1-12)</button>
+                     <button class="bet-table-button" data-bet-type="dozen-2">2ª Docena (13-24)</button>
+                     <button class="bet-table-button" data-bet-type="dozen-3">3ª Docena (25-36)</button>
+                 </div>
                  <div class="outside-bets-bottom">
-                     <button class="bet-table-button" data-bet-type="low">1-18 (Falta)</button> <button class="bet-table-button" data-bet-type="even">PAR</button>
+                     <button class="bet-table-button" data-bet-type="low">1-18 (Falta)</button>
+                     <button class="bet-table-button" data-bet-type="even">PAR</button>
                      <button class="bet-table-button bet-table-button-red" data-bet-type="color-red">ROJO</button>
                      <button class="bet-table-button bet-table-button-black" data-bet-type="color-black">NEGRO</button>
                      <button class="bet-table-button" data-bet-type="odd">IMPAR</button>
-                     <button class="bet-table-button" data-bet-type="high">19-36 (Pasa)</button> </div>
+                     <button class="bet-table-button" data-bet-type="high">19-36 (Pasa)</button>
+                 </div>
             </div>
 
             <div class="add-clear-buttons">
@@ -294,14 +392,22 @@
         const betsListDisplay = document.getElementById('betsList');
         const totalBetSpan = document.getElementById('totalBetSpan');
         const numberGrid = document.querySelector('.number-grid');
+        const historyList = document.getElementById('historyList');
 
         const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
+        const HISTORY_LOCAL_STORAGE_KEY = 'rouletteNumberHistory_v1';
         const DEFAULT_BALANCE = 5000;
+        const MAX_HISTORY_LENGTH = 15;
+
         const segments = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
         const segmentColors = {};
         const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
         const blackNumbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
-        segments.forEach(num => { if (num === 0) segmentColors[num] = '#2ecc71'; else if (redNumbers.includes(num)) segmentColors[num] = '#c53030'; else segmentColors[num] = '#1A202C'; });
+        segments.forEach(num => {
+            if (num === 0) segmentColors[num] = '#2ecc71';
+            else if (redNumbers.includes(num)) segmentColors[num] = '#c53030';
+            else segmentColors[num] = '#1A202C';
+        });
         const column1 = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34];
         const column2 = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35];
         const column3 = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36];
@@ -310,6 +416,7 @@
         let canvasSize = canvas.width; let centerX = canvasSize / 2; let centerY = canvasSize / 2; let radius = canvasSize / 2 - 10; let pointerHeight = 20; let borderWidth = 4; let currentAngle = 0; let spinAngleStart = 0; let spinTime = 0; let spinTimeTotal = 0; let isSpinning = false;
         let balance;
         let currentBets = [];
+        let numberHistory = [];
 
         let cheatModeActive = false;
         let cheatTimeoutId = null;
@@ -319,46 +426,54 @@
         function saveBalance() { try { localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString()); } catch (error) { console.error("Error al guardar saldo:", error); } }
         function updateBalanceDisplay() { if (balanceDisplay) { const valueToShow = (typeof balance === 'number' && !isNaN(balance)) ? balance : DEFAULT_BALANCE; balanceDisplay.textContent = valueToShow; } }
 
+        // --- Funciones Historial (localStorage) ---
+        function loadHistory() {
+            try {
+                const savedHistory = localStorage.getItem(HISTORY_LOCAL_STORAGE_KEY);
+                if (savedHistory) {
+                    const parsedHistory = JSON.parse(savedHistory);
+                    if (Array.isArray(parsedHistory) && parsedHistory.every(n => typeof n === 'number')) {
+                         numberHistory = parsedHistory.slice(0, MAX_HISTORY_LENGTH);
+                    } else {
+                        console.warn('Historial guardado no válido.');
+                        numberHistory = [];
+                        localStorage.removeItem(HISTORY_LOCAL_STORAGE_KEY);
+                    }
+                } else {
+                    numberHistory = [];
+                }
+            } catch (error) {
+                console.error("Error al leer historial:", error);
+                numberHistory = [];
+            }
+            updateHistoryDisplay();
+        }
+        function saveHistory() {
+            try {
+                localStorage.setItem(HISTORY_LOCAL_STORAGE_KEY, JSON.stringify(numberHistory));
+            } catch (error) {
+                console.error("Error al guardar historial:", error);
+            }
+        }
+        function updateHistoryDisplay() {
+            if (!historyList) return;
+            historyList.innerHTML = '';
+            numberHistory.forEach(num => {
+                const li = document.createElement('li');
+                li.textContent = num;
+                if (num === 0) { li.classList.add('history-green'); }
+                else if (redNumbers.includes(num)) { li.classList.add('history-red'); }
+                else if (blackNumbers.includes(num)) { li.classList.add('history-black'); }
+                li.title = `Número ${num}`;
+                historyList.appendChild(li);
+            });
+             if (window.innerWidth > 480) { historyList.scrollTop = 0; }
+             else { historyList.scrollLeft = 0; }
+        }
+
         // --- Funciones Dibujo y Ajuste ---
-        function resizeCanvas() {
-            const rouletteArea = document.querySelector('.roulette-area');
-            const availableWidth = document.getElementById('game-container').clientWidth * 0.95;
-            const maxHeightFromViewport = window.innerHeight * 0.65;
-
-            let size = Math.min(availableWidth, maxHeightFromViewport);
-            size = Math.max(size, parseFloat(getComputedStyle(rouletteArea).minWidth) || 200);
-            size = Math.min(size, 700);
-
-            canvasSize = size;
-            if (rouletteArea) { rouletteArea.style.width = `${canvasSize}px`; rouletteArea.style.height = `${canvasSize}px`; }
-
-            if (canvasSize <= 350) { borderWidth = 3; pointerHeight = 18; }
-            else if (canvasSize <= 450) { borderWidth = 4; pointerHeight = 20; }
-            else { borderWidth = 5; pointerHeight = 25; }
-
-            canvas.width = canvasSize; canvas.height = canvasSize; canvas.style.borderWidth = `${borderWidth}px`;
-            centerX = canvas.width / 2; centerY = canvas.height / 2; radius = canvas.width / 2 - (borderWidth + 5);
-
-            pointer.style.borderLeftWidth = `${pointerHeight * 0.6}px`;
-            pointer.style.borderRightWidth = `${pointerHeight * 0.6}px`;
-            pointer.style.borderTopWidth = `${pointerHeight}px`;
-            const pointerOffset = -(radius + pointerHeight / 2 + borderWidth + 2);
-            pointer.style.transform = `translate(-50%, -100%) translateY(${pointerOffset}px)`;
-
-            drawRoulette(currentAngle);
-        }
-        function drawSegment(index, angleOffset) {
-            const angle = anglePerSegment * index + angleOffset; const number = segments[index]; const color = segmentColors[number];
-            ctx.beginPath(); ctx.fillStyle = color; ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, angle, angle + anglePerSegment); ctx.closePath(); ctx.fill();
-            ctx.strokeStyle = '#bdc3c7'; ctx.lineWidth = 1; ctx.stroke();
-            ctx.save(); ctx.fillStyle = '#ffffff';
-            const fontSize = Math.max(9, Math.floor(radius * 0.08));
-            ctx.font = `bold ${fontSize}px "Inter", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            const textAngle = angle + anglePerSegment / 2; const textRadius = radius * 0.82;
-            const textX = centerX + textRadius * Math.cos(textAngle); const textY = centerY + textRadius * Math.sin(textAngle);
-            ctx.translate(textX, textY); ctx.rotate(textAngle + Math.PI / 2);
-            ctx.fillText(number, 0, 0); ctx.restore();
-        }
+        function resizeCanvas() { const rouletteArea = document.querySelector('.roulette-area'); const availableWidth = document.getElementById('game-container').clientWidth * 0.95; const maxHeightFromViewport = window.innerHeight * 0.65; let size = Math.min(availableWidth, maxHeightFromViewport); size = Math.max(size, parseFloat(getComputedStyle(rouletteArea).minWidth) || 200); size = Math.min(size, 700); canvasSize = size; if (rouletteArea) { rouletteArea.style.width = `${canvasSize}px`; rouletteArea.style.height = `${canvasSize}px`; } if (canvasSize <= 350) { borderWidth = 3; pointerHeight = 18; } else if (canvasSize <= 450) { borderWidth = 4; pointerHeight = 20; } else { borderWidth = 5; pointerHeight = 25; } canvas.width = canvasSize; canvas.height = canvasSize; canvas.style.borderWidth = `${borderWidth}px`; centerX = canvas.width / 2; centerY = canvas.height / 2; radius = canvas.width / 2 - (borderWidth + 5); pointer.style.borderLeftWidth = `${pointerHeight * 0.6}px`; pointer.style.borderRightWidth = `${pointerHeight * 0.6}px`; pointer.style.borderTopWidth = `${pointerHeight}px`; const pointerOffset = -(radius + pointerHeight / 2 + borderWidth + 2); pointer.style.transform = `translate(-50%, -100%) translateY(${pointerOffset}px)`; drawRoulette(currentAngle); }
+        function drawSegment(index, angleOffset) { const angle = anglePerSegment * index + angleOffset; const number = segments[index]; const color = segmentColors[number]; ctx.beginPath(); ctx.fillStyle = color; ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, angle, angle + anglePerSegment); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#bdc3c7'; ctx.lineWidth = 1; ctx.stroke(); ctx.save(); ctx.fillStyle = '#ffffff'; const fontSize = Math.max(9, Math.floor(radius * 0.08)); ctx.font = `bold ${fontSize}px "Inter", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const textAngle = angle + anglePerSegment / 2; const textRadius = radius * 0.82; const textX = centerX + textRadius * Math.cos(textAngle); const textY = centerY + textRadius * Math.sin(textAngle); ctx.translate(textX, textY); ctx.rotate(textAngle + Math.PI / 2); ctx.fillText(number, 0, 0); ctx.restore(); }
         function drawRoulette(angleOffset = 0) { ctx.clearRect(0, 0, canvas.width, canvas.height); for (let i = 0; i < numSegments; i++) drawSegment(i, angleOffset); ctx.beginPath(); ctx.fillStyle = '#f4a261'; ctx.arc(centerX, centerY, radius * 0.15, 0, 2 * Math.PI); ctx.fill(); }
 
         // --- Lógica de Animación ---
@@ -367,7 +482,6 @@
             isSpinning = false;
             clearBetsButton.disabled = false;
             betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = false);
-
             const finalAngle = spinAngleStart % (2 * Math.PI);
             let effectiveAngle = ( (3 * Math.PI / 2) - finalAngle + (2*Math.PI) ) % (2 * Math.PI);
             const winningIndex = Math.floor(effectiveAngle / anglePerSegment);
@@ -375,241 +489,45 @@
             const winningNumber = segments[safeWinningIndex];
             const winningColor = segmentColors[winningNumber] || '#ffffff';
             console.log(`Índice: ${safeWinningIndex}, Número: ${winningNumber}`);
+            numberHistory.unshift(winningNumber);
+            if (numberHistory.length > MAX_HISTORY_LENGTH) { numberHistory = numberHistory.slice(0, MAX_HISTORY_LENGTH); }
+            saveHistory();
+            updateHistoryDisplay();
             determineWinner(winningNumber, winningColor);
         }
         function easeOut(t, b, c, d) { t /= d; t--; return c * (t * t * t + 1) + b; }
 
         // --- Lógica del Juego ---
-        function handleBetPlacement(event) {
-            if (isSpinning) return;
-            const button = event.target.closest('.bet-table-button');
-            if (!button || button.disabled) return;
-
-            const betType = button.dataset.betType; let betValue = null; const betAmount = parseInt(betAmountInput.value);
-
-            if (isNaN(betAmount) || betAmount <= 0) { showMessage("Introduce una cantidad válida para apostar."); betAmountInput.focus(); return; }
-            if (balance < betAmount) { showMessage("Saldo insuficiente para añadir esta apuesta."); return; }
-
-            if (betType === 'number') { betValue = parseInt(button.dataset.number); if (isNaN(betValue)) { console.error("Error: Botón de número sin data-number válido."); return; } }
-
-            const newBet = { amount: betAmount, type: betType, value: betValue, element: button };
-            currentBets.push(newBet);
-
-            updateBetsList();
-            updateTotalBetAmountDisplay();
-            showMessage(`${getBetDescription(newBet)} (${betAmount}€) añadida. ¡Haz clic en la ruleta para girar!`);
-
-            button.classList.add('active-bet');
-            setTimeout(() => button.classList.remove('active-bet'), 300);
-        }
-
-        function clearBets() {
-            if (isSpinning) return;
-            currentBets = [];
-            updateBetsList();
-            updateTotalBetAmountDisplay();
-            showMessage("Apuestas limpiadas. Haz clic en el tapete para apostar.");
-        }
-
-        function spin() {
-            if (isSpinning) return;
-            if (currentBets.length === 0) { showMessage("Añade una o más apuestas antes de girar."); return; }
-
-            const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-            if (totalBetAmount > balance) { showMessage("Error: Saldo insuficiente para las apuestas realizadas."); return; }
-
-            balance -= totalBetAmount;
-            updateBalanceDisplay();
-            saveBalance();
-
-            showMessage("¡Girando!");
-            isSpinning = true;
-            clearBetsButton.disabled = true;
-            betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = true);
-
-            if (cheatModeActive) {
-                console.warn("MODO GUIADO ACTIVADO!");
-                const targetBet = currentBets[0];
-                let targetWinningNumber = -1;
-
-                switch (targetBet.type) {
-                    case 'number': targetWinningNumber = targetBet.value; break;
-                    case 'color-red': targetWinningNumber = redNumbers[Math.floor(Math.random() * redNumbers.length)]; break;
-                    case 'color-black': targetWinningNumber = blackNumbers[Math.floor(Math.random() * blackNumbers.length)]; break;
-                    case 'even': targetWinningNumber = segments.filter(n => n !== 0 && n % 2 === 0)[Math.floor(Math.random() * 18)]; break;
-                    case 'odd': targetWinningNumber = segments.filter(n => n % 2 !== 0)[Math.floor(Math.random() * 18)]; break;
-                    case 'low': targetWinningNumber = segments.filter(n => n >= 1 && n <= 18)[Math.floor(Math.random() * 18)]; break;
-                    case 'high': targetWinningNumber = segments.filter(n => n >= 19 && n <= 36)[Math.floor(Math.random() * 18)]; break;
-                    case 'dozen-1': targetWinningNumber = segments.filter(n => n >= 1 && n <= 12)[Math.floor(Math.random() * 12)]; break;
-                    case 'dozen-2': targetWinningNumber = segments.filter(n => n >= 13 && n <= 24)[Math.floor(Math.random() * 12)]; break;
-                    case 'dozen-3': targetWinningNumber = segments.filter(n => n >= 25 && n <= 36)[Math.floor(Math.random() * 12)]; break;
-                    case 'column-1': targetWinningNumber = column1[Math.floor(Math.random() * column1.length)]; break;
-                    case 'column-2': targetWinningNumber = column2[Math.floor(Math.random() * column2.length)]; break;
-                    case 'column-3': targetWinningNumber = column3[Math.floor(Math.random() * column3.length)]; break;
-                    default: targetWinningNumber = Math.floor(Math.random() * 37);
-                }
-                if (targetWinningNumber === 0 && targetBet.type !== 'number') {
-                    targetWinningNumber = segments.filter(n => n !== 0)[Math.floor(Math.random() * 36)];
-                }
-
-                console.log(`Objetivo: Ganar apuesta a ${getBetDescription(targetBet)}. Número forzado: ${targetWinningNumber}`);
-                const targetIndex = segments.findIndex(num => num === targetWinningNumber);
-
-                if (targetIndex !== -1) {
-                    const targetSegmentCenterAngle = (targetIndex + 0.5) * anglePerSegment;
-                    const targetFinalAngle = ( (3 * Math.PI / 2) - targetSegmentCenterAngle + 4 * Math.PI) % (2 * Math.PI);
-                    spinAngleStart = targetFinalAngle + (Math.floor(Math.random() * 4) + 6) * (2 * Math.PI);
-                    console.log(`Ángulo de giro calculado: ${spinAngleStart}`);
-                } else {
-                    console.error(`Error: No se encontró el índice para ${targetWinningNumber}. Usando giro aleatorio.`);
-                    spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI);
-                }
-                cheatModeActive = false;
-                const redBtn = document.querySelector('.bet-table-button-red');
-                const blackBtn = document.querySelector('.bet-table-button-black');
-                if (redBtn) redBtn.classList.remove('cheat-swap-red');
-                if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
-                if(cheatTimeoutId) clearTimeout(cheatTimeoutId);
-
-            } else {
-                spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI);
-            }
-
-            spinTimeTotal = Math.random() * 3 + 4;
-            spinTime = 0;
-            rotateWheel();
-        }
-
-        function determineWinner(winningNumber, winningColor) {
-            let totalPayout = 0;
-            const resultMessage = `El número ganador es ${winningNumber} (${getColorName(winningColor)})`;
-
-            currentBets.forEach(bet => {
-                let betWins = false;
-                let payoutMultiplier = 0;
-                const { amount, type, value } = bet;
-
-                if (winningNumber === 0) {
-                    if (type === 'number' && value === 0) {
-                         betWins = true; payoutMultiplier = 36;
-                    }
-                } else {
-                    switch (type) {
-                        case 'number': if (value === winningNumber) { betWins = true; payoutMultiplier = 36; } break;
-                        case 'color-red': if (redNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'color-black': if (blackNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'even': if (winningNumber % 2 === 0) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'odd': if (winningNumber % 2 !== 0) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'low': if (winningNumber >= 1 && winningNumber <= 18) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'high': if (winningNumber >= 19 && winningNumber <= 36) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'dozen-1': if (winningNumber >= 1 && winningNumber <= 12) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'dozen-2': if (winningNumber >= 13 && winningNumber <= 24) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'dozen-3': if (winningNumber >= 25 && winningNumber <= 36) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'column-1': if (column1.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'column-2': if (column2.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'column-3': if (column3.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
-                    }
-                }
-
-                if (betWins) {
-                    totalPayout += amount * payoutMultiplier;
-                }
-            });
-
-            const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-            const netWinnings = totalPayout - totalBetAmount;
-
-            balance += totalPayout;
-            updateBalanceDisplay();
-            saveBalance();
-
-            if (netWinnings > 0) { showMessage(`${resultMessage}. ¡Ganaste ${netWinnings}€ netos! (Total pagado: ${totalPayout}€)`, 'win'); }
-            else if (netWinnings < 0) { showMessage(`${resultMessage}. Perdiste ${Math.abs(netWinnings)}€ en total.`, 'lose'); }
-            else { showMessage(`${resultMessage}. Ni ganas ni pierdes. (Devolución: ${totalPayout}€)`); }
-
-            currentBets = [];
-            updateBetsList();
-            updateTotalBetAmountDisplay();
-        }
+        function handleBetPlacement(event) { if (isSpinning) return; const button = event.target.closest('.bet-table-button'); if (!button || button.disabled) return; const betType = button.dataset.betType; let betValue = null; const betAmount = parseInt(betAmountInput.value); if (isNaN(betAmount) || betAmount <= 0) { showMessage("Introduce una cantidad válida para apostar."); betAmountInput.focus(); return; } if (balance < betAmount) { showMessage("Saldo insuficiente para añadir esta apuesta."); return; } if (betType === 'number') { betValue = parseInt(button.dataset.number); if (isNaN(betValue)) { console.error("Error: Botón de número sin data-number válido."); return; } } const newBet = { amount: betAmount, type: betType, value: betValue, element: button }; currentBets.push(newBet); updateBetsList(); updateTotalBetAmountDisplay(); showMessage(`${getBetDescription(newBet)} (${betAmount}€) añadida. ¡Haz clic en la ruleta para girar!`); button.classList.add('active-bet'); setTimeout(() => button.classList.remove('active-bet'), 300); }
+        function clearBets() { if (isSpinning) return; currentBets = []; updateBetsList(); updateTotalBetAmountDisplay(); showMessage("Apuestas limpiadas. Haz clic en el tapete para apostar."); }
+        function spin() { if (isSpinning) return; if (currentBets.length === 0) { showMessage("Añade una o más apuestas antes de girar."); return; } const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0); if (totalBetAmount > balance) { showMessage("Error: Saldo insuficiente para las apuestas realizadas."); return; } balance -= totalBetAmount; updateBalanceDisplay(); saveBalance(); showMessage("¡Girando!"); isSpinning = true; clearBetsButton.disabled = true; betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = true); if (cheatModeActive) { console.warn("MODO GUIADO ACTIVADO!"); const targetBet = currentBets[0]; let targetWinningNumber = -1; switch (targetBet.type) { case 'number': targetWinningNumber = targetBet.value; break; case 'color-red': targetWinningNumber = redNumbers[Math.floor(Math.random() * redNumbers.length)]; break; case 'color-black': targetWinningNumber = blackNumbers[Math.floor(Math.random() * blackNumbers.length)]; break; case 'even': targetWinningNumber = segments.filter(n => n !== 0 && n % 2 === 0)[Math.floor(Math.random() * 18)]; break; case 'odd': targetWinningNumber = segments.filter(n => n % 2 !== 0)[Math.floor(Math.random() * 18)]; break; case 'low': targetWinningNumber = segments.filter(n => n >= 1 && n <= 18)[Math.floor(Math.random() * 18)]; break; case 'high': targetWinningNumber = segments.filter(n => n >= 19 && n <= 36)[Math.floor(Math.random() * 18)]; break; case 'dozen-1': targetWinningNumber = segments.filter(n => n >= 1 && n <= 12)[Math.floor(Math.random() * 12)]; break; case 'dozen-2': targetWinningNumber = segments.filter(n => n >= 13 && n <= 24)[Math.floor(Math.random() * 12)]; break; case 'dozen-3': targetWinningNumber = segments.filter(n => n >= 25 && n <= 36)[Math.floor(Math.random() * 12)]; break; case 'column-1': targetWinningNumber = column1[Math.floor(Math.random() * column1.length)]; break; case 'column-2': targetWinningNumber = column2[Math.floor(Math.random() * column2.length)]; break; case 'column-3': targetWinningNumber = column3[Math.floor(Math.random() * column3.length)]; break; default: targetWinningNumber = Math.floor(Math.random() * 37); } if (targetWinningNumber === 0 && targetBet.type !== 'number') { targetWinningNumber = segments.filter(n => n !== 0)[Math.floor(Math.random() * 36)]; } console.log(`Objetivo: Ganar apuesta a ${getBetDescription(targetBet)}. Número forzado: ${targetWinningNumber}`); const targetIndex = segments.findIndex(num => num === targetWinningNumber); if (targetIndex !== -1) { const targetSegmentCenterAngle = (targetIndex + 0.5) * anglePerSegment; const targetFinalAngle = ( (3 * Math.PI / 2) - targetSegmentCenterAngle + 4 * Math.PI) % (2 * Math.PI); spinAngleStart = targetFinalAngle + (Math.floor(Math.random() * 4) + 6) * (2 * Math.PI); console.log(`Ángulo de giro calculado: ${spinAngleStart}`); } else { console.error(`Error: No se encontró el índice para ${targetWinningNumber}. Usando giro aleatorio.`); spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI); } cheatModeActive = false; const redBtn = document.querySelector('.bet-table-button-red'); const blackBtn = document.querySelector('.bet-table-button-black'); if (redBtn) redBtn.classList.remove('cheat-swap-red'); if (blackBtn) blackBtn.classList.remove('cheat-swap-black'); if(cheatTimeoutId) clearTimeout(cheatTimeoutId); } else { spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI); } spinTimeTotal = Math.random() * 3 + 4; spinTime = 0; rotateWheel(); }
+        function determineWinner(winningNumber, winningColor) { let totalPayout = 0; const resultMessage = `El número ganador es ${winningNumber} (${getColorName(winningColor)})`; currentBets.forEach(bet => { let betWins = false; let payoutMultiplier = 0; const { amount, type, value } = bet; if (winningNumber === 0) { if (type === 'number' && value === 0) { betWins = true; payoutMultiplier = 36; } } else { switch (type) { case 'number': if (value === winningNumber) { betWins = true; payoutMultiplier = 36; } break; case 'color-red': if (redNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break; case 'color-black': if (blackNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break; case 'even': if (winningNumber % 2 === 0) { betWins = true; payoutMultiplier = 2; } break; case 'odd': if (winningNumber % 2 !== 0) { betWins = true; payoutMultiplier = 2; } break; case 'low': if (winningNumber >= 1 && winningNumber <= 18) { betWins = true; payoutMultiplier = 2; } break; case 'high': if (winningNumber >= 19 && winningNumber <= 36) { betWins = true; payoutMultiplier = 2; } break; case 'dozen-1': if (winningNumber >= 1 && winningNumber <= 12) { betWins = true; payoutMultiplier = 3; } break; case 'dozen-2': if (winningNumber >= 13 && winningNumber <= 24) { betWins = true; payoutMultiplier = 3; } break; case 'dozen-3': if (winningNumber >= 25 && winningNumber <= 36) { betWins = true; payoutMultiplier = 3; } break; case 'column-1': if (column1.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break; case 'column-2': if (column2.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break; case 'column-3': if (column3.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break; } } if (betWins) { totalPayout += amount * payoutMultiplier; } }); const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0); const netWinnings = totalPayout - totalBetAmount; balance += totalPayout; updateBalanceDisplay(); saveBalance(); if (netWinnings > 0) { showMessage(`${resultMessage}. ¡Ganaste ${netWinnings}€ netos! (Total pagado: ${totalPayout}€)`, 'win'); } else if (netWinnings < 0) { showMessage(`${resultMessage}. Perdiste ${Math.abs(netWinnings)}€ en total.`, 'lose'); } else { showMessage(`${resultMessage}. Ni ganas ni pierdes. (Devolución: ${totalPayout}€)`); } currentBets = []; updateBetsList(); updateTotalBetAmountDisplay(); }
 
         // --- Funciones auxiliares ---
         function getColorName(colorCode) { if (colorCode === '#2ecc71') return 'Verde'; if (colorCode === '#c53030') return 'Rojo'; if (colorCode === '#1A202C') return 'Negro'; return 'Desconocido'; }
         function showMessage(msg, type = 'info') { messageDisplay.textContent = msg; messageDisplay.style.color = type === 'win' ? '#2ecc71' : type === 'lose' ? '#e74c3c' : '#f0e68c'; }
         function updateBetsList() { betsListDisplay.innerHTML = ''; if (currentBets.length === 0) { betsListDisplay.innerHTML = '<li>No hay apuestas añadidas</li>'; } else { currentBets.forEach((bet, index) => { const li = document.createElement('li'); li.textContent = `(${index + 1}) ${bet.amount}€ a ${getBetDescription(bet)}`; betsListDisplay.appendChild(li); }); } betsListDisplay.scrollTop = betsListDisplay.scrollHeight; }
-        // --- Modificado: Descripciones de apuestas más claras ---
-        function getBetDescription(bet) {
-            switch (bet.type) {
-                case 'number': return `Número ${bet.value}`;
-                case 'color-red': return `Rojo`;
-                case 'color-black': return `Negro`;
-                case 'even': return `Par`;
-                case 'odd': return `Impar`;
-                case 'low': return `Falta (1-18)`;
-                case 'high': return `Pasa (19-36)`;
-                case 'dozen-1': return `1ª Docena (1-12)`;
-                case 'dozen-2': return `2ª Docena (13-24)`;
-                case 'dozen-3': return `3ª Docena (25-36)`;
-                case 'column-1': return `Columna 1`; // El botón ya dice 2:1
-                case 'column-2': return `Columna 2`; // El botón ya dice 2:1
-                case 'column-3': return `Columna 3`; // El botón ya dice 2:1
-                default: return `Desconocido`;
-            }
-        }
+        function getBetDescription(bet) { switch (bet.type) { case 'number': return `Número ${bet.value}`; case 'color-red': return `Rojo`; case 'color-black': return `Negro`; case 'even': return `Par`; case 'odd': return `Impar`; case 'low': return `Falta (1-18)`; case 'high': return `Pasa (19-36)`; case 'dozen-1': return `1ª Docena (1-12)`; case 'dozen-2': return `2ª Docena (13-24)`; case 'dozen-3': return `3ª Docena (25-36)`; case 'column-1': return `Columna 1`; case 'column-2': return `Columna 2`; case 'column-3': return `Columna 3`; default: return `Desconocido`; } }
         function updateTotalBetAmountDisplay() { const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0); totalBetSpan.textContent = totalBetAmount; }
 
         // --- Generar Cuadrícula de Números Dinámicamente ---
-        function generateNumberGrid() {
-            if (!numberGrid) { console.error("Elemento .number-grid no encontrado"); return; }
-            numberGrid.innerHTML = '';
-            const gridOrder = [ 3,  6,  9, 12, 15, 18, 21, 24, 27, 30, 33, 36,
-                                2,  5,  8, 11, 14, 17, 20, 23, 26, 29, 32, 35,
-                                1,  4,  7, 10, 13, 16, 19, 22, 25, 28, 31, 34 ];
-
-            gridOrder.forEach((num) => {
-                const button = document.createElement('button');
-                button.classList.add('bet-table-button', 'number-button');
-                button.dataset.betType = 'number'; button.dataset.number = num; button.textContent = num;
-                if (redNumbers.includes(num)) button.classList.add('red'); else if (blackNumbers.includes(num)) button.classList.add('black');
-                numberGrid.appendChild(button);
-            });
-        }
+        function generateNumberGrid() { if (!numberGrid) { console.error("Elemento .number-grid no encontrado"); return; } numberGrid.innerHTML = ''; const gridOrder = [ 3,  6,  9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 2,  5,  8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 1,  4,  7, 10, 13, 16, 19, 22, 25, 28, 31, 34 ]; gridOrder.forEach((num) => { const button = document.createElement('button'); button.classList.add('bet-table-button', 'number-button'); button.dataset.betType = 'number'; button.dataset.number = num; button.textContent = num; if (redNumbers.includes(num)) button.classList.add('red'); else if (blackNumbers.includes(num)) button.classList.add('black'); numberGrid.appendChild(button); }); }
 
         // --- Event Listeners ---
         canvas.addEventListener('click', spin);
         clearBetsButton.addEventListener('click', clearBets);
         betOptionsContainer.addEventListener('click', handleBetPlacement);
         window.addEventListener('resize', resizeCanvas);
-        window.addEventListener('storage', (event) => { if (event.key === BALANCE_LOCAL_STORAGE_KEY) { console.log('Saldo cambiado externamente.'); loadBalance(); } });
-        window.addEventListener('focus', () => { console.log('Ventana enfocada, actualizando saldo.'); loadBalance(); });
+        window.addEventListener('storage', (event) => { if (event.key === BALANCE_LOCAL_STORAGE_KEY) { console.log('Saldo cambiado externamente.'); loadBalance(); } if (event.key === HISTORY_LOCAL_STORAGE_KEY) { console.log('Historial cambiado externamente.'); loadHistory(); } });
+        window.addEventListener('focus', () => { console.log('Ventana enfocada, actualizando saldo e historial.'); loadBalance(); loadHistory(); });
 
         // --- LISTENER MODO GUIADO (Doble clic en saldo) ---
-        balanceDisplay.addEventListener('dblclick', () => {
-            cheatModeActive = !cheatModeActive;
-            if (cheatTimeoutId) { clearTimeout(cheatTimeoutId); cheatTimeoutId = null; }
-            const redBtn = document.querySelector('.bet-table-button-red');
-            const blackBtn = document.querySelector('.bet-table-button-black');
-            if (redBtn) redBtn.classList.remove('cheat-swap-red');
-            if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
-
-            if (cheatModeActive) {
-                console.warn("MODO GUIADO ACTIVADO (Próximo giro será forzado a la primera apuesta)");
-                showMessage("Modo Guiado ACTIVADO", "win");
-                if (redBtn) redBtn.classList.add('cheat-swap-red');
-                if (blackBtn) blackBtn.classList.add('cheat-swap-black');
-                cheatTimeoutId = setTimeout(() => {
-                     if (redBtn) redBtn.classList.remove('cheat-swap-red');
-                     if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
-                     cheatTimeoutId = null;
-                }, 2000);
-            } else {
-                console.log("MODO GUIADO DESACTIVADO");
-                showMessage("Modo Guiado DESACTIVADO");
-            }
-        });
+        balanceDisplay.addEventListener('dblclick', () => { cheatModeActive = !cheatModeActive; if (cheatTimeoutId) { clearTimeout(cheatTimeoutId); cheatTimeoutId = null; } const redBtn = document.querySelector('.bet-table-button-red'); const blackBtn = document.querySelector('.bet-table-button-black'); if (redBtn) redBtn.classList.remove('cheat-swap-red'); if (blackBtn) blackBtn.classList.remove('cheat-swap-black'); if (cheatModeActive) { console.warn("MODO GUIADO ACTIVADO (Próximo giro será forzado a la primera apuesta)"); showMessage("Modo Guiado ACTIVADO", "win"); if (redBtn) redBtn.classList.add('cheat-swap-red'); if (blackBtn) blackBtn.classList.add('cheat-swap-black'); cheatTimeoutId = setTimeout(() => { if (redBtn) redBtn.classList.remove('cheat-swap-red'); if (blackBtn) blackBtn.classList.remove('cheat-swap-black'); cheatTimeoutId = null; }, 2000); } else { console.log("MODO GUIADO DESACTIVADO"); showMessage("Modo Guiado DESACTIVADO"); } });
 
         // --- Inicialización al cargar la página ---
         window.onload = () => {
             loadBalance();
+            loadHistory();
             generateNumberGrid();
             resizeCanvas();
             updateBetsList();
