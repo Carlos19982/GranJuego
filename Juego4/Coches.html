@@ -70,10 +70,10 @@
         const windowMaterial = new THREE.MeshStandardMaterial({ color: 0xadd8e6, opacity: 0.7, transparent: true });
 
         // --- Materiales para decoración ---
-        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Marrón para troncos
-        const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Verde oscuro para hojas/arbustos
-        const standMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D }); // Marrón siena para gradas
-        const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 }); // Gris para rocas
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+        const standMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D });
+        const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
         const crowdColors = [0xff6347, 0x4682b4, 0x32cd32, 0xffd700, 0x6a5acd, 0xee82ee, 0xf08080];
         const lineMarkingMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 
@@ -193,55 +193,22 @@
             return standGroup;
          }
 
-        // *** NUEVA FUNCIÓN para crear arbustos simples ***
+        // --- Función para crear arbustos simples ---
         function createBush(position) {
             const bushGroup = new THREE.Group();
-            const numSpheres = 3 + Math.floor(Math.random() * 3); // Entre 3 y 5 esferas
-            const baseRadius = 0.5 + Math.random() * 0.3;
-
-            for (let i = 0; i < numSpheres; i++) {
-                const sphereRadius = baseRadius * (0.6 + Math.random() * 0.4);
-                const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 8, 6); // Menos detalle
-                const sphere = new THREE.Mesh(sphereGeometry, foliageMaterial);
-
-                // Posición aleatoria dentro de un área pequeña
-                sphere.position.set(
-                    (Math.random() - 0.5) * baseRadius * 1.5,
-                    sphereRadius * 0.5, // Ligeramente levantado
-                    (Math.random() - 0.5) * baseRadius * 1.5
-                );
-                sphere.castShadow = true; // Opcional
-                bushGroup.add(sphere);
-            }
-            bushGroup.position.copy(position);
-            bushGroup.userData.isDecoration = true;
+            const numSpheres = 3 + Math.floor(Math.random() * 3); const baseRadius = 0.5 + Math.random() * 0.3;
+            for (let i = 0; i < numSpheres; i++) { const sphereRadius = baseRadius * (0.6 + Math.random() * 0.4); const sphereGeometry = new THREE.SphereGeometry(sphereRadius, 8, 6); const sphere = new THREE.Mesh(sphereGeometry, foliageMaterial); sphere.position.set( (Math.random() - 0.5) * baseRadius * 1.5, sphereRadius * 0.5, (Math.random() - 0.5) * baseRadius * 1.5 ); sphere.castShadow = true; bushGroup.add(sphere); }
+            bushGroup.position.copy(position); bushGroup.userData.isDecoration = true;
             return bushGroup;
         }
 
-        // *** NUEVA FUNCIÓN para crear rocas simples ***
+        // --- Función para crear rocas simples ---
         function createRock(position) {
-            const rockGeometry = new THREE.IcosahedronGeometry(0.5 + Math.random() * 0.5, 0); // Radio base aleatorio, 0 subdivisiones (muy low-poly)
-            const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-
-            // Deformación aleatoria simple
-            rock.scale.set(
-                1 + (Math.random() - 0.5) * 0.8,
-                1 + (Math.random() - 0.5) * 0.8,
-                1 + (Math.random() - 0.5) * 0.8
-            );
-            // Rotación aleatoria
-            rock.rotation.set(
-                Math.random() * Math.PI * 2,
-                Math.random() * Math.PI * 2,
-                Math.random() * Math.PI * 2
-            );
-
-            rock.position.copy(position);
-            rock.position.y = (rock.geometry.parameters.radius || 0.5) * rock.scale.y / 2; // Levantarla un poco
-            rock.castShadow = true;
-            rock.receiveShadow = true;
-            rock.userData.isDecoration = true;
-            return rock; // Devolvemos la malla directamente, no un grupo
+            const rockGeometry = new THREE.IcosahedronGeometry(0.5 + Math.random() * 0.5, 0); const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+            rock.scale.set( 1 + (Math.random() - 0.5) * 0.8, 1 + (Math.random() - 0.5) * 0.8, 1 + (Math.random() - 0.5) * 0.8 );
+            rock.rotation.set( Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2 );
+            rock.position.copy(position); rock.position.y = (rock.geometry.parameters.radius || 0.5) * rock.scale.y / 2; rock.castShadow = true; rock.receiveShadow = true; rock.userData.isDecoration = true;
+            return rock;
         }
 
 
@@ -269,20 +236,10 @@
 
             // --- Añadir Decoración ---
             const standLength = trackLength * 0.6; const standOffset = 5; const standZ = track.position.z; const standLeft = createStand(new THREE.Vector3(-trackWidth / 2 - borderWidth - standOffset, 0, standZ), standLength, 4, 1.5, 1.5); scene.add(standLeft); const standRight = createStand(new THREE.Vector3(trackWidth / 2 + borderWidth + standOffset, 0, standZ), standLength, 4, 1.5, 1.5); scene.add(standRight);
-
-            const treeCount = 40;
-            const bushCount = 60; // Número de arbustos
-            const rockCount = 30; // Número de rocas
-            const minX = trackWidth / 2 + 8; const maxX = 90;
-            const minZ = track.position.z - trackLength / 2 + 30; const maxZ = track.position.z + trackLength / 2 - 30;
-
-            // Colocar árboles
+            const treeCount = 40; const bushCount = 60; const rockCount = 30; const minX = trackWidth / 2 + 8; const maxX = 90; const minZ = track.position.z - trackLength / 2 + 30; const maxZ = track.position.z + trackLength / 2 - 30;
             for (let i = 0; i < treeCount; i++) { const xPos = (Math.random() < 0.5 ? -1 : 1) * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const tree = createTree(new THREE.Vector3(xPos, 0, zPos)); scene.add(tree); }
-            // Colocar arbustos
             for (let i = 0; i < bushCount; i++) { const xPos = (Math.random() < 0.5 ? -1 : 1) * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const bush = createBush(new THREE.Vector3(xPos, 0, zPos)); scene.add(bush); }
-            // Colocar rocas
             for (let i = 0; i < rockCount; i++) { const xPos = (Math.random() < 0.5 ? -1 : 1) * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const rock = createRock(new THREE.Vector3(xPos, 0, zPos)); scene.add(rock); }
-
 
             // --- Crear los Coches ---
             const carColors = [0xff0000, 0x00ff00, 0x0000ff, 0xff00ff, 0x00ffff];
@@ -307,9 +264,9 @@
         function checkBetButtonState() { const amount = parseInt(betAmountInput.value, 10); const hasEnoughBalance = amount <= balance; betButton.disabled = !(raceState === 'idle' && selectedCarGroup && amount >= MIN_BET && hasEnoughBalance); if (raceState === 'idle' && selectedCarGroup && amount >= MIN_BET && !hasEnoughBalance) { messageArea.textContent = `Saldo insuficiente (Tienes ${balance}€)`; } else if (raceState === 'idle' && selectedCarGroup) { messageArea.textContent = `Coche ${selectedCarGroup.userData.id + 1} seleccionado`; } else if (raceState === 'idle') { messageArea.textContent = 'Selecciona un coche y apuesta.'; } }
 
         // --- Lógica de la Carrera ---
-        function placeBetAndStartRace() { if (betButton.disabled || !selectedCarGroup || raceState !== 'idle') return; const betAmount = parseInt(betAmountInput.value, 10); if (betAmount > balance) { messageArea.textContent = `¡Saldo insuficiente! Tienes ${balance}€ y quieres apostar ${betAmount}€.`; return; } if (betAmount < MIN_BET) { messageArea.textContent = `La apuesta mínima es ${MIN_BET}€.`; return; } try { console.log(`Apuesta realizada: Coche ${selectedCarGroup.userData.id + 1}, Cantidad: ${betAmount}`); balance -= betAmount; saveBalance(); updateBalanceDisplay(); uiContainer.style.display = 'none'; raceState = 'racing'; winnerCarGroup = null; controls.enabled = false; cars.forEach(car => { car.userData.baseSpeed = BASE_SPEED; car.userData.currentSpeed = car.userData.baseSpeed; }); } catch (error) { console.error("Error al iniciar la carrera:", error); raceState = 'idle'; if (uiContainer) uiContainer.style.display = 'flex'; controls.enabled = true; checkBetButtonState(); } }
-        function endRace() { try { raceState = 'finished'; controls.enabled = true; const playerWon = selectedCarGroup === winnerCarGroup; const betAmount = parseInt(betAmountInput.value, 10) || 0; let payout = 0; let resultMessage = `¡Carrera terminada! Ganador: Coche ${winnerCarGroup.userData.id + 1}. `; if (playerWon) { payout = betAmount * cars.length; resultMessage += `¡Has ganado! Recibes ${payout}€.`; balance += payout; } else { resultMessage += `Has perdido tu apuesta de ${betAmount}€.`; } saveBalance(); updateBalanceDisplay(); messageArea.textContent = resultMessage; uiContainer.style.display = 'flex'; betButton.classList.add('hidden'); resetButton.classList.remove('hidden'); betAmountInput.disabled = true; } catch (error) { console.error("Error al finalizar la carrera:", error); if (uiContainer) uiContainer.style.display = 'flex'; if (resetButton) resetButton.classList.remove('hidden'); } }
-        function resetRace() { try { raceState = 'idle'; winnerCarGroup = null; cars.forEach(car => { car.position.z = startZ; car.userData.baseSpeed = 0; car.userData.currentSpeed = 0; if (car === selectedCarGroup) { deselectCar(); } }); uiContainer.style.display = 'flex'; resetButton.classList.add('hidden'); betButton.classList.remove('hidden'); betAmountInput.disabled = false; messageArea.textContent = 'Selecciona un coche y apuesta para la próxima carrera.'; updateBalanceDisplay(); checkBetButtonState(); camera.position.set(0, 20, 25); controls.target.set(0, 0, -30); } catch (error) { console.error("Error al resetear la carrera:", error); if (uiContainer) uiContainer.style.display = 'flex'; if (betButton) betButton.classList.remove('hidden'); } }
+        function placeBetAndStartRace() { if (betButton.disabled || !selectedCarGroup || raceState !== 'idle') return; const betAmount = parseInt(betAmountInput.value, 10); if (betAmount > balance) { messageArea.textContent = `¡Saldo insuficiente! Tienes ${balance}€ y quieres apostar ${betAmount}€.`; return; } if (betAmount < MIN_BET) { messageArea.textContent = `La apuesta mínima es ${MIN_BET}€.`; return; } try { console.log(`Apuesta realizada: Coche ${selectedCarGroup.userData.id + 1}, Cantidad: ${betAmount}`); balance -= betAmount; saveBalance(); updateBalanceDisplay(); uiContainer.style.display = 'none'; raceState = 'racing'; winnerCarGroup = null; controls.enableRotate = false; controls.enablePan = false; controls.enableZoom = true; cars.forEach(car => { car.userData.baseSpeed = BASE_SPEED; car.userData.currentSpeed = car.userData.baseSpeed; }); } catch (error) { console.error("Error al iniciar la carrera:", error); raceState = 'idle'; if (uiContainer) uiContainer.style.display = 'flex'; controls.enableRotate = true; controls.enablePan = true; controls.enableZoom = true; checkBetButtonState(); } }
+        function endRace() { try { raceState = 'finished'; controls.enableRotate = true; controls.enablePan = true; const playerWon = selectedCarGroup === winnerCarGroup; const betAmount = parseInt(betAmountInput.value, 10) || 0; let payout = 0; let resultMessage = `¡Carrera terminada! Ganador: Coche ${winnerCarGroup.userData.id + 1}. `; if (playerWon) { payout = betAmount * cars.length; resultMessage += `¡Has ganado! Recibes ${payout}€.`; balance += payout; } else { resultMessage += `Has perdido tu apuesta de ${betAmount}€.`; } saveBalance(); updateBalanceDisplay(); messageArea.textContent = resultMessage; uiContainer.style.display = 'flex'; betButton.classList.add('hidden'); resetButton.classList.remove('hidden'); betAmountInput.disabled = true; } catch (error) { console.error("Error al finalizar la carrera:", error); if (uiContainer) uiContainer.style.display = 'flex'; if (resetButton) resetButton.classList.remove('hidden'); controls.enableRotate = true; controls.enablePan = true; controls.enableZoom = true; } }
+        function resetRace() { try { raceState = 'idle'; winnerCarGroup = null; controls.enableRotate = true; controls.enablePan = true; controls.enableZoom = true; cars.forEach(car => { car.position.z = startZ; car.userData.baseSpeed = 0; car.userData.currentSpeed = 0; if (car === selectedCarGroup) { deselectCar(); } }); uiContainer.style.display = 'flex'; resetButton.classList.add('hidden'); betButton.classList.remove('hidden'); betAmountInput.disabled = false; messageArea.textContent = 'Selecciona un coche y apuesta para la próxima carrera.'; updateBalanceDisplay(); checkBetButtonState(); camera.position.set(0, 20, 25); controls.target.set(0, 0, -30); } catch (error) { console.error("Error al resetear la carrera:", error); if (uiContainer) uiContainer.style.display = 'flex'; if (betButton) betButton.classList.remove('hidden'); controls.enableRotate = true; controls.enablePan = true; controls.enableZoom = true; } }
 
 
         // --- Bucle de Animación ---
@@ -318,12 +275,63 @@
             const deltaTime = clock.getDelta();
             try {
                 if (raceState === 'racing') {
-                    let leadZ = Infinity;
-                    cars.forEach(car => { const randomAccel = (Math.random() - 0.5) * ACCELERATION_FACTOR * deltaTime; car.userData.currentSpeed += randomAccel; const minSpeed = car.userData.baseSpeed * MIN_SPEED_FACTOR; const maxSpeed = car.userData.baseSpeed * MAX_SPEED_FACTOR; car.userData.currentSpeed = Math.max(minSpeed, Math.min(car.userData.currentSpeed, maxSpeed)); car.position.z -= car.userData.currentSpeed * deltaTime; leadZ = Math.min(leadZ, car.position.z); if (car.position.z <= finishLineZ && !winnerCarGroup) { winnerCarGroup = car; endRace(); } });
-                    if (raceState === 'racing') { const targetCameraZ = leadZ + 15; const targetCameraY = 8; const targetLookZ = leadZ - 30; camera.position.lerp(new THREE.Vector3(camera.position.x, targetCameraY, targetCameraZ), 0.05); controls.target.lerp(new THREE.Vector3(controls.target.x, 0, targetLookZ), 0.05); }
-                } else { const direction = new THREE.Vector3(); camera.getWorldDirection(direction); const right = new THREE.Vector3(); right.crossVectors(camera.up, direction).normalize(); const moveVector = new THREE.Vector3(); moveVector.addScaledVector(direction, (moveState.forward - moveState.backward) * moveSpeed); moveVector.addScaledVector(right, (moveState.left - moveState.right) * moveSpeed); camera.position.add(moveVector); controls.target.add(moveVector); }
-                controls.update(); renderer.render(scene, camera);
-            } catch (error) { console.error("Error en el bucle de animación:", error); }
+                    let lastZ = -Infinity;
+                    let carCount = 0;
+
+                    cars.forEach(car => {
+                        // Lógica de Velocidad Variable
+                        const randomAccel = (Math.random() - 0.5) * ACCELERATION_FACTOR * deltaTime;
+                        car.userData.currentSpeed += randomAccel;
+                        const minSpeed = car.userData.baseSpeed * MIN_SPEED_FACTOR;
+                        const maxSpeed = car.userData.baseSpeed * MAX_SPEED_FACTOR;
+                        car.userData.currentSpeed = Math.max(minSpeed, Math.min(car.userData.currentSpeed, maxSpeed));
+                        car.position.z -= car.userData.currentSpeed * deltaTime;
+
+                        lastZ = Math.max(lastZ, car.position.z);
+                        carCount++;
+
+                        // Comprobar ganador
+                        if (car.position.z <= finishLineZ && !winnerCarGroup) {
+                            winnerCarGroup = car;
+                            endRace();
+                        }
+                    });
+
+                    // Cámara de seguimiento (usa lastZ)
+                    if (raceState === 'racing') {
+                        const cameraOffset = 25; // *** Aumentada la distancia ***
+                        const lookAheadOffset = 10;
+                        const lerpFactor = 0.12; // *** Aumentado el factor lerp ***
+
+                        const targetCameraZ = lastZ + cameraOffset;
+                        const targetCameraY = 8;
+                        // const targetLookZ = lastZ - lookAheadOffset; // No moveremos el target automáticamente
+
+                        // *** Solo actualizar posición de la cámara ***
+                        camera.position.lerp(new THREE.Vector3(camera.position.x, targetCameraY, targetCameraZ), lerpFactor);
+                        // *** Línea eliminada: controls.target.lerp(new THREE.Vector3(controls.target.x, 0, targetLookZ), lerpFactor); ***
+                    }
+
+                } else { // 'idle' or 'finished'
+                    // Movimiento WASD (solo se aplica si raceState es 'idle' debido a handleKeyDown)
+                    const direction = new THREE.Vector3();
+                    camera.getWorldDirection(direction);
+                    const right = new THREE.Vector3();
+                    right.crossVectors(camera.up, direction).normalize();
+                    const moveVector = new THREE.Vector3();
+                    moveVector.addScaledVector(direction, (moveState.forward - moveState.backward) * moveSpeed);
+                    moveVector.addScaledVector(right, (moveState.left - moveState.right) * moveSpeed);
+                    camera.position.add(moveVector);
+                    controls.target.add(moveVector);
+                }
+
+                // *** controls.update() siempre se llama para que el damping y el zoom (si está activo) funcionen ***
+                controls.update();
+                renderer.render(scene, camera);
+
+            } catch (error) {
+                console.error("Error en el bucle de animación:", error);
+            }
         }
         init();
     </script>
