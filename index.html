@@ -15,37 +15,62 @@
         }
         .grid-button {
             /* Estilo base del botón */
-            aspect-ratio: 1 / 1; /* Mantiene la forma cuadrada */
+            aspect-ratio: 1 / 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 0.5rem; /* Bordes redondeados (igual a rounded-lg de Tailwind) */
-            background-color: #4B5563; /* Color base gris oscuro (Tailwind gray-600) */
-            color: #F9FAFB; /* Color de texto gris muy claro (Tailwind gray-50) */
-            font-weight: 600; /* Semibold */
+            border-radius: 0.5rem;
+            background-color: #4B5563; /* gray-600 */
+            color: #F9FAFB; /* gray-50 */
+            font-weight: 600;
             font-size: 1.125rem; /* text-lg */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* Sombra sutil */
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out; /* Transiciones suaves */
-            text-decoration: none; /* Quitar subrayado del enlace */
-            text-align: center; /* Centrar texto si es largo */
-            padding: 0.5rem; /* Añadir padding por si el texto es largo */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
+            text-decoration: none;
+            text-align: center;
+            padding: 0.5rem;
         }
         .grid-button:hover {
-            /* Efecto al pasar el ratón */
-            transform: translateY(-3px) scale(1.03); /* Ligero levantamiento y escala */
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* Sombra más pronunciada */
-            background-color: #374151; /* Color gris más oscuro al pasar el ratón (Tailwind gray-700) */
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            background-color: #374151; /* gray-700 */
         }
-        /* Estilo para el contenedor del saldo */
         #global-balance-container {
             background-color: #e5e7eb; /* bg-gray-200 */
-            padding: 0.75rem 1.5rem; /* py-3 px-6 */
-            border-radius: 0.5rem; /* rounded-lg */
-            border: 1px solid #d1d5db; /* border border-gray-300 */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db; /* border-gray-300 */
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
-            display: inline-block; /* Para que no ocupe todo el ancho */
-            margin-top: 0.5rem; /* Separación del título */
+            display: inline-block;
+            margin-top: 0.5rem;
         }
+
+        /* --- NUEVO: Estilos para el aviso de rotación --- */
+        #rotate-prompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); /* Fondo oscuro semitransparente */
+            color: white;
+            display: none; /* Oculto por defecto */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000; /* Asegurar que esté por encima de todo */
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2rem;
+            cursor: pointer; /* Indicar que se puede cerrar (aunque se cierra solo) */
+        }
+        #rotate-prompt svg {
+            width: 60px; /* Tamaño de los iconos */
+            height: 60px;
+            margin: 15px;
+            fill: white; /* Color de los iconos */
+        }
+        /* --- FIN NUEVO --- */
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
@@ -69,13 +94,13 @@
             <a href="./juego2/FlappyBird.html" class="grid-button">
                 Flappy bird
             </a>
-            <a href="./Juego3/Ruleta.html" class="grid-button">
+            <a href="./Juego3/Ruleta.html" id="roulette-button" class="grid-button">
                 Ruleta
             </a>
             <a href="./Juego4/Coches.html" class="grid-button">
                 Carrera de Coches
             </a>
-            <a href="./Juego5/Juego5.html" class="grid-button">
+             <a href="./Juego5/Juego5.html" class="grid-button">
                 Blackjack
             </a>
             <a href="#" class="grid-button">
@@ -90,69 +115,95 @@
             </div>
     </footer>
 
+    <div id="rotate-prompt">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.5 4.5h-15A1.5 1.5 0 0 0 3 6v12a1.5 1.5 0 0 0 1.5 1.5h15a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5zm-15 13.5V6h15v12z"/>
+            <path d="M0 0h24v24H0z" fill="none"/>
+        </svg>
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            <path d="M0 0h24v24H0z" fill="none"/>
+        </svg>
+        <p>Para una mejor experiencia, gira el móvil a horizontal.</p>
+    </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Clave usada en el juego para guardar el saldo en localStorage
+            // --- Código de Saldo (sin cambios) ---
             const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
-            // Saldo inicial por defecto si no se encuentra nada
             const DEFAULT_BALANCE = 5000;
-            // Elemento donde mostraremos el saldo
             const balanceElement = document.getElementById('global-balance');
 
-            // Función para actualizar el saldo mostrado
             function updateBalanceDisplay() {
                 try {
                     const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
-                    let balanceToShow = DEFAULT_BALANCE; // Usar por defecto
-
+                    let balanceToShow = DEFAULT_BALANCE;
                     if (savedBalance !== null) {
                         const parsedBalance = parseInt(savedBalance);
-                        // Comprobar si es un número válido
                         if (!isNaN(parsedBalance)) {
                             balanceToShow = parsedBalance;
                         } else {
                             console.warn('Saldo guardado no es un número válido, usando valor por defecto.');
-                            // Opcional: limpiar el valor inválido
-                            // localStorage.removeItem(BALANCE_LOCAL_STORAGE_KEY);
                         }
                     } else {
                         console.log('No se encontró saldo guardado, mostrando valor por defecto.');
                     }
-
                     if (balanceElement) {
-                        // Formatear el número para mejor lectura si quieres (opcional)
-                        // balanceElement.textContent = balanceToShow.toLocaleString('es-ES');
                         balanceElement.textContent = balanceToShow;
                     }
                 } catch (error) {
                     console.error("Error al leer el saldo desde localStorage:", error);
                     if (balanceElement) {
-                        balanceElement.textContent = DEFAULT_BALANCE; // Mostrar defecto en caso de error
+                        balanceElement.textContent = DEFAULT_BALANCE;
                     }
                 }
             }
-
-            // Llama a la función para mostrar el saldo al cargar la página
             updateBalanceDisplay();
-
-            // (Opcional) Escuchar cambios en localStorage desde otras pestañas/ventanas
-            // Si el saldo cambia en el juego, se actualizará aquí también
             window.addEventListener('storage', (event) => {
-                // Comprueba si la clave que cambió es la del saldo
                 if (event.key === BALANCE_LOCAL_STORAGE_KEY) {
                     console.log('Detectado cambio en el saldo desde otra pestaña.');
                     updateBalanceDisplay();
                 }
             });
-
-             // (Opcional) Actualizar el saldo cuando la ventana vuelve a tener foco
-             // Útil si el usuario jugó en otra pestaña y luego vuelve a esta
              window.addEventListener('focus', () => {
-                console.log('Ventana enfocada, actualizando saldo.');
-                updateBalanceDisplay();
+                 console.log('Ventana enfocada, actualizando saldo.');
+                 updateBalanceDisplay();
              });
+            // --- Fin Código de Saldo ---
 
-            console.log("Landing page elegante cargada y script de saldo ejecutado.");
+
+            // --- NUEVO: Lógica para el aviso de rotación ---
+            const rouletteButton = document.getElementById('roulette-button');
+            const rotatePrompt = document.getElementById('rotate-prompt');
+
+            if (rouletteButton && rotatePrompt) {
+                rouletteButton.addEventListener('click', (event) => {
+                    event.preventDefault(); // Prevenir la navegación inmediata
+
+                    // Mostrar el aviso
+                    rotatePrompt.style.display = 'flex';
+
+                    // Ocultar el aviso y navegar después de 5 segundos
+                    setTimeout(() => {
+                        rotatePrompt.style.display = 'none';
+                        // Navegar a la URL original del botón
+                        window.location.href = rouletteButton.href;
+                    }, 5000); // 5000 milisegundos = 5 segundos
+                });
+
+                 // Opcional: permitir cerrar el aviso haciendo clic en él
+                 rotatePrompt.addEventListener('click', () => {
+                     rotatePrompt.style.display = 'none';
+                     // Navegar inmediatamente si el usuario cierra el aviso antes
+                      window.location.href = rouletteButton.href;
+                 });
+
+            } else {
+                console.error("No se encontró el botón de ruleta o el panel de aviso.");
+            }
+            // --- FIN NUEVO ---
+
+
+            console.log("Landing page elegante cargada y scripts ejecutados.");
         });
     </script>
 
