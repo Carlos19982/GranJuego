@@ -9,8 +9,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#2d3748 0%,#1a202c 100%);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;color:#2d374d}
+        /* --- Estilos (sin cambios, excepto la adición del botón si se hace con CSS puro) --- */
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#2d3748 0%,#1a202c 100%);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;color:#2d374d; position: relative;} /* Añadido position: relative para el botón absoluto */
         h1{font-family:'Playfair Display',serif}
+
+        /* Estilo para el botón de salir (añadido) */
+        #exit-button {
+            position: absolute;
+            top: 1rem; /* Ajusta según sea necesario */
+            right: 1rem; /* Ajusta según sea necesario */
+            z-index: 50; /* Asegura que esté sobre otros elementos si es necesario */
+        }
 
         /* --- Estructura y Estilos de Carta (Restaurada para Giro) --- */
         .card-container {
@@ -218,6 +227,14 @@
 
         /* Media Query para Móviles */
         @media (max-width: 767px) {
+            /* Ajustar botón de salir en móvil */
+            #exit-button {
+                top: 0.5rem;
+                right: 0.5rem;
+                padding: 0.4rem 0.6rem; /* Hacerlo un poco más pequeño */
+                font-size: 0.8rem; /* Fuente más pequeña */
+            }
+
             .game-container { width: auto; max-width: 95%; padding: 1rem; padding-top: 3.5rem; }
             #cards-area {
                 padding-top: 5rem;
@@ -258,6 +275,10 @@
     </style>
 </head>
 <body>
+
+    <a href="../index.html" id="exit-button" class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out text-sm no-underline">
+        &larr; Menú
+    </a>
 
     <div class="game-container text-center">
 
@@ -327,6 +348,7 @@
     </div>
 
     <script>
+        // --- Script (sin cambios) ---
         // --- Elementos del DOM ---
         const bettingSection = document.getElementById('betting-section');
         const gameSection = document.getElementById('game-section');

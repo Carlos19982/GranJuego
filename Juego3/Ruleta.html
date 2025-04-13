@@ -13,8 +13,33 @@
             font-family: 'Press Start 2P', cursive; background-color: #1a1a2e; color: #e0e0e0;
             line-height: 1.5; min-height: 100%; padding: 10px;
             user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+            position: relative; /* Necesario para el botón absoluto */
         }
         #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto; }
+
+        /* Estilo para el botón de salir (añadido) */
+        #exit-button-roulette-user { /* ID ligeramente diferente para evitar conflictos si se prueba junto al anterior */
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 8px 12px;
+            background-color: #f4a261; /* Color naranja del juego */
+            color: #162447; /* Color azul oscuro del juego */
+            text-decoration: none;
+            border-radius: 6px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7em; /* Tamaño acorde al estilo */
+            border: 2px solid #162447;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 100;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        #exit-button-roulette-user:hover {
+            background-color: #e76f51; /* Color rojo/naranja del puntero */
+            border-color: #e76f51;
+            color: #ffffff;
+        }
 
         /* --- Sección de la Ruleta --- */
         .roulette-section { width: 100%; display: flex; justify-content: center; align-items: center; padding: 15px 0; margin-bottom: 15px; }
@@ -92,9 +117,11 @@
             .total-bet-amount { font-size: 0.85em;}
             .number-bet-section { flex-direction: row; }
             .number-bet-section label { margin-bottom: 0; margin-right: 5px; }
+            #exit-button-roulette-user { font-size: 0.8em; padding: 10px 15px; } /* Ajustar tamaño botón salir en escritorio */
         }
         /* Media query para pantallas muy pequeñas */
          @media (max-width: 500px) {
+             #exit-button-roulette-user { font-size: 0.6em; padding: 6px 8px; top: 10px; right: 10px; } /* Ajustar botón salir en móvil */
              /* .roulette-area { max-height: 55vh; } */
              .controls-section { padding: 10px; width: 95%; }
              .pointer { border-left-width: 10px; border-right-width: 10px; border-top-width: 18px; }
@@ -112,6 +139,10 @@
     </style>
 </head>
 <body>
+    <a href="../index.html" id="exit-button-roulette-user">
+        &larr; Menu
+    </a>
+
     <div id="game-container">
 
         <section class="roulette-section">
@@ -239,34 +270,37 @@
             // --- Lógica Modo Guiado ---
             if (cheatModeActive) {
                 console.warn("MODO GUIADO ACTIVADO!");
-                const targetBet = currentBets[0];
+                const targetBet = currentBets[0]; // Forzar resultado para la primera apuesta añadida
                 let targetWinningNumber = -1;
+                // Determinar un número ganador basado en el tipo de apuesta
                 switch (targetBet.type) {
                     case 'number': targetWinningNumber = targetBet.value; break;
-                    case 'color-red': targetWinningNumber = redNumbers[0] || 1; break;
-                    case 'color-black': targetWinningNumber = blackNumbers[0] || 2; break;
-                    case 'even': targetWinningNumber = blackNumbers.find(n => n % 2 === 0 && n !== 0) || 2; break;
-                    case 'odd': targetWinningNumber = redNumbers.find(n => n % 2 !== 0) || 1; break;
-                    case 'low': targetWinningNumber = segments.find(n => n >= 1 && n <= 18) || 1; break;
-                    case 'high': targetWinningNumber = segments.find(n => n >= 19 && n <= 36) || 19; break;
-                    case 'dozen-1': targetWinningNumber = segments.find(n => n >= 1 && n <= 12) || 1; break;
-                    case 'dozen-2': targetWinningNumber = segments.find(n => n >= 13 && n <= 24) || 13; break;
-                    case 'dozen-3': targetWinningNumber = segments.find(n => n >= 25 && n <= 36) || 25; break;
-                    case 'column-1': targetWinningNumber = column1[0] || 1; break;
-                    case 'column-2': targetWinningNumber = column2[0] || 2; break;
-                    case 'column-3': targetWinningNumber = column3[0] || 3; break;
-                    default: targetWinningNumber = Math.floor(Math.random() * 37);
+                    case 'color-red': targetWinningNumber = redNumbers[0] || 1; break; // Primer número rojo
+                    case 'color-black': targetWinningNumber = blackNumbers[0] || 2; break; // Primer número negro
+                    case 'even': targetWinningNumber = blackNumbers.find(n => n % 2 === 0 && n !== 0) || 2; break; // Primer par (no 0)
+                    case 'odd': targetWinningNumber = redNumbers.find(n => n % 2 !== 0) || 1; break; // Primer impar
+                    case 'low': targetWinningNumber = segments.find(n => n >= 1 && n <= 18) || 1; break; // Primer número bajo
+                    case 'high': targetWinningNumber = segments.find(n => n >= 19 && n <= 36) || 19; break; // Primer número alto
+                    case 'dozen-1': targetWinningNumber = segments.find(n => n >= 1 && n <= 12) || 1; break; // Primer número 1ª docena
+                    case 'dozen-2': targetWinningNumber = segments.find(n => n >= 13 && n <= 24) || 13; break; // Primer número 2ª docena
+                    case 'dozen-3': targetWinningNumber = segments.find(n => n >= 25 && n <= 36) || 25; break; // Primer número 3ª docena
+                    case 'column-1': targetWinningNumber = column1[0] || 1; break; // Primer número Col 1
+                    case 'column-2': targetWinningNumber = column2[0] || 2; break; // Primer número Col 2
+                    case 'column-3': targetWinningNumber = column3[0] || 3; break; // Primer número Col 3
+                    default: targetWinningNumber = Math.floor(Math.random() * 37); // Aleatorio si es desconocido
                 }
                 console.log(`Objetivo: Ganar apuesta a ${getBetDescription(targetBet)}. Número forzado: ${targetWinningNumber}`);
                 const targetIndex = segments.findIndex(num => num === targetWinningNumber);
                 if (targetIndex !== -1) {
-                    const targetEffectiveAngle = (targetIndex + 0.5) * anglePerSegment;
-                    const targetFinalAngle = ( (3 * Math.PI / 2) - targetEffectiveAngle + 4 * Math.PI) % (2 * Math.PI);
+                    // Calcular el ángulo final deseado para que el puntero caiga en el índice objetivo
+                    const targetEffectiveAngle = (targetIndex + 0.5) * anglePerSegment; // Centro del segmento
+                    const targetFinalAngle = ( (3 * Math.PI / 2) - targetEffectiveAngle + 4 * Math.PI) % (2 * Math.PI); // Ajustar offset y asegurar positivo
+                    // Añadir vueltas completas aleatorias + el ángulo final
                     spinAngleStart = targetFinalAngle + (Math.floor(Math.random() * 5) + 5) * (2 * Math.PI);
                     console.log(`Ángulo de giro calculado: ${spinAngleStart}`);
                 } else {
                     console.error(`Error: No se encontró el índice para ${targetWinningNumber}. Usando giro aleatorio.`);
-                    spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI);
+                    spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI); // Fallback a aleatorio
                 }
                 cheatModeActive = false; // Desactivar después de usar
                 // Quitar indicador visual si se desactivó antes de tiempo
@@ -352,4 +386,4 @@
 
     </script>
 </body>
-</html>
+</ht
