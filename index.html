@@ -11,69 +11,105 @@
     <style>
         /* Estilos personalizados */
         body {
-            font-family: 'Inter', sans-serif; /* Fuente Inter */
+            font-family: 'Inter', sans-serif;
         }
         .grid-button {
-            /* Estilo base del botón */
-            aspect-ratio: 1 / 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.5rem;
-            background-color: #4B5563; /* gray-600 */
-            color: #F9FAFB; /* gray-50 */
-            font-weight: 600;
-            font-size: 1.125rem; /* text-lg */
+            aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+            border-radius: 0.5rem; background-color: #4B5563; color: #F9FAFB;
+            font-weight: 600; font-size: 1.125rem; /* text-lg */
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
-            text-decoration: none;
-            text-align: center;
-            padding: 0.5rem;
+            text-decoration: none; text-align: center; padding: 0.5rem;
         }
         .grid-button:hover {
             transform: translateY(-3px) scale(1.03);
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            background-color: #374151; /* gray-700 */
+            background-color: #374151;
         }
         #global-balance-container {
-            background-color: #e5e7eb; /* bg-gray-200 */
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db; /* border-gray-300 */
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
-            display: inline-block;
-            margin-top: 0.5rem;
+            background-color: #e5e7eb; padding: 0.75rem 1.5rem; border-radius: 0.5rem;
+            border: 1px solid #d1d5db; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+            display: inline-block; margin-top: 0.5rem;
         }
-
-        /* --- NUEVO: Estilos para el aviso de rotación --- */
         #rotate-prompt {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8); /* Fondo oscuro semitransparente */
-            color: white;
-            display: none; /* Oculto por defecto */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000; /* Asegurar que esté por encima de todo */
-            text-align: center;
-            padding: 20px;
-            font-size: 1.2rem;
-            cursor: pointer; /* Indicar que se puede cerrar (aunque se cierra solo) */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); color: white; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; text-align: center; padding: 20px; font-size: 1.2rem; cursor: pointer;
         }
-        #rotate-prompt svg {
-            width: 60px; /* Tamaño de los iconos */
-            height: 60px;
-            margin: 15px;
-            fill: white; /* Color de los iconos */
+        #rotate-prompt svg { width: 60px; height: 60px; margin: 15px; fill: white; }
+        .top-buttons {
+            position: absolute; top: 15px; right: 15px; display: flex; gap: 10px; z-index: 100;
+        }
+        .top-button {
+             padding: 8px 12px; background-color: #4a5568; color: #f7fafc; text-decoration: none;
+             border-radius: 6px; font-size: 0.8em; font-weight: 600; border: 1px solid #718096;
+             box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.2s ease; user-select: none; cursor: pointer;
+        }
+        .top-button:hover { background-color: #718096; border-color: #a0aec0; }
+
+        /* --- Estilos Modal de Logros (sin cambios) --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); animation: fadeIn 0.3s ease-out; }
+        .modal-content { background-color: #1f1f38; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 10px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: slideIn 0.3s ease-out; }
+        .modal-close-button { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; }
+        .modal-close-button:hover, .modal-close-button:focus { color: #fff; text-decoration: none; }
+        .modal-content h2 { color: #f4a261; margin-bottom: 20px; text-align: center; }
+        #achievementsList { list-style: none; padding: 0; max-height: 60vh; overflow-y: auto; }
+        .achievement-item { background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 12px 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease; }
+        .achievement-item.unlocked { background-color: rgba(46, 204, 113, 0.2); border-color: #2ecc71; color: #e0e0e0; }
+        .achievement-info h3 { font-size: 1em; margin: 0 0 3px 0; color: #e0e0e0; }
+        .achievement-info p { font-size: 0.85em; margin: 0; color: #aaa; }
+        .achievement-item.unlocked .achievement-info h3 { color: #f4a261; }
+        .achievement-item.unlocked .achievement-info p { color: #bdc3c7; }
+        .achievement-status { font-size: 1.5em; }
+        .achievement-status .icon-locked { color: #e74c3c; }
+        .achievement-status .icon-unlocked { color: #2ecc71; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-30px); opacity: 0; } }
+        .modal.fade-out { animation: fadeOut 0.3s ease-out forwards; }
+        .modal.fade-out .modal-content { animation: slideOut 0.3s ease-out forwards; }
+         @media (max-width: 700px) { .modal-content { width: 90%; margin: 15% auto; } }
+         @media (max-width: 480px) { .modal-content { width: 95%; margin: 20% auto; padding: 20px; } .achievement-info h3 { font-size: 0.9em; } .achievement-info p { font-size: 0.8em; } }
+
+        /* --- NUEVO: Estilos para el Banner de Notificación --- */
+        #achievement-notification-banner {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            bottom: 20px; /* Posición en la parte inferior */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2ecc71; /* Verde éxito */
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1100; /* Encima del modal si estuviera abierto */
+            text-align: center;
+            font-size: 0.9em;
+            animation: slideUpFadeIn 0.5s ease-out forwards;
+        }
+        #achievement-notification-banner.hide {
+            animation: fadeOutDown 0.5s ease-in forwards;
+        }
+        @keyframes slideUpFadeIn {
+            from { bottom: -100px; opacity: 0; }
+            to { bottom: 20px; opacity: 1; }
+        }
+        @keyframes fadeOutDown {
+            from { bottom: 20px; opacity: 1; }
+            to { bottom: -100px; opacity: 0; }
         }
         /* --- FIN NUEVO --- */
+
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
+
+    <div class="top-buttons">
+        <button id="achievementsButton" class="top-button">🏆 Logros</button>
+    </div>
 
     <header class="bg-white shadow-md py-5 mb-10 text-center">
         <div class="container mx-auto px-6">
@@ -88,24 +124,12 @@
 
     <main class="flex-grow container mx-auto px-6 lg:px-8 py-8">
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-6 md:gap-8">
-            <a href="./Juego1/AdivinaCartas.html" class="grid-button">
-                Adivinar (Cartas)
-            </a>
-            <a href="./juego2/FlappyBird.html" class="grid-button">
-                Flappy bird
-            </a>
-            <a href="./Juego3/Ruleta.html" id="roulette-button" class="grid-button">
-                Ruleta
-            </a>
-            <a href="./Juego4/Coches.html" class="grid-button">
-                Carrera de Coches
-            </a>
-             <a href="./Juego5/Juego5.html" class="grid-button">
-                Blackjack
-            </a>
-            <a href="#" class="grid-button">
-                Opción 6
-            </a>
+            <a href="./Juego1/AdivinaCartas.html" class="grid-button">Adivinar (Cartas)</a>
+            <a href="./juego2/FlappyBird.html" class="grid-button">Flappy bird</a>
+            <a href="./Juego3/Ruleta.html" id="roulette-button" class="grid-button">Ruleta</a>
+            <a href="./Juego4/Coches.html" class="grid-button">Carrera de Coches</a>
+            <a href="./Juego5/Juego5.html" class="grid-button">Blackjack</a>
+            <a href="#" class="grid-button">Opción 6</a>
         </div>
     </main>
 
@@ -116,16 +140,21 @@
     </footer>
 
     <div id="rotate-prompt">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19.5 4.5h-15A1.5 1.5 0 0 0 3 6v12a1.5 1.5 0 0 0 1.5 1.5h15a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5zm-15 13.5V6h15v12z"/>
-            <path d="M0 0h24v24H0z" fill="none"/>
-        </svg>
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-            <path d="M0 0h24v24H0z" fill="none"/>
-        </svg>
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 4.5h-15A1.5 1.5 0 0 0 3 6v12a1.5 1.5 0 0 0 1.5 1.5h15a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5zm-15 13.5V6h15v12z"/><path d="M0 0h24v24H0z" fill="none"/></svg>
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/><path d="M0 0h24v24H0z" fill="none"/></svg>
         <p>Para una mejor experiencia, gira el móvil a horizontal.</p>
     </div>
+
+    <div id="achievementsModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close-button">&times;</span>
+            <h2>Logros de Saldo</h2>
+            <ul id="achievementsList"></ul>
+        </div>
+    </div>
+
+    <div id="achievement-notification-banner"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Código de Saldo (sin cambios) ---
@@ -133,28 +162,19 @@
             const DEFAULT_BALANCE = 5000;
             const balanceElement = document.getElementById('global-balance');
 
-            function updateBalanceDisplay() {
+            function updateBalanceDisplay() { /* ... (sin cambios) ... */
                 try {
                     const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
                     let balanceToShow = DEFAULT_BALANCE;
                     if (savedBalance !== null) {
                         const parsedBalance = parseInt(savedBalance);
-                        if (!isNaN(parsedBalance)) {
-                            balanceToShow = parsedBalance;
-                        } else {
-                            console.warn('Saldo guardado no es un número válido, usando valor por defecto.');
-                        }
-                    } else {
-                        console.log('No se encontró saldo guardado, mostrando valor por defecto.');
-                    }
-                    if (balanceElement) {
-                        balanceElement.textContent = balanceToShow;
-                    }
+                        if (!isNaN(parsedBalance)) { balanceToShow = parsedBalance; }
+                        else { console.warn('Saldo guardado no es un número válido, usando valor por defecto.'); }
+                    } else { console.log('No se encontró saldo guardado, mostrando valor por defecto.'); }
+                    if (balanceElement) { balanceElement.textContent = balanceToShow.toLocaleString('es-ES'); }
                 } catch (error) {
                     console.error("Error al leer el saldo desde localStorage:", error);
-                    if (balanceElement) {
-                        balanceElement.textContent = DEFAULT_BALANCE;
-                    }
+                    if (balanceElement) { balanceElement.textContent = DEFAULT_BALANCE.toLocaleString('es-ES'); }
                 }
             }
             updateBalanceDisplay();
@@ -162,46 +182,210 @@
                 if (event.key === BALANCE_LOCAL_STORAGE_KEY) {
                     console.log('Detectado cambio en el saldo desde otra pestaña.');
                     updateBalanceDisplay();
+                    loadAchievements(); // Actualizar logros si cambia el saldo
+                }
+                 if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
+                    console.log('Detectado cambio en los logros desde otra pestaña.');
+                    loadAchievements(); // Recarga y actualiza la vista del modal
+                    // NUEVO: Comprobar si hay notificaciones pendientes al detectar cambio
+                    checkForNewAchievementsNotification();
                 }
             });
              window.addEventListener('focus', () => {
-                 console.log('Ventana enfocada, actualizando saldo.');
-                 updateBalanceDisplay();
-             });
+                console.log('Ventana enfocada, actualizando saldo y logros.');
+                updateBalanceDisplay();
+                loadAchievements();
+                 // NUEVO: Comprobar si hay notificaciones pendientes al enfocar
+                 checkForNewAchievementsNotification();
+            });
             // --- Fin Código de Saldo ---
 
-
-            // --- NUEVO: Lógica para el aviso de rotación ---
+            // --- Aviso de rotación (sin cambios) ---
             const rouletteButton = document.getElementById('roulette-button');
             const rotatePrompt = document.getElementById('rotate-prompt');
-
-            if (rouletteButton && rotatePrompt) {
+            if (rouletteButton && rotatePrompt) { /* ... (sin cambios) ... */
                 rouletteButton.addEventListener('click', (event) => {
-                    event.preventDefault(); // Prevenir la navegación inmediata
+                    event.preventDefault(); rotatePrompt.style.display = 'flex';
+                    setTimeout(() => { rotatePrompt.style.display = 'none'; window.location.href = rouletteButton.href; }, 5000);
+                });
+                 rotatePrompt.addEventListener('click', () => { rotatePrompt.style.display = 'none'; window.location.href = rouletteButton.href; });
+            } else { console.error("No se encontró el botón de ruleta o el panel de aviso."); }
+            // --- Fin Aviso de rotación ---
 
-                    // Mostrar el aviso
-                    rotatePrompt.style.display = 'flex';
+            // --- Lógica de Logros (Visualización y Notificación) ---
+            const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1';
+            const LAST_SEEN_ACHIEVEMENTS_KEY = 'rouletteLastSeenAchievements_v1'; // NUEVA CLAVE
+            const achievementsButton = document.getElementById('achievementsButton');
+            const achievementsModal = document.getElementById('achievementsModal');
+            const achievementsList = document.getElementById('achievementsList');
+            const modalCloseButton = achievementsModal.querySelector('.modal-close-button');
+            const notificationBanner = document.getElementById('achievement-notification-banner'); // NUEVO
 
-                    // Ocultar el aviso y navegar después de 5 segundos
-                    setTimeout(() => {
-                        rotatePrompt.style.display = 'none';
-                        // Navegar a la URL original del botón
-                        window.location.href = rouletteButton.href;
-                    }, 5000); // 5000 milisegundos = 5 segundos
+            // Definición de logros (sin cambios respecto a la última versión)
+            const achievementsData = [
+                { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 }
+            ];
+            let unlockedAchievements = []; // Lista actual de desbloqueados
+            let notificationTimeout = null; // Para controlar el banner
+
+            function loadAchievements() {
+                try {
+                    const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                    if (savedAchievements) {
+                        const parsedAchievements = JSON.parse(savedAchievements);
+                        if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
+                            unlockedAchievements = parsedAchievements;
+                        } else {
+                            console.warn("Formato de logros guardado inválido. Reiniciando.");
+                            unlockedAchievements = [];
+                        }
+                    } else { unlockedAchievements = []; }
+                } catch (error) {
+                    console.error("Error al cargar logros:", error);
+                    unlockedAchievements = [];
+                }
+                // No llamar a displayAchievements aquí directamente, se hará después de la notificación
+            }
+
+            function displayAchievements() { /* ... (sin cambios respecto a la versión anterior) ... */
+                if (!achievementsList) return;
+                achievementsList.innerHTML = '';
+                achievementsData.forEach(ach => {
+                    const isUnlocked = unlockedAchievements.includes(ach.id);
+                    const li = document.createElement('li');
+                    li.classList.add('achievement-item');
+                    if (isUnlocked) { li.classList.add('unlocked'); }
+                    const formatNumber = (num) => num.toLocaleString('es-ES');
+                    li.innerHTML = `
+                        <div class="achievement-info">
+                            <h3>${ach.name}</h3>
+                            <p>Objetivo: ${formatNumber(ach.target)}€</p>
+                        </div>
+                        <div class="achievement-status">
+                            ${isUnlocked ? '<span class="icon-unlocked">✔️</span>' : '<span class="icon-locked">🔒</span>'}
+                        </div>
+                    `;
+                    li.title = isUnlocked ? `Desbloqueado!` : `Necesitas ${formatNumber(ach.target)}€ para desbloquear.`;
+                    achievementsList.appendChild(li);
+                });
+            }
+
+            function openAchievementsModal() { /* ... (sin cambios) ... */
+                loadAchievements(); // Asegura cargar los últimos datos
+                displayAchievements(); // Muestra la lista actualizada
+                achievementsModal.style.display = 'block';
+                void achievementsModal.offsetWidth;
+                achievementsModal.classList.remove('fade-out');
+            }
+
+            function closeAchievementsModal() { /* ... (sin cambios) ... */
+                achievementsModal.classList.add('fade-out');
+                setTimeout(() => { achievementsModal.style.display = 'none'; }, 290);
+            }
+
+            // NUEVO: Función para mostrar notificación de nuevos logros
+            function showNewAchievementNotification(newAchievements) {
+                if (!notificationBanner || newAchievements.length === 0) return;
+
+                // Limpiar timeout anterior si existiera
+                if (notificationTimeout) {
+                    clearTimeout(notificationTimeout);
+                    notificationBanner.classList.remove('hide'); // Quitar clase hide si estaba en proceso
+                }
+
+                let message = "🏆 ¡Nuevos logros desbloqueados!<br>";
+                newAchievements.forEach(ach => {
+                    message += `- ${ach.name}<br>`;
                 });
 
-                 // Opcional: permitir cerrar el aviso haciendo clic en él
-                 rotatePrompt.addEventListener('click', () => {
-                     rotatePrompt.style.display = 'none';
-                     // Navegar inmediatamente si el usuario cierra el aviso antes
-                      window.location.href = rouletteButton.href;
-                 });
+                notificationBanner.innerHTML = message;
+                notificationBanner.style.display = 'block';
+                notificationBanner.classList.remove('hide'); // Asegurar que no tenga la clase hide
 
-            } else {
-                console.error("No se encontró el botón de ruleta o el panel de aviso.");
+                // Ocultar automáticamente después de unos segundos
+                notificationTimeout = setTimeout(() => {
+                    notificationBanner.classList.add('hide');
+                    // Esperar a que termine la animación de ocultar antes de poner display:none
+                    setTimeout(() => {
+                         if (notificationBanner.classList.contains('hide')) { // Comprobar si aún debe ocultarse
+                            notificationBanner.style.display = 'none';
+                         }
+                    }, 500); // Duración de la animación fadeOutDown
+                }, 6000); // Mostrar durante 6 segundos
             }
-            // --- FIN NUEVO ---
 
+             // NUEVO: Función principal para comprobar y notificar
+             function checkForNewAchievementsNotification() {
+                // 1. Cargar logros actuales (ya lo hace loadAchievements en la variable global)
+                 loadAchievements(); // Asegura que unlockedAchievements esté actualizado
+                 const currentUnlockedIds = unlockedAchievements;
+
+                // 2. Cargar los últimos vistos
+                let lastSeenIds = [];
+                try {
+                    const savedLastSeen = localStorage.getItem(LAST_SEEN_ACHIEVEMENTS_KEY);
+                    if (savedLastSeen) {
+                        const parsedLastSeen = JSON.parse(savedLastSeen);
+                        if (Array.isArray(parsedLastSeen)) {
+                            lastSeenIds = parsedLastSeen;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error al cargar últimos logros vistos:", error);
+                    lastSeenIds = []; // Empezar de cero si hay error
+                }
+
+                // 3. Comparar y encontrar los nuevos
+                const newlyUnlockedIds = currentUnlockedIds.filter(id => !lastSeenIds.includes(id));
+
+                // 4. Si hay nuevos, buscar sus datos y notificar
+                if (newlyUnlockedIds.length > 0) {
+                    const newAchievementsDetails = newlyUnlockedIds.map(id => {
+                        return achievementsData.find(ach => ach.id === id);
+                    }).filter(ach => ach !== undefined); // Filtrar por si algún ID no se encontrara
+
+                    if (newAchievementsDetails.length > 0) {
+                        console.log("Nuevos logros detectados:", newAchievementsDetails.map(a => a.name));
+                        showNewAchievementNotification(newAchievementsDetails);
+
+                        // 5. Actualizar los "últimos vistos" AHORA que se ha notificado
+                        try {
+                            localStorage.setItem(LAST_SEEN_ACHIEVEMENTS_KEY, JSON.stringify(currentUnlockedIds));
+                        } catch (error) {
+                            console.error("Error al guardar últimos logros vistos:", error);
+                        }
+                    }
+                } else {
+                     // 5. Si no hay nuevos, asegurarse de que los "últimos vistos" estén actualizados igualmente
+                     // (Esto es importante si el usuario borra localStorage o si hay algún error previo)
+                      try {
+                            // Solo actualizar si son diferentes para evitar escrituras innecesarias
+                            if (JSON.stringify(lastSeenIds) !== JSON.stringify(currentUnlockedIds)) {
+                                localStorage.setItem(LAST_SEEN_ACHIEVEMENTS_KEY, JSON.stringify(currentUnlockedIds));
+                            }
+                        } catch (error) {
+                             console.error("Error al actualizar últimos logros vistos (sin nuevos):", error);
+                        }
+                }
+
+                 // Siempre actualizar la vista del modal después de comprobar
+                 displayAchievements();
+             }
+
+
+            // Listeners para el modal (sin cambios)
+            if (achievementsButton && achievementsModal && modalCloseButton && achievementsList) {
+                 achievementsButton.addEventListener('click', openAchievementsModal);
+                 modalCloseButton.addEventListener('click', closeAchievementsModal);
+                 achievementsModal.addEventListener('click', (event) => {
+                    if (event.target === achievementsModal) { closeAchievementsModal(); }
+                });
+            } else { console.error("Faltan elementos del DOM para el modal de logros."); }
+
+            // Carga inicial y comprobación de notificación
+            loadAchievements(); // Carga inicial de datos de logros desbloqueados
+            checkForNewAchievementsNotification(); // Comprueba si hay algo nuevo que notificar al cargar
+            // --- FIN Lógica de Logros ---
 
             console.log("Landing page elegante cargada y scripts ejecutados.");
         });
@@ -209,3 +393,29 @@
 
 </body>
 </html>
+```
+
+**Cambios Clave:**
+
+1.  **HTML:** Añadido un `div` vacío con `id="achievement-notification-banner"` al final del `body`. Este será el contenedor de la notificación.
+2.  **CSS:** Añadidos estilos para `#achievement-notification-banner`, posicionándolo en la parte inferior central, dándole un fondo verde, y añadiendo animaciones (`slideUpFadeIn`, `fadeOutDown`) para que aparezca y desaparezca suavemente.
+3.  **JavaScript:**
+    * **Nueva Clave:** Definida `LAST_SEEN_ACHIEVEMENTS_KEY` para `localStorage`.
+    * **Nueva Variable:** `notificationTimeout` para gestionar la desaparición automática del banner.
+    * **Nueva Función `showNewAchievementNotification(newAchievements)`:**
+        * Recibe un array con los detalles de los nuevos logros.
+        * Construye el mensaje HTML para el banner.
+        * Muestra el banner con animación.
+        * Establece un `setTimeout` para ocultar el banner después de 6 segundos con otra animación.
+    * **Nueva Función `checkForNewAchievementsNotification()`:**
+        * Llama a `loadAchievements()` para obtener la lista actual (`unlockedAchievements`).
+        * Carga la lista de la última vez (`lastSeenIds`) desde `localStorage`.
+        * Compara las dos listas para encontrar los IDs de los logros nuevos (`newlyUnlockedIds`).
+        * Si hay logros nuevos, busca sus detalles en `achievementsData`.
+        * Llama a `showNewAchievementNotification` para mostrar el banner.
+        * **Actualiza `LAST_SEEN_ACHIEVEMENTS_KEY`** en `localStorage` con la lista actual para que la notificación no se repita.
+        * Llama a `displayAchievements()` para actualizar el modal (esto se hace aquí en lugar de en `loadAchievements` para asegurar que ocurra *después* de la comprobación de notificación).
+    * **Llamadas Iniciales:** En `DOMContentLoaded`, ahora se llama a `loadAchievements()` y luego a `checkForNewAchievementsNotification()`.
+    * **Listeners `storage` y `focus`:** Ahora también llaman a `checkForNewAchievementsNotification()` para que la notificación pueda aparecer si se desbloquea un logro en otra pestaña y luego se vuelve a esta.
+
+Ahora, cuando vuelvas a la página principal después de haber desbloqueado uno o más logros en el juego de la Ruleta (o en cualquier otro juego, si implementas la lógica de desbloqueo allí también), deberías ver un banner verde aparecer desde abajo listando los nombres de los logros recién conseguidos. El banner desaparecerá automáticamente después de unos segund
