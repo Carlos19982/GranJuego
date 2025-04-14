@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta v9 - Repetir Apuesta</title>
+    <title>Ruleta v10 - Logros Integrados</title> {/* Título actualizado */}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* --- Estilos (SIN CAMBIOS RESPECTO A v9) --- */
         /* --- Reset Básico y Estilos Globales --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { height: 100%; }
@@ -223,7 +224,7 @@
         /* --- Mensaje --- */
         #message { margin-top: 15px; font-size: 0.9em; min-height: 1.5em; line-height: 1.4; color: #f0e68c; text-align: center; width: 100%; font-weight: 600; text-shadow: 1px 1px 1px #000;}
 
-        /* --- Media Queries --- */
+        /* --- Media Queries (SIN CAMBIOS) --- */
         @media (max-width: 700px) {
             .roulette-section { justify-content: space-around; align-items: center; }
             #history-panel { max-height: 300px; width: 65px; }
@@ -302,7 +303,6 @@
         @keyframes colorSwapBlack { 0%, 100% { background-color: #1A202C; } 50% { background-color: #c53030; } }
         .cheat-swap-red { animation: colorSwapRed 0.5s infinite; }
         .cheat-swap-black { animation: colorSwapBlack 0.5s infinite; }
-
     </style>
 </head>
 <body>
@@ -366,7 +366,8 @@
 
             <div class="action-buttons-container">
                  <button id="clearBetsButton" class="action-button">Limpiar Apuestas</button>
-                 <button id="repeatBetButton" class="action-button" disabled>Repetir Apuesta</button> </div>
+                 <button id="repeatBetButton" class="action-button" disabled>Repetir Apuesta</button>
+            </div>
 
             <div id="message">Haz clic en el tapete para apostar y en la ruleta para girar!</div>
         </section>
@@ -382,7 +383,7 @@
         const pointer = document.querySelector('.pointer');
         const betOptionsContainer = document.querySelector('.bet-options');
         const clearBetsButton = document.getElementById('clearBetsButton');
-        const repeatBetButton = document.getElementById('repeatBetButton'); // NEW: Get repeat button
+        const repeatBetButton = document.getElementById('repeatBetButton');
         const betsListDisplay = document.getElementById('betsList');
         const totalBetSpan = document.getElementById('totalBetSpan');
         const numberGrid = document.querySelector('.number-grid');
@@ -390,8 +391,15 @@
 
         const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
         const HISTORY_LOCAL_STORAGE_KEY = 'rouletteNumberHistory_v1';
+        const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1'; // <<< NUEVO: Clave de logros
         const DEFAULT_BALANCE = 5000;
         const MAX_HISTORY_LENGTH = 15;
+
+        // <<< NUEVO: Definición de logros (COPIADA de index.html) >>>
+        const achievementsData = [
+            { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 }
+        ];
+        let unlockedAchievements = []; // <<< NUEVO: Array para IDs de logros desbloqueados
 
         // Roulette segments order (European Roulette)
         const segments = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
@@ -421,7 +429,7 @@
         // Game state variables
         let balance; // Player's balance
         let currentBets = []; // Bets placed in the current round
-        let lastBets = []; // NEW: Bets placed in the previous round
+        let lastBets = []; // Bets placed in the previous round
         let numberHistory = []; // History of winning numbers
 
         // Cheat mode variables
@@ -454,7 +462,10 @@
         }
         function saveBalance() {
             try {
-                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString());
+                // Asegúrate de que balance es un número antes de guardar
+                const balanceToSave = (typeof balance === 'number' && !isNaN(balance)) ? balance : DEFAULT_BALANCE;
+                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balanceToSave.toString());
+                 console.log("Balance saved:", balanceToSave); // Debug log
             } catch (error) {
                 console.error("Error saving balance:", error);
             }
@@ -462,7 +473,7 @@
         function updateBalanceDisplay() {
             if (balanceDisplay) {
                 const valueToShow = (typeof balance === 'number' && !isNaN(balance)) ? balance : DEFAULT_BALANCE;
-                balanceDisplay.textContent = valueToShow;
+                balanceDisplay.textContent = valueToShow.toLocaleString('es-ES'); // Formatear con separadores
             }
         }
 
@@ -472,20 +483,19 @@
                 const savedHistory = localStorage.getItem(HISTORY_LOCAL_STORAGE_KEY);
                 if (savedHistory) {
                     const parsedHistory = JSON.parse(savedHistory);
-                    // Validate saved history
                     if (Array.isArray(parsedHistory) && parsedHistory.every(n => typeof n === 'number')) {
-                         numberHistory = parsedHistory.slice(0, MAX_HISTORY_LENGTH); // Limit history length
+                         numberHistory = parsedHistory.slice(0, MAX_HISTORY_LENGTH);
                     } else {
                         console.warn('Invalid saved history. Clearing.');
                         numberHistory = [];
                         localStorage.removeItem(HISTORY_LOCAL_STORAGE_KEY);
                     }
                 } else {
-                    numberHistory = []; // Start with empty history if none saved
+                    numberHistory = [];
                 }
             } catch (error) {
                 console.error("Error loading history:", error);
-                numberHistory = []; // Fallback to empty on error
+                numberHistory = [];
             }
             updateHistoryDisplay();
         }
@@ -498,25 +508,101 @@
         }
         function updateHistoryDisplay() {
             if (!historyList) return;
-            historyList.innerHTML = ''; // Clear previous history display
+            historyList.innerHTML = '';
             numberHistory.forEach(num => {
                 const li = document.createElement('li');
                 li.textContent = num;
-                // Add class based on number color for styling
                 if (num === 0) { li.classList.add('history-green'); }
                 else if (redNumbers.includes(num)) { li.classList.add('history-red'); }
                 else if (blackNumbers.includes(num)) { li.classList.add('history-black'); }
-                li.title = `Número ${num}`; // Tooltip
+                li.title = `Número ${num}`;
                 historyList.appendChild(li);
             });
-            // Scroll to the top/left (most recent) after updating
-             if (window.innerWidth > 480) { historyList.scrollTop = 0; } // Vertical scroll on larger screens
-             else { historyList.scrollLeft = 0; } // Horizontal scroll on smaller screens
+             if (window.innerWidth > 480) { historyList.scrollTop = 0; }
+             else { historyList.scrollLeft = 0; }
         }
 
-        // --- Funciones Dibujo y Ajuste ---
-        function resizeCanvas() {
-            const rouletteArea = document.querySelector('.roulette-area');
+        // --- <<< NUEVO: Funciones de Logros >>> ---
+        function loadUnlockedAchievements() {
+            try {
+                const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                if (savedAchievements) {
+                    const parsedAchievements = JSON.parse(savedAchievements);
+                    if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
+                        unlockedAchievements = parsedAchievements;
+                    } else {
+                        console.warn("Invalid achievement format in localStorage. Resetting.");
+                        unlockedAchievements = [];
+                        localStorage.removeItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                    }
+                } else {
+                    unlockedAchievements = [];
+                }
+            } catch (error) {
+                console.error("Error loading achievements:", error);
+                unlockedAchievements = [];
+            }
+             console.log("Loaded achievements:", unlockedAchievements); // Debug log
+        }
+
+        function saveUnlockedAchievements() {
+            try {
+                localStorage.setItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY, JSON.stringify(unlockedAchievements));
+                 console.log("Saved achievements:", unlockedAchievements); // Debug log
+            } catch (error) {
+                console.error("Error saving achievements:", error);
+            }
+        }
+
+        /**
+         * Checks if any achievements are unlocked based on the current balance
+         * and adds their rewards. Updates localStorage for balance and achievements.
+         * Returns an array of newly unlocked achievement objects.
+         */
+        function checkAndUnlockAchievements() {
+            const newlyUnlocked = [];
+            let totalRewardAdded = 0;
+            let balanceChanged = false;
+            let achievementsChanged = false;
+
+            // Carga la lista más reciente de desbloqueados por si acaso
+            loadUnlockedAchievements();
+            const currentBalance = balance; // Usa el balance global actual
+
+            achievementsData.forEach(ach => {
+                // Comprueba si se alcanza el objetivo y si NO está ya desbloqueado
+                if (currentBalance >= ach.target && !unlockedAchievements.includes(ach.id)) {
+                    console.log(`Unlocking achievement: ${ach.name} (Target: ${ach.target}, Reward: ${ach.reward})`);
+                    unlockedAchievements.push(ach.id); // Añade ID a la lista
+                    totalRewardAdded += ach.reward; // Suma la recompensa
+                    newlyUnlocked.push(ach); // Guarda el objeto del logro para mensajes, etc.
+                    achievementsChanged = true;
+                    balanceChanged = true;
+                }
+            });
+
+            // Si se desbloquearon logros, actualiza el balance y guarda todo
+            if (newlyUnlocked.length > 0) {
+                balance += totalRewardAdded; // Actualiza el balance global
+                console.log(`Total reward added: ${totalRewardAdded}. New balance: ${balance}`);
+
+                // Guarda el nuevo balance y la nueva lista de logros
+                saveUnlockedAchievements();
+                saveBalance(); // Guarda el balance actualizado con las recompensas
+            }
+
+            return {
+                newlyUnlocked, // Array de objetos de logros recién desbloqueados
+                balanceChanged,
+                achievementsChanged,
+                totalRewardAdded
+            };
+        }
+        // --- <<< FIN NUEVO: Funciones de Logros >>> ---
+
+        // --- Funciones Dibujo y Ajuste (SIN CAMBIOS) ---
+        function resizeCanvas() { /* ... código sin cambios ... */
+             const rouletteArea = document.querySelector('.roulette-area');
             const availableWidth = document.getElementById('game-container').clientWidth * 0.95; // Use 95% of container width
             const maxHeightFromViewport = window.innerHeight * 0.65; // Limit height based on viewport
             let size = Math.min(availableWidth, maxHeightFromViewport); // Choose the smaller dimension
@@ -551,7 +637,7 @@
 
             drawRoulette(currentAngle); // Redraw the roulette with new dimensions
         }
-        function drawSegment(index, angleOffset) {
+        function drawSegment(index, angleOffset) { /* ... código sin cambios ... */
             const angle = anglePerSegment * index + angleOffset; // Calculate start angle for the segment
             const number = segments[index];
             const color = segmentColors[number];
@@ -588,7 +674,7 @@
             ctx.fillText(number, 0, 0); // Draw the number
             ctx.restore(); // Restore context state
         }
-        function drawRoulette(angleOffset = 0) {
+        function drawRoulette(angleOffset = 0) { /* ... código sin cambios ... */
             ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
             // Draw all segments
             for (let i = 0; i < numSegments; i++) {
@@ -602,7 +688,7 @@
         }
 
         // --- Lógica de Animación ---
-        function rotateWheel() {
+        function rotateWheel() { /* ... código sin cambios ... */
             spinTime += 1 / 60; // Increment time (assuming 60fps)
             // Calculate rotation angle using ease-out function for smooth deceleration
             const spinAmount = easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
@@ -620,40 +706,38 @@
             isSpinning = false;
             // Re-enable betting buttons
             clearBetsButton.disabled = false;
-            repeatBetButton.disabled = lastBets.length === 0; // NEW: Enable repeat only if last bets exist
+            repeatBetButton.disabled = lastBets.length === 0; // Enable repeat only if last bets exist
             betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = false);
 
             // Calculate the winning segment based on the final angle
-            const finalAngle = currentAngle; // Use the last drawn angle
-            // Adjust angle to align with the pointer (pointing straight up at 3*PI/2)
+            const finalAngle = currentAngle;
             let effectiveAngle = ( (3 * Math.PI / 2) - finalAngle + (2*Math.PI) ) % (2 * Math.PI);
             const winningIndex = Math.floor(effectiveAngle / anglePerSegment);
-            const safeWinningIndex = winningIndex % numSegments; // Ensure index is within bounds
+            const safeWinningIndex = winningIndex % numSegments;
             const winningNumber = segments[safeWinningIndex];
-            const winningColor = segmentColors[winningNumber] || '#ffffff'; // Fallback color
+            const winningColor = segmentColors[winningNumber] || '#ffffff';
 
             console.log(`Final Angle: ${finalAngle.toFixed(2)}, Effective Angle: ${effectiveAngle.toFixed(2)}, Index: ${safeWinningIndex}, Number: ${winningNumber}`);
 
             // Update history
-            numberHistory.unshift(winningNumber); // Add to the beginning of the array
+            numberHistory.unshift(winningNumber);
             if (numberHistory.length > MAX_HISTORY_LENGTH) {
-                numberHistory = numberHistory.slice(0, MAX_HISTORY_LENGTH); // Keep history size limited
+                numberHistory = numberHistory.slice(0, MAX_HISTORY_LENGTH);
             }
             saveHistory();
             updateHistoryDisplay();
 
             // Determine winner and process payouts
-            determineWinner(winningNumber, winningColor);
+            determineWinner(winningNumber, winningColor); // <<< LLAMADA A determineWinner >>>
         }
-        // Ease-out function (cubic) for smooth deceleration
-        function easeOut(t, b, c, d) {
+        function easeOut(t, b, c, d) { /* ... código sin cambios ... */
             t /= d;
             t--;
             return c * (t * t * t + 1) + b;
         }
 
         // --- Lógica del Juego ---
-        function handleBetPlacement(event) {
+        function handleBetPlacement(event) { /* ... código sin cambios ... */
             if (isSpinning) return; // Don't allow betting while spinning
 
             const button = event.target.closest('.bet-table-button');
@@ -688,8 +772,6 @@
                 amount: betAmount,
                 type: betType,
                 value: betValue, // Will be null for non-number bets
-                // Store reference to the button element for potential future use (e.g., highlighting)
-                // element: button
             };
             currentBets.push(newBet);
 
@@ -702,8 +784,8 @@
             button.classList.add('active-bet');
             setTimeout(() => button.classList.remove('active-bet'), 300); // Remove highlight after 300ms
         }
-        function clearBets() {
-            if (isSpinning) return; // Don't clear while spinning
+        function clearBets() { /* ... código sin cambios ... */
+             if (isSpinning) return; // Don't clear while spinning
             currentBets = [];
             updateBetsList();
             updateTotalBetAmountDisplay();
@@ -711,9 +793,8 @@
             // Disable repeat button when bets are cleared manually
             repeatBetButton.disabled = true;
         }
-        // NEW: Function to repeat the last set of bets
-        function repeatLastBet() {
-            if (isSpinning) return;
+        function repeatLastBet() { /* ... código sin cambios ... */
+             if (isSpinning) return;
             if (lastBets.length === 0) {
                 showMessage("No hay apuesta anterior para repetir.");
                 return;
@@ -745,8 +826,8 @@
             updateTotalBetAmountDisplay();
             showMessage(`Apuesta anterior repetida (${totalLastBetAmount}€). ¡Haz clic en la ruleta para girar!`);
         }
-        function spin() {
-            if (isSpinning) return;
+        function spin() { /* ... código sin cambios (excepto que ya no llama a determineWinner) ... */
+             if (isSpinning) return;
             if (currentBets.length === 0) {
                 showMessage("Añade una o más apuestas antes de girar.");
                 return;
@@ -755,25 +836,25 @@
             const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
             if (totalBetAmount > balance) {
                 showMessage("Error: Saldo insuficiente para las apuestas realizadas.");
-                // Optionally, clear bets or highlight the issue
                 return;
             }
 
             // Deduct bet amount from balance
             balance -= totalBetAmount;
             updateBalanceDisplay();
-            saveBalance(); // Save balance immediately after betting
+            // NO guardar balance aquí, se guarda después de añadir ganancias/recompensas
 
             showMessage("¡Girando!");
             isSpinning = true;
             // Disable betting buttons during spin
             clearBetsButton.disabled = true;
-            repeatBetButton.disabled = true; // NEW: Disable repeat during spin
+            repeatBetButton.disabled = true;
             betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = true);
 
             // --- Cheat Mode Logic ---
             if (cheatModeActive && currentBets.length > 0) {
-                console.warn("MODO GUIADO ACTIVADO!");
+                 // ... (lógica cheat sin cambios) ...
+                 console.warn("MODO GUIADO ACTIVADO!");
                 const targetBet = currentBets[0]; // Target the first bet placed
                 let targetWinningNumber = -1; // Default to invalid
 
@@ -798,19 +879,13 @@
                 if (targetWinningNumber === 0 && targetBet.type !== 'number') {
                      targetWinningNumber = segments.filter(n => n !== 0)[Math.floor(Math.random() * 36)];
                 }
-
                 console.log(`Cheat Target: Win bet on ${getBetDescription(targetBet)}. Forcing number: ${targetWinningNumber}`);
 
                 // Calculate the angle needed to land on the target number
                 const targetIndex = segments.findIndex(num => num === targetWinningNumber);
                 if (targetIndex !== -1) {
-                    // Calculate the center angle of the target segment
                     const targetSegmentCenterAngle = (targetIndex + 0.5) * anglePerSegment;
-                    // Calculate the final angle the wheel needs to stop at for the pointer to be at the target center
-                    // (Pointer is at 3*PI/2, so target angle = 3*PI/2 - targetSegmentCenterAngle)
                     const targetFinalAngle = ( (3 * Math.PI / 2) - targetSegmentCenterAngle + 4 * Math.PI) % (2 * Math.PI); // Add buffer rotations
-
-                    // Set the spin angle start: target final angle + multiple full rotations
                     spinAngleStart = targetFinalAngle + (Math.floor(Math.random() * 4) + 6) * (2 * Math.PI); // 6-9 extra rotations
                     console.log(`Calculated spin angle for cheat: ${spinAngleStart.toFixed(2)} (Target Angle: ${targetFinalAngle.toFixed(2)})`);
                 } else {
@@ -825,104 +900,114 @@
                 if (redBtn) redBtn.classList.remove('cheat-swap-red');
                 if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
                 if(cheatTimeoutId) clearTimeout(cheatTimeoutId);
-
             } else {
                 // --- Normal Spin Logic ---
-                // Calculate random spin angle: random offset + multiple full rotations
-                spinAngleStart = currentAngle + (Math.random() * 5 * (2*Math.PI)) + (5 * (2*Math.PI)); // Add 5-10 full rotations + random offset
+                spinAngleStart = currentAngle + (Math.random() * 5 * (2*Math.PI)) + (5 * (2*Math.PI));
             }
 
-            // Set random spin duration
-            spinTimeTotal = Math.random() * 3 + 4; // Spin duration between 4 and 7 seconds
-            spinTime = 0; // Reset spin timer
-            rotateWheel(); // Start the animation
+            spinTimeTotal = Math.random() * 3 + 4;
+            spinTime = 0;
+            rotateWheel();
         }
-        function determineWinner(winningNumber, winningColor) {
+
+        function determineWinner(winningNumber, winningColor) { // <<< MODIFICADO >>>
             let totalPayout = 0;
-            const resultMessage = `El número ganador es ${winningNumber} (${getColorName(winningColor)})`;
+            let baseResultMessage = `El número ganador es ${winningNumber} (${getColorName(winningColor)})`;
+            let finalMessage = ""; // Mensaje que se mostrará al final
+            let messageType = 'info'; // Tipo de mensaje (info, win, lose)
 
-            // NEW: Store the bets from this round before calculating winnings
-            lastBets = [...currentBets]; // Create a copy
+            lastBets = [...currentBets]; // Guardar apuestas para 'Repetir'
 
-            // Calculate winnings for each bet
+            // 1. Calcular ganancias de las apuestas
             currentBets.forEach(bet => {
                 let betWins = false;
                 let payoutMultiplier = 0;
                 const { amount, type, value } = bet;
 
-                if (winningNumber === 0) { // Special case for 0
-                    if (type === 'number' && value === 0) { // Bet on 0 wins
-                        betWins = true; payoutMultiplier = 36; // Payout 35:1 + stake back
-                    }
-                    // All other bets lose if 0 comes up
-                } else { // Cases for numbers 1-36
+                if (winningNumber === 0) {
+                    if (type === 'number' && value === 0) { betWins = true; payoutMultiplier = 36; }
+                } else {
                     switch (type) {
                         case 'number':      if (value === winningNumber) { betWins = true; payoutMultiplier = 36; } break;
-                        case 'color-red':   if (redNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break; // 1:1 payout
-                        case 'color-black': if (blackNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break; // 1:1 payout
-                        case 'even':        if (winningNumber % 2 === 0) { betWins = true; payoutMultiplier = 2; } break; // 1:1 payout
-                        case 'odd':         if (winningNumber % 2 !== 0) { betWins = true; payoutMultiplier = 2; } break; // 1:1 payout
-                        case 'low':         if (winningNumber >= 1 && winningNumber <= 18) { betWins = true; payoutMultiplier = 2; } break; // 1:1 payout
-                        case 'high':        if (winningNumber >= 19 && winningNumber <= 36) { betWins = true; payoutMultiplier = 2; } break; // 1:1 payout
-                        case 'dozen-1':     if (winningNumber >= 1 && winningNumber <= 12) { betWins = true; payoutMultiplier = 3; } break; // 2:1 payout
-                        case 'dozen-2':     if (winningNumber >= 13 && winningNumber <= 24) { betWins = true; payoutMultiplier = 3; } break; // 2:1 payout
-                        case 'dozen-3':     if (winningNumber >= 25 && winningNumber <= 36) { betWins = true; payoutMultiplier = 3; } break; // 2:1 payout
-                        case 'column-1':    if (column1.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break; // 2:1 payout
-                        case 'column-2':    if (column2.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break; // 2:1 payout
-                        case 'column-3':    if (column3.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break; // 2:1 payout
+                        case 'color-red':   if (redNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break;
+                        case 'color-black': if (blackNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break;
+                        case 'even':        if (winningNumber % 2 === 0) { betWins = true; payoutMultiplier = 2; } break;
+                        case 'odd':         if (winningNumber % 2 !== 0) { betWins = true; payoutMultiplier = 2; } break;
+                        case 'low':         if (winningNumber >= 1 && winningNumber <= 18) { betWins = true; payoutMultiplier = 2; } break;
+                        case 'high':        if (winningNumber >= 19 && winningNumber <= 36) { betWins = true; payoutMultiplier = 2; } break;
+                        case 'dozen-1':     if (winningNumber >= 1 && winningNumber <= 12) { betWins = true; payoutMultiplier = 3; } break;
+                        case 'dozen-2':     if (winningNumber >= 13 && winningNumber <= 24) { betWins = true; payoutMultiplier = 3; } break;
+                        case 'dozen-3':     if (winningNumber >= 25 && winningNumber <= 36) { betWins = true; payoutMultiplier = 3; } break;
+                        case 'column-1':    if (column1.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
+                        case 'column-2':    if (column2.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
+                        case 'column-3':    if (column3.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
                     }
                 }
-                // Add winnings to total payout
                 if (betWins) {
-                    totalPayout += amount * payoutMultiplier; // Payout includes stake return
+                    totalPayout += amount * payoutMultiplier; // Sumar ganancias (incluye apuesta devuelta)
                 }
             });
 
             const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-            const netWinnings = totalPayout - totalBetAmount; // Calculate net win/loss
+            const netWinnings = totalPayout - totalBetAmount; // Ganancia/pérdida neta
 
-            // Update balance with winnings
-            balance += totalPayout;
-            updateBalanceDisplay();
-            saveBalance();
+            // 2. Actualizar balance CON las ganancias de la apuesta
+            balance += totalPayout; // Balance ahora incluye ganancias de la apuesta
+            console.log(`Balance after bet payout: ${balance}`);
 
-            // Display result message
-            if (netWinnings > 0) {
-                showMessage(`${resultMessage}. ¡Ganaste ${netWinnings}€ netos! (Total pagado: ${totalPayout}€)`, 'win');
-            } else if (netWinnings < 0) {
-                // No payout, message already includes winning number
-                showMessage(`${resultMessage}. Perdiste ${Math.abs(netWinnings)}€ en total.`, 'lose');
-            } else { // netWinnings === 0 (e.g., bet on red, won, bet on black, lost - net zero)
-                 if (totalPayout > 0) {
-                     showMessage(`${resultMessage}. Ni ganas ni pierdes. (Devolución: ${totalPayout}€)`);
-                 } else {
-                     showMessage(`${resultMessage}. Ninguna apuesta ganadora.`);
-                 }
+            // 3. Comprobar y desbloquear logros CON el balance actualizado
+            const achievementResult = checkAndUnlockAchievements(); // Esta función AÑADE recompensas al balance si desbloquea algo y GUARDA el nuevo balance y logros
+
+            // 4. Construir el mensaje final
+            let achievementMessage = "";
+            if (achievementResult.newlyUnlocked.length > 0) {
+                 achievementMessage = ` ¡Logro${achievementResult.newlyUnlocked.length > 1 ? 's' : ''} desbloqueado${achievementResult.newlyUnlocked.length > 1 ? 's' : ''}: ${achievementResult.newlyUnlocked.map(a => a.name).join(', ')} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                 messageType = 'win'; // Considerar mensaje como victoria si se desbloquea logro
             }
 
-            // Clear bets for the next round
+            if (totalPayout > 0 || achievementResult.totalRewardAdded > 0) { // Si hubo ganancias de apuestas O recompensas de logros
+                const totalEarned = netWinnings + achievementResult.totalRewardAdded; // Ganancia neta total
+                if (totalEarned > 0) {
+                     finalMessage = `${baseResultMessage}. ¡Ganaste ${totalEarned.toLocaleString('es-ES')}€ netos!${achievementMessage}`;
+                     messageType = 'win';
+                } else if (totalEarned < 0) { // Ganancias apuesta < Pérdida apuesta, pero hubo recompensa
+                    finalMessage = `${baseResultMessage}. Perdiste ${Math.abs(totalEarned).toLocaleString('es-ES')}€ en total.${achievementMessage}`;
+                     messageType = achievementResult.totalRewardAdded > 0 ? 'info' : 'lose'; // Si hubo recompensa, es info, si no, pérdida
+                } else { // Ganancias apuesta == Pérdida apuesta, solo recompensa
+                     finalMessage = `${baseResultMessage}. Ni ganas ni pierdes.${achievementMessage}`;
+                     messageType = 'win';
+                }
+            } else { // Sin ganancias de apuesta Y sin recompensa de logro
+                finalMessage = `${baseResultMessage}. Ninguna apuesta ganadora.`;
+                messageType = 'lose';
+            }
+
+            // 5. Actualizar UI y estado
+            updateBalanceDisplay(); // Mostrar el balance final (con posibles recompensas)
+            // saveBalance(); // El balance ya se guarda DENTRO de checkAndUnlockAchievements si cambia
+
+            showMessage(finalMessage, messageType);
+
             currentBets = [];
             updateBetsList();
             updateTotalBetAmountDisplay();
-
-            // NEW: Enable the repeat button now that lastBets is populated
             repeatBetButton.disabled = lastBets.length === 0;
         }
 
-        // --- Funciones auxiliares ---
-        function getColorName(colorCode) {
+        // --- Funciones auxiliares (SIN CAMBIOS) ---
+        function getColorName(colorCode) { /* ... código sin cambios ... */
             if (colorCode === '#2ecc71') return 'Verde';
             if (colorCode === '#c53030') return 'Rojo';
             if (colorCode === '#1A202C') return 'Negro';
             return 'Desconocido';
         }
-        function showMessage(msg, type = 'info') {
+        function showMessage(msg, type = 'info') { /* ... código sin cambios ... */
             messageDisplay.textContent = msg;
             // Change message color based on type (win/lose/info)
             messageDisplay.style.color = type === 'win' ? '#2ecc71' : type === 'lose' ? '#e74c3c' : '#f0e68c';
         }
-        function updateBetsList() {
-            betsListDisplay.innerHTML = ''; // Clear previous list
+        function updateBetsList() { /* ... código sin cambios ... */
+             betsListDisplay.innerHTML = ''; // Clear previous list
             if (currentBets.length === 0) {
                 betsListDisplay.innerHTML = '<li>No hay apuestas añadidas</li>';
             } else {
@@ -935,7 +1020,7 @@
             // Scroll to the bottom of the list
             betsListDisplay.scrollTop = betsListDisplay.scrollHeight;
         }
-        function getBetDescription(bet) {
+        function getBetDescription(bet) { /* ... código sin cambios ... */
             // Returns a user-friendly description of the bet type
             switch (bet.type) {
                 case 'number': return `Número ${bet.value}`;
@@ -954,14 +1039,14 @@
                 default: return `Desconocido`;
             }
         }
-        function updateTotalBetAmountDisplay() {
+        function updateTotalBetAmountDisplay() { /* ... código sin cambios ... */
             const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-            totalBetSpan.textContent = totalBetAmount;
+            totalBetSpan.textContent = totalBetAmount.toLocaleString('es-ES'); // Formatear
         }
 
-        // --- Generar Cuadrícula de Números Dinámicamente ---
-        function generateNumberGrid() {
-            if (!numberGrid) {
+        // --- Generar Cuadrícula de Números Dinámicamente (SIN CAMBIOS) ---
+        function generateNumberGrid() { /* ... código sin cambios ... */
+             if (!numberGrid) {
                 console.error("Element .number-grid not found");
                 return;
             }
@@ -986,32 +1071,37 @@
         }
 
         // --- Event Listeners ---
-        canvas.addEventListener('click', spin); // Spin the wheel on click
-        clearBetsButton.addEventListener('click', clearBets); // Clear current bets
-        repeatBetButton.addEventListener('click', repeatLastBet); // NEW: Repeat last bet
-        betOptionsContainer.addEventListener('click', handleBetPlacement); // Handle clicks on betting buttons
-        window.addEventListener('resize', resizeCanvas); // Adjust canvas size on window resize
+        canvas.addEventListener('click', spin);
+        clearBetsButton.addEventListener('click', clearBets);
+        repeatBetButton.addEventListener('click', repeatLastBet);
+        betOptionsContainer.addEventListener('click', handleBetPlacement);
+        window.addEventListener('resize', resizeCanvas);
 
-        // Listen for changes in localStorage from other tabs/windows
         window.addEventListener('storage', (event) => {
             if (event.key === BALANCE_LOCAL_STORAGE_KEY) {
                 console.log('Balance changed externally. Reloading.');
                 loadBalance();
+                loadUnlockedAchievements(); // <<< RECARGAR LOGROS TAMBIÉN >>>
             }
             if (event.key === HISTORY_LOCAL_STORAGE_KEY) {
                 console.log('History changed externally. Reloading.');
                 loadHistory();
             }
+             // <<< NUEVO: Escuchar cambios en logros >>>
+             if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
+                 console.log('Achievements changed externally. Reloading.');
+                 loadUnlockedAchievements();
+             }
         });
-        // Reload balance/history when the window gains focus (in case of offline changes)
         window.addEventListener('focus', () => {
-            console.log('Window focused, reloading balance and history.');
+            console.log('Window focused, reloading balance, history, and achievements.');
             loadBalance();
             loadHistory();
+            loadUnlockedAchievements(); // <<< CARGAR LOGROS AL ENFOCAR >>>
         });
 
-        // --- LISTENER MODO GUIADO (Doble clic en saldo) ---
-        balanceDisplay.addEventListener('dblclick', () => {
+        // --- LISTENER MODO GUIADO (SIN CAMBIOS) ---
+        balanceDisplay.addEventListener('dblclick', () => { /* ... código sin cambios ... */
             cheatModeActive = !cheatModeActive; // Toggle cheat mode
             if (cheatTimeoutId) { clearTimeout(cheatTimeoutId); cheatTimeoutId = null; } // Clear any existing timeout
 
@@ -1041,15 +1131,16 @@
 
         // --- Inicialización al cargar la página ---
         window.onload = () => {
-            loadBalance(); // Load balance from localStorage
-            loadHistory(); // Load history from localStorage
-            generateNumberGrid(); // Create the number buttons on the betting table
-            resizeCanvas(); // Set initial canvas size
-            updateBetsList(); // Initialize bets list display
-            updateTotalBetAmountDisplay(); // Initialize total bet display
+            loadBalance(); // Carga saldo
+            loadHistory(); // Carga historial
+            loadUnlockedAchievements(); // <<< NUEVO: Carga logros desbloqueados >>>
+            generateNumberGrid(); // Genera tapete
+            resizeCanvas(); // Ajusta tamaño
+            updateBetsList(); // Actualiza lista apuestas
+            updateTotalBetAmountDisplay(); // Actualiza total apostado
             showMessage("Haz clic en el tapete para apostar y en la ruleta para girar!");
-            clearBetsButton.disabled = false; // Ensure clear button is enabled
-            repeatBetButton.disabled = true; // NEW: Ensure repeat button is initially disabled
+            clearBetsButton.disabled = false;
+            repeatBetButton.disabled = true;
         };
 
     </script>

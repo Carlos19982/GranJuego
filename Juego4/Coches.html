@@ -3,34 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apuestas Carreras 3D - ¡Carrera Larga!</title>
+    <title>Apuestas Carreras 3D - Logros Integrados</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos generales */
+        /* --- Styles (mostly unchanged) --- */
         body { margin: 0; overflow: hidden; font-family: 'Inter', sans-serif; background-color: #f0f0f0; position: relative;}
         #scene-container { width: 100vw; height: 100vh; display: block; cursor: grab; }
         #scene-container:active { cursor: grabbing; }
-        /* Contenedor de la UI */
+        /* UI Container */
         #ui-container { position: absolute; top: 20px; left: 20px; background-color: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px; z-index: 10; max-width: 250px; }
-        /* Área de mensajes */
-        #message-area { margin-top: 10px; font-weight: bold; min-height: 40px; color: #4b5563; /* Color de texto gris */ }
-        /* Botón de salir */
+        /* Message Area */
+        #message-area { margin-top: 10px; font-weight: bold; min-height: 40px; color: #4b5563; /* Gray text color */ }
+        /* Exit Button */
         #exit-button-cars { position: absolute; top: 20px; right: 20px; z-index: 10; }
-        /* Display de saldo */
+        /* Balance Display */
         #balance-display { margin-top: 5px; padding: 8px; background-color: #e5e7eb; border-radius: 6px; border: 1px solid #d1d5db; text-align: center; font-size: 0.9rem; color: #374151; }
         #balance-amount { font-weight: 700; color: #1d4ed8; }
 
-        /* Estilos para los botones de selección de coche */
+        /* Car Selection Buttons */
         #car-selection-buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); /* Columnas flexibles */
-            gap: 8px; /* Espacio entre botones */
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); /* Flexible columns */
+            gap: 8px; /* Space between buttons */
             margin-top: 10px;
         }
         .car-button {
-            padding: 8px 5px; /* Ajustar padding */
+            padding: 8px 5px; /* Adjust padding */
             border-radius: 6px;
-            font-size: 0.75rem; /* Texto más pequeño */
+            font-size: 0.75rem; /* Smaller text */
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
@@ -38,23 +38,23 @@
             transition: transform 0.1s ease, border-color 0.2s ease;
             cursor: pointer;
             text-align: center;
-            line-height: 1.2; /* Ajustar altura de línea */
+            line-height: 1.2; /* Adjust line height */
         }
         .car-button:hover {
             transform: scale(1.05);
         }
         .car-button.selected {
-            border-color: #facc15; /* Borde amarillo para selección */
+            border-color: #facc15; /* Yellow border for selection */
             box-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
             transform: scale(1.05);
         }
-        .car-button:disabled { /* Estilo cuando está deshabilitado (durante carrera) */
+        .car-button:disabled { /* Style when disabled (during race) */
              opacity: 0.6;
              cursor: not-allowed;
         }
 
 
-        /* Estilos responsivos */
+        /* Responsive Styles */
         @media (max-width: 640px) {
              #ui-container { left: 10px; top: 10px; padding: 15px; gap: 10px; max-width: calc(100% - 20px); }
              #exit-button-cars { top: 10px; right: 10px; padding: 6px 10px; font-size: 0.875rem; }
@@ -62,9 +62,9 @@
              #ui-container label, #message-area, #balance-display { font-size: 0.875rem; }
              #bet-button, #reset-button { padding: 8px 16px; font-size: 0.875rem; }
              input[type="number"] { padding: 6px; font-size: 0.875rem; }
-             .car-button { font-size: 0.7rem; padding: 6px 4px;} /* Ajustar tamaño en móvil */
+             .car-button { font-size: 0.7rem; padding: 6px 4px;} /* Adjust size on mobile */
         }
-        /* Clase para ocultar elementos */
+        /* Class to hide elements */
         .hidden { display: none; }
     </style>
 </head>
@@ -110,57 +110,65 @@
     </script>
 
     <script type="module">
-        // Importar Three.js y OrbitControls
+        // Import Three.js and OrbitControls
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // Variables globales de Three.js
+        // --- Global Three.js Variables ---
         let scene, camera, renderer, controls;
-        // Array para almacenar los coches y variables de selección
+        // Array to store cars and selection variables
         let cars = [];
         let selectedCarGroup = null;
-        let originalCarMaterials = new Map(); // Para guardar materiales originales al resaltar
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0x333300 }); // Material para resaltar (amarillo brillante)
+        let originalCarMaterials = new Map(); // To store original materials when highlighting
+        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0x333300 }); // Highlight material (bright yellow)
 
-        // Materiales comunes reutilizables
-        const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 }); // Material para ruedas (gris oscuro)
-        const windowMaterial = new THREE.MeshStandardMaterial({ color: 0xadd8e6, opacity: 0.7, transparent: true, roughness: 0.2 }); // Material para ventanas (azul claro semitransparente)
+        // --- Reusable Common Materials ---
+        const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 }); // Wheel material (dark gray)
+        const windowMaterial = new THREE.MeshStandardMaterial({ color: 0xadd8e6, opacity: 0.7, transparent: true, roughness: 0.2 }); // Window material (light blue semi-transparent)
 
-        // --- Materiales para decoración ---
-        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Marrón para troncos
-        const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Verde oscuro para hojas/arbustos
-        const standMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D }); // Marrón siena para gradas
-        const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.9 }); // Gris para rocas
-        const crowdColors = [0xff6347, 0x4682b4, 0x32cd32, 0xffd700, 0x6a5acd, 0xee82ee, 0xf08080]; // Colores para el público
-        const lineMarkingMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide }); // Material para líneas de la pista (blanco)
+        // --- Decoration Materials ---
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown for trunks
+        const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Dark green for leaves/bushes
+        const standMaterial = new THREE.MeshStandardMaterial({ color: 0xA0522D }); // Sienna brown for stands
+        const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.9 }); // Gray for rocks
+        const crowdColors = [0xff6347, 0x4682b4, 0x32cd32, 0xffd700, 0x6a5acd, 0xee82ee, 0xf08080]; // Colors for the crowd
+        const lineMarkingMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide }); // Material for track lines (white)
 
-        // --- Variables de estado de la carrera ---
-        let raceState = 'idle'; // Estados posibles: 'idle', 'racing', 'finished'
-        let winnerCarGroup = null; // Almacena el grupo del coche ganador
-        let finishLineZ; // Posición Z de la línea de meta (se calcula en init)
-        const clock = new THREE.Clock(); // Reloj para medir el tiempo entre frames (deltaTime)
-        const startZ = 8; // Posición Z inicial de los coches en la línea de salida
-        const MIN_BET = 1; // Apuesta mínima permitida
+        // --- Race State Variables ---
+        let raceState = 'idle'; // Possible states: 'idle', 'racing', 'finished'
+        let winnerCarGroup = null; // Stores the winning car group
+        let finishLineZ; // Z position of the finish line (calculated in init)
+        const clock = new THREE.Clock(); // Clock to measure time between frames (deltaTime)
+        const startZ = 8; // Initial Z position of cars at the starting line
+        const MIN_BET = 1; // Minimum allowed bet
 
-        // --- Variables de Saldo Global ---
-        const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3'; // Clave única para guardar el saldo en localStorage
-        const DEFAULT_BALANCE = 5000; // Saldo inicial si no hay ninguno guardado
-        let balance = DEFAULT_BALANCE; // Saldo actual del jugador
+        // --- Global Balance Variables ---
+        const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3'; // Unique key for saving balance in localStorage
+        const DEFAULT_BALANCE = 5000; // Initial balance if none is saved
+        let balance = DEFAULT_BALANCE; // Current player balance
 
-        // --- Variables para control de cámara con WASD (modo libre) ---
-        const moveSpeed = 0.5; // Velocidad de movimiento de la cámara con WASD
-        const moveState = { forward: 0, backward: 0, left: 0, right: 0 }; // Estado de las teclas presionadas
+        // --- <<< NEW: Achievement Variables >>> ---
+        const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1'; // Key for achievements (shared)
+        const achievementsData = [ // Achievement definitions (copied)
+            { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 }
+        ];
+        let unlockedAchievements = []; // Array for unlocked achievement IDs
+        // --- <<< END NEW: Achievement Variables >>> ---
 
-        // --- Constantes para la velocidad variable de los coches durante la carrera ---
-        const BASE_SPEED = 25; // Velocidad media de los coches
-        const ACCELERATION_FACTOR = 8; // Factor de aleatoriedad en la aceleración/desaceleración
-        const MIN_SPEED_FACTOR = 0.85; // Velocidad mínima como porcentaje de la base
-        const MAX_SPEED_FACTOR = 1.15; // Velocidad máxima como porcentaje de la base
+        // --- Camera Control Variables (WASD - free mode) ---
+        const moveSpeed = 0.5; // Camera movement speed with WASD
+        const moveState = { forward: 0, backward: 0, left: 0, right: 0 }; // State of pressed keys
 
-        // --- Constante para la suavidad del seguimiento de la cámara durante la carrera ---
-        const CAMERA_LERP_FACTOR = 0.02; // Factor de interpolación lineal (más bajo = más suave/lento)
+        // --- Car Speed Variables ---
+        const BASE_SPEED = 25; // Average car speed
+        const ACCELERATION_FACTOR = 8; // Randomness factor in acceleration/deceleration
+        const MIN_SPEED_FACTOR = 0.85; // Minimum speed as percentage of base
+        const MAX_SPEED_FACTOR = 1.15; // Maximum speed as percentage of base
 
-        // Referencias a los elementos de la UI obtenidos por su ID
+        // --- Camera Lerp Factor ---
+        const CAMERA_LERP_FACTOR = 0.02; // Linear interpolation factor (lower = smoother/slower)
+
+        // --- DOM Element References ---
         const uiContainer = document.getElementById('ui-container');
         const betAmountInput = document.getElementById('bet-amount');
         const betButton = document.getElementById('bet-button');
@@ -168,9 +176,9 @@
         const sceneContainer = document.getElementById('scene-container');
         const resetButton = document.getElementById('reset-button');
         const balanceAmountElement = document.getElementById('balance-amount');
-        const carSelectionContainer = document.getElementById('car-selection-buttons'); // Contenedor para botones de coche
+        const carSelectionContainer = document.getElementById('car-selection-buttons'); // Container for car buttons
 
-        // --- Funciones de Gestión del Saldo ---
+        // --- Balance Management Functions ---
         function loadBalance() {
             try {
                 const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
@@ -195,7 +203,7 @@
             updateBalanceDisplay();
         }
 
-        function saveBalance() {
+        function saveBalance() { // Note: This might become less used if checkAndUnlockAchievements handles saving
             try {
                 localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString());
             } catch (error) {
@@ -213,8 +221,89 @@
             checkBetButtonState();
         }
 
-        // --- Funciones de Creación de Geometrías y Objetos 3D ---
+        // --- <<< NEW: Achievement Functions (copied) >>> ---
+        function loadUnlockedAchievements() {
+            try {
+                const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                if (savedAchievements) {
+                    const parsedAchievements = JSON.parse(savedAchievements);
+                    if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
+                        unlockedAchievements = parsedAchievements;
+                    } else {
+                        console.warn("Invalid achievement format in localStorage. Resetting.");
+                        unlockedAchievements = [];
+                        localStorage.removeItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                    }
+                } else {
+                    unlockedAchievements = [];
+                }
+            } catch (error) {
+                console.error("Error loading achievements:", error);
+                unlockedAchievements = [];
+            }
+             console.log("Loaded achievements:", unlockedAchievements);
+        }
+
+        function saveUnlockedAchievements() {
+            try {
+                localStorage.setItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY, JSON.stringify(unlockedAchievements));
+                 console.log("Saved achievements:", unlockedAchievements);
+            } catch (error) {
+                console.error("Error saving achievements:", error);
+            }
+        }
+
+        /**
+         * Checks achievements, adds rewards, and saves balance/achievements.
+         * Returns details about newly unlocked achievements.
+         */
+        function checkAndUnlockAchievements() {
+            const newlyUnlocked = [];
+            let totalRewardAdded = 0;
+            let balanceChanged = false;
+            let achievementsChanged = false;
+
+            loadUnlockedAchievements(); // Ensure latest list is loaded
+            const currentBalance = balance; // Use current global balance
+
+            achievementsData.forEach(ach => {
+                if (currentBalance >= ach.target && !unlockedAchievements.includes(ach.id)) {
+                    console.log(`Unlocking achievement: ${ach.name} (Target: ${ach.target}, Reward: ${ach.reward})`);
+                    unlockedAchievements.push(ach.id);
+                    totalRewardAdded += ach.reward;
+                    newlyUnlocked.push(ach);
+                    achievementsChanged = true;
+                    balanceChanged = true;
+                }
+            });
+
+            if (newlyUnlocked.length > 0) {
+                balance += totalRewardAdded; // Update global balance
+                console.log(`Total reward added: ${totalRewardAdded}. New balance: ${balance}`);
+
+                // Save new achievements list and updated balance
+                saveUnlockedAchievements();
+                try {
+                    localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString());
+                    console.log("Balance saved after achievement rewards:", balance);
+                } catch (error) {
+                    console.error("Error saving balance after achievement rewards:", error);
+                }
+            }
+
+            return {
+                newlyUnlocked,
+                balanceChanged,
+                achievementsChanged,
+                totalRewardAdded
+            };
+        }
+        // --- <<< END NEW: Achievement Functions >>> ---
+
+
+        // --- 3D Object Creation Functions ---
         function createCarShape(color) {
+            // ... (car creation code - unchanged) ...
             const carGroup = new THREE.Group();
             const carBodyMaterial = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
             originalCarMaterials.set(carGroup, carBodyMaterial);
@@ -269,8 +358,7 @@
             carGroup.userData.isCarGroup = true;
             return carGroup;
         }
-
-        function createTree(position) {
+        function createTree(position) { /* ... (unchanged) ... */
             const treeGroup = new THREE.Group();
             const trunkHeight = 3 + Math.random() * 2; const trunkRadius = 0.2 + Math.random() * 0.1;
             const trunkGeometry = new THREE.CylinderGeometry(trunkRadius * 0.7, trunkRadius, trunkHeight, 8);
@@ -281,8 +369,7 @@
             treeGroup.position.copy(position); treeGroup.userData.isDecoration = true;
             return treeGroup;
         }
-
-        function createStand(position, length, width = 3, height = 1.5, crowdDensity = 0.8) {
+        function createStand(position, length, width = 3, height = 1.5, crowdDensity = 0.8) { /* ... (unchanged) ... */
             const standGroup = new THREE.Group();
             const standGeometry = new THREE.BoxGeometry(width, height, length);
             const standBase = new THREE.Mesh(standGeometry, standMaterial);
@@ -300,9 +387,8 @@
             }
             standGroup.position.copy(position); standGroup.userData.isDecoration = true;
             return standGroup;
-       }
-
-        function createBush(position) {
+        }
+        function createBush(position) { /* ... (unchanged) ... */
             const bushGroup = new THREE.Group();
             const numSpheres = 3 + Math.floor(Math.random() * 3); const baseRadius = 0.5 + Math.random() * 0.3;
             for (let i = 0; i < numSpheres; i++) {
@@ -315,8 +401,7 @@
             bushGroup.position.copy(position); bushGroup.userData.isDecoration = true;
             return bushGroup;
         }
-
-        function createRock(position) {
+        function createRock(position) { /* ... (unchanged) ... */
             const rockGeometry = new THREE.IcosahedronGeometry(0.5 + Math.random() * 0.5, 0);
             const rock = new THREE.Mesh(rockGeometry, rockMaterial);
             rock.scale.set( 1 + (Math.random() - 0.5) * 0.8, 1 + (Math.random() - 0.5) * 0.8, 1 + (Math.random() - 0.5) * 0.8 );
@@ -327,11 +412,13 @@
             return rock;
         }
 
-        /** Función principal de inicialización. */
+        /** Main initialization function. */
         function init() {
-            loadBalance();
+            loadBalance(); // Load balance first
+            loadUnlockedAchievements(); // <<< NEW: Load achievements
 
-            // --- Escena, Cámara, Renderer, Controles, Luces ---
+            // --- Scene, Camera, Renderer, Controls, Lights ---
+            // ... (scene setup code - unchanged) ...
             scene = new THREE.Scene(); scene.background = new THREE.Color(0x87ceeb);
             const trackLength = 800; scene.fog = new THREE.Fog(0x87ceeb, 150, trackLength * 0.8);
             const aspect = window.innerWidth / window.innerHeight; camera = new THREE.PerspectiveCamera(60, aspect, 0.1, trackLength + 200); camera.position.set(0, 25, 35); camera.lookAt(0, 0, -100);
@@ -339,7 +426,8 @@
             controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.dampingFactor = 0.05; controls.screenSpacePanning = false; controls.minDistance = 5; controls.maxDistance = 150; controls.maxPolarAngle = Math.PI / 2 - 0.1; controls.target.set(0, 0, -50);
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); scene.add(ambientLight); const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); directionalLight.position.set(30, 50, 40); directionalLight.castShadow = true; directionalLight.shadow.camera.left = -50; directionalLight.shadow.camera.right = 50; directionalLight.shadow.camera.top = 50; directionalLight.shadow.camera.bottom = -50; directionalLight.shadow.camera.near = 0.5; directionalLight.shadow.camera.far = 150; directionalLight.shadow.mapSize.width = 1024; directionalLight.shadow.mapSize.height = 1024; scene.add(directionalLight);
 
-            // --- Pista, Líneas, Bordes, Suelo ---
+            // --- Track, Lines, Borders, Ground ---
+            // ... (track setup code - unchanged) ...
             const trackWidth = 25;
             const trackGeometry = new THREE.PlaneGeometry(trackWidth, trackLength); const trackMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.8 }); const track = new THREE.Mesh(trackGeometry, trackMaterial); track.rotation.x = -Math.PI / 2; track.position.z = -(trackLength / 2) + 10; track.receiveShadow = true; scene.add(track);
             const lineYOffset = 0.01; const startLineGeo = new THREE.PlaneGeometry(trackWidth, 1); const startLine = new THREE.Mesh(startLineGeo, lineMarkingMaterial); startLine.rotation.x = -Math.PI / 2; startLine.position.set(0, lineYOffset, 6); scene.add(startLine);
@@ -350,18 +438,19 @@
             const borderHeight = 0.5; const borderWidth = 0.5; const borderMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.7 }); const borderGeometry = new THREE.BoxGeometry(borderWidth, borderHeight, trackLength); const borderLeft = new THREE.Mesh(borderGeometry, borderMaterial); borderLeft.position.set(-trackWidth / 2 - borderWidth / 2, borderHeight / 2, track.position.z); borderLeft.castShadow = true; borderLeft.receiveShadow = true; scene.add(borderLeft); const borderRight = new THREE.Mesh(borderGeometry, borderMaterial); borderRight.position.set(trackWidth / 2 + borderWidth / 2, borderHeight / 2, track.position.z); borderRight.castShadow = true; borderRight.receiveShadow = true; scene.add(borderRight);
             const groundGeometry = new THREE.PlaneGeometry(200, trackLength + 100); const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22, side: THREE.DoubleSide, roughness: 0.9 }); const ground = new THREE.Mesh(groundGeometry, groundMaterial); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; ground.position.z = track.position.z; ground.receiveShadow = true; scene.add(ground);
 
-            // --- Añadir Decoración ---
+            // --- Add Decoration ---
+            // ... (decoration code - unchanged) ...
             const standLength = trackLength * 0.6; const standOffset = 5; const standZ = track.position.z; const standLeft = createStand(new THREE.Vector3(-trackWidth / 2 - borderWidth - standOffset, 0, standZ), standLength, 4, 1.5, 1.5); scene.add(standLeft); const standRight = createStand(new THREE.Vector3(trackWidth / 2 + borderWidth + standOffset, 0, standZ), standLength, 4, 1.5, 1.5); scene.add(standRight);
             const treeCount = 40; const bushCount = 60; const rockCount = 30; const minX = trackWidth / 2 + 8; const maxX = 90; const minZ = track.position.z - trackLength / 2 + 30; const maxZ = track.position.z + trackLength / 2 - 30;
             for (let i = 0; i < treeCount; i++) { const side = Math.random() < 0.5 ? -1 : 1; const xPos = side * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const tree = createTree(new THREE.Vector3(xPos, 0, zPos)); scene.add(tree); }
             for (let i = 0; i < bushCount; i++) { const side = Math.random() < 0.5 ? -1 : 1; const xPos = side * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const bush = createBush(new THREE.Vector3(xPos, 0, zPos)); scene.add(bush); }
             for (let i = 0; i < rockCount; i++) { const side = Math.random() < 0.5 ? -1 : 1; const xPos = side * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const rock = createRock(new THREE.Vector3(xPos, 0, zPos)); scene.add(rock); }
 
-            // --- Crear los Coches ---
-            const carColors = [0xff0000, 0x00ff00, 0x0000ff, 0xff00ff, 0x00ffff]; // Rojo, Verde, Azul, Magenta, Cyan
+            // --- Create Cars ---
+            const carColors = [0xff0000, 0x00ff00, 0x0000ff, 0xff00ff, 0x00ffff]; // Red, Green, Blue, Magenta, Cyan
             const startX = -trackWidth / 2 + 3;
             const spacing = (trackWidth - 6) / (carColors.length - 1);
-            carSelectionContainer.innerHTML = ''; // Limpiar botones previos si los hubiera
+            carSelectionContainer.innerHTML = ''; // Clear previous buttons if any
             for (let i = 0; i < carColors.length; i++) {
                 const carGroup = createCarShape(carColors[i]);
                 carGroup.position.set(startX + i * spacing, 0, startZ);
@@ -371,68 +460,82 @@
                 scene.add(carGroup);
                 cars.push(carGroup);
 
-                // --- Crear Botón de Selección para este coche ---
+                // --- Create Selection Button for this car ---
                 const button = document.createElement('button');
-                button.className = 'car-button'; // Aplicar clase CSS base
+                button.className = 'car-button'; // Apply base CSS class
                 button.textContent = `Coche ${i + 1}`;
-                // Obtener color original para el botón
+                // Get original color for the button
                 const originalMaterial = originalCarMaterials.get(carGroup);
                 if (originalMaterial) {
                     button.style.backgroundColor = `#${originalMaterial.color.getHexString()}`;
                 }
-                // Añadir listener para seleccionar este coche al hacer clic
+                // Add listener to select this car on click
                 button.addEventListener('click', () => {
-                    if (raceState === 'idle') { // Solo permitir selección si no hay carrera
+                    if (raceState === 'idle') { // Only allow selection if not racing
                         selectCar(carGroup);
                     }
                 });
-                carSelectionContainer.appendChild(button); // Añadir botón al contenedor
+                carSelectionContainer.appendChild(button); // Add button to container
             }
 
             // --- Event Listeners ---
             window.addEventListener('resize', onWindowResize);
-            // REMOVIDO: renderer.domElement.addEventListener('pointerdown', onPointerDown); // Ya no se usa raycasting
             betButton.addEventListener('click', placeBetAndStartRace);
             resetButton.addEventListener('click', resetRace);
             betAmountInput.addEventListener('input', checkBetButtonState);
             window.addEventListener('keydown', handleKeyDown);
             window.addEventListener('keyup', handleKeyUp);
-            window.addEventListener('storage', (event) => { if (event.key === BALANCE_LOCAL_STORAGE_KEY && event.newValue !== null) { console.log('Saldo cambiado externamente...'); loadBalance(); } });
-            window.addEventListener('focus', () => { console.log('Ventana enfocada...'); loadBalance(); });
+            // <<< MODIFIED: Storage and Focus Listeners >>>
+            window.addEventListener('storage', (event) => {
+                if (event.key === BALANCE_LOCAL_STORAGE_KEY && event.newValue !== null) {
+                    console.log('Saldo cambiado externamente...');
+                    loadBalance();
+                    loadUnlockedAchievements(); // Reload achievements too
+                }
+                 if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
+                     console.log('Logros cambiados externamente...');
+                     loadUnlockedAchievements(); // Reload achievements
+                     // Optionally update UI if achievements affect it directly
+                 }
+            });
+            window.addEventListener('focus', () => {
+                console.log('Ventana enfocada...');
+                loadBalance();
+                loadUnlockedAchievements(); // Reload achievements too
+            });
 
-            animate(); // Iniciar bucle de animación
+            animate(); // Start animation loop
         }
 
-        // --- Funciones de Control de Teclado (WASD) ---
+        // --- Keyboard Control Functions (WASD) ---
         function handleKeyDown(event) { if (raceState === 'racing') return; switch (event.code) { case 'KeyW': case 'ArrowUp': moveState.forward = 1; break; case 'KeyS': case 'ArrowDown': moveState.backward = 1; break; case 'KeyA': case 'ArrowLeft': moveState.left = 1; break; case 'KeyD': case 'ArrowRight': moveState.right = 1; break; } }
         function handleKeyUp(event) { switch (event.code) { case 'KeyW': case 'ArrowUp': moveState.forward = 0; break; case 'KeyS': case 'ArrowDown': moveState.backward = 0; break; case 'KeyA': case 'ArrowLeft': moveState.left = 0; break; case 'KeyD': case 'ArrowRight': moveState.right = 0; break; } }
 
-        // --- Funciones de Interacción y UI ---
+        // --- Interaction and UI Functions ---
         function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
 
-        // REMOVIDA: function onPointerDown(event) { ... } // Ya no se usa
-
-        /** Selecciona un coche, lo resalta en 3D y en el botón correspondiente. */
+        /** Selects a car, highlights it in 3D and the corresponding button. */
         function selectCar(carGroup) {
-            if (raceState !== 'idle') return; // Solo seleccionar si no hay carrera
+            // ... (selectCar code - unchanged) ...
+            if (raceState !== 'idle') return; // Only select if not racing
 
-            // Deseleccionar visualmente el coche y botón anteriores
+            // Visually deselect the previous car and button
             if (selectedCarGroup && selectedCarGroup !== carGroup) {
                 deselectCar();
             } else if (selectedCarGroup === carGroup) {
-                return; // No hacer nada si se clica el mismo coche ya seleccionado
+                return; // Do nothing if the same car is clicked again
             }
 
-            selectedCarGroup = carGroup; // Guardar referencia al coche seleccionado
+            selectedCarGroup = carGroup; // Store reference to the selected car
 
-            // Resaltar el modelo 3D
+            // Highlight the 3D model
             selectedCarGroup.traverse((child) => {
                 if (child.isMesh && child.userData.isBodyOrCabin) {
                     child.material = highlightMaterial;
                 }
             });
 
-            // Resaltar el botón correspondiente
+            // Highlight the corresponding button
             document.querySelectorAll('.car-button').forEach((btn, index) => {
                 if (index === selectedCarGroup.userData.id) {
                     btn.classList.add('selected');
@@ -444,13 +547,14 @@
 
             console.log(`Coche seleccionado: ID ${selectedCarGroup.userData.id}`);
             messageArea.textContent = `Coche ${selectedCarGroup.userData.id + 1} seleccionado. Introduce tu apuesta.`;
-            checkBetButtonState(); // Habilitar/deshabilitar botón de apuesta
+            checkBetButtonState(); // Enable/disable bet button
         }
 
-        /** Deselecciona el coche actual, restaurando su material y quitando el resaltado del botón. */
+        /** Deselects the current car, restoring its material and removing button highlight. */
         function deselectCar() {
+            // ... (deselectCar code - unchanged) ...
             if (selectedCarGroup) {
-                // Restaurar material 3D
+                // Restore 3D material
                 const originalMaterial = originalCarMaterials.get(selectedCarGroup);
                 if (originalMaterial) {
                     selectedCarGroup.traverse((child) => {
@@ -459,25 +563,26 @@
                         }
                     });
                 }
-                // Quitar resaltado de todos los botones
+                // Remove highlight from all buttons
                 document.querySelectorAll('.car-button.selected').forEach(btn => btn.classList.remove('selected'));
 
-                selectedCarGroup = null; // Limpiar referencia
-                messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.'; // Mensaje por defecto
-                checkBetButtonState(); // Actualizar estado del botón
+                selectedCarGroup = null; // Clear reference
+                messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.'; // Default message
+                checkBetButtonState(); // Update button state
             }
         }
 
-        /** Comprueba si se puede apostar y habilita/deshabilita el botón. */
+        /** Checks if betting is possible and enables/disables the button. */
         function checkBetButtonState() {
-            const amount = parseInt(betAmountInput.value, 10) || 0;
+            // ... (checkBetButtonState code - unchanged) ...
+             const amount = parseInt(betAmountInput.value, 10) || 0;
             const isValidAmount = amount >= MIN_BET;
             const hasEnoughBalance = amount <= balance;
 
             const canBet = raceState === 'idle' && selectedCarGroup !== null && isValidAmount && hasEnoughBalance;
             betButton.disabled = !canBet;
 
-            // Mensajes de ayuda/error en la UI
+            // Help/error messages in the UI
              if (raceState === 'idle' && selectedCarGroup) {
                 if (!isValidAmount && betAmountInput.value !== '') {
                      messageArea.textContent = `La apuesta mínima es ${MIN_BET}€.`;
@@ -493,8 +598,9 @@
             }
         }
 
-        // --- Lógica de la Carrera ---
+        // --- Race Logic ---
         function placeBetAndStartRace() {
+            // ... (validation - unchanged) ...
             if (betButton.disabled || raceState !== 'idle' || !selectedCarGroup) return;
             const betAmount = parseInt(betAmountInput.value, 10);
             if (betAmount < MIN_BET) { messageArea.textContent = `Error: La apuesta mínima es ${MIN_BET}€.`; return; }
@@ -502,10 +608,12 @@
 
             try {
                 console.log(`Apuesta realizada: Coche ID ${selectedCarGroup.userData.id}, Cantidad: ${betAmount}`);
-                balance -= betAmount; saveBalance(); updateBalanceDisplay();
+                balance -= betAmount;
+                // saveBalance(); // <<< REMOVED: Balance will be saved after potential achievement check in endRace
+                updateBalanceDisplay();
 
                 raceState = 'racing';
-                uiContainer.style.display = 'none'; // Ocultar toda la UI
+                uiContainer.style.display = 'none'; // Hide the entire UI
                 winnerCarGroup = null;
                 controls.enabled = false; controls.autoRotate = false;
 
@@ -522,6 +630,7 @@
             }
         }
 
+        // <<< MODIFIED: endRace function >>>
         function endRace() {
             if (raceState !== 'racing' || !winnerCarGroup) { console.warn("endRace llamada incorrectamente."); return; }
             try {
@@ -533,20 +642,47 @@
                 const playerWon = playerCarId === winnerId;
                 const betAmount = parseInt(betAmountInput.value, 10) || 0;
                 let payout = 0;
-                let resultMessage = `🏁 ¡Carrera terminada! Ganador: Coche ${winnerId + 1}. `;
+                let achievementResult = { newlyUnlocked: [], totalRewardAdded: 0 }; // Default achievement result
 
+                if (playerWon) {
+                    payout = betAmount * cars.length;
+                    balance += payout; // Add winnings to balance
+                    // <<< NEW: Check achievements AFTER adding winnings >>>
+                    achievementResult = checkAndUnlockAchievements();
+                } else {
+                    // <<< NEW: Check achievements even on loss >>>
+                    achievementResult = checkAndUnlockAchievements();
+                }
+
+                // Construct the result message
+                let resultMessage = `🏁 ¡Carrera terminada! Ganador: Coche ${winnerId + 1}. `;
                 if (playerCarId !== -1) {
                     if (playerWon) {
-                        payout = betAmount * cars.length; resultMessage += `✅ ¡Has ganado! Recibes ${payout.toLocaleString('es-ES')}€.`; balance += payout;
-                    } else { resultMessage += `❌ Has perdido tu apuesta de ${betAmount.toLocaleString('es-ES')}€.`; }
-                } else { resultMessage += "No se realizó apuesta."; }
+                        resultMessage += `✅ ¡Has ganado! Recibes ${payout.toLocaleString('es-ES')}€.`;
+                    } else {
+                        resultMessage += `❌ Has perdido tu apuesta de ${betAmount.toLocaleString('es-ES')}€.`;
+                    }
+                } else {
+                    resultMessage += "No se realizó apuesta.";
+                }
 
-                if (payout > 0) { saveBalance(); updateBalanceDisplay(); }
+                // Append achievement message if any
+                if (achievementResult.newlyUnlocked.length > 0) {
+                    resultMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                }
 
-                messageArea.textContent = resultMessage; uiContainer.style.display = 'flex'; betButton.classList.add('hidden'); resetButton.classList.remove('hidden'); betAmountInput.disabled = true;
-                 // Deshabilitar botones de coche al final
+                // Final balance update display (includes potential rewards)
+                updateBalanceDisplay();
+                // saveBalance(); // <<< REMOVED: Balance is saved within checkAndUnlockAchievements if needed
+
+                // Update UI
+                messageArea.textContent = resultMessage;
+                uiContainer.style.display = 'flex';
+                betButton.classList.add('hidden');
+                resetButton.classList.remove('hidden');
+                betAmountInput.disabled = true;
+                // Disable car buttons at the end
                 document.querySelectorAll('.car-button').forEach(btn => btn.disabled = true);
-
 
             } catch (error) {
                 console.error("Error crítico al finalizar la carrera:", error);
@@ -555,12 +691,14 @@
             }
         }
 
+
         function resetRace() {
-            try {
+            // ... (resetRace code - unchanged) ...
+             try {
                 console.log("Reseteando para nueva carrera...");
                 raceState = 'idle'; winnerCarGroup = null;
 
-                // Resetear coches y deselección visual
+                // Reset cars and visual deselection
                 cars.forEach(car => {
                     car.position.z = startZ; car.userData.baseSpeed = 0; car.userData.currentSpeed = 0;
                     if (originalCarMaterials.has(car)) {
@@ -568,17 +706,17 @@
                          car.traverse((child) => { if (child.isMesh && child.userData.isBodyOrCabin) { child.material = originalMaterial; } });
                     }
                 });
-                deselectCar(); // Limpia selectedCarGroup y quita resaltado de botones
+                deselectCar(); // Clears selectedCarGroup and removes button highlights
 
-                // Restaurar UI
+                // Restore UI
                 uiContainer.style.display = 'flex'; resetButton.classList.add('hidden'); betButton.classList.remove('hidden');
                 betAmountInput.disabled = false; betAmountInput.value = '';
-                 // Habilitar botones de coche
+                 // Enable car buttons
                 document.querySelectorAll('.car-button').forEach(btn => btn.disabled = false);
                 messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.';
                 updateBalanceDisplay(); checkBetButtonState();
 
-                // Resetear cámara
+                // Reset camera
                 camera.position.set(0, 25, 35); controls.target.set(0, 0, -50); controls.update();
 
             } catch (error) {
@@ -589,8 +727,9 @@
         }
 
 
-        // --- Bucle Principal de Animación/Renderizado ---
+        // --- Main Animation/Render Loop ---
         function animate() {
+            // ... (animate code - unchanged) ...
             requestAnimationFrame(animate);
             const deltaTime = clock.getDelta();
             try {
@@ -624,7 +763,7 @@
             } catch (error) { console.error("Error en el bucle de animación:", error); }
         }
 
-        // --- Iniciar la aplicación ---
+        // --- Start the application ---
         init();
 
     </script>

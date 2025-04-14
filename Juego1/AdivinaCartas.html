@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego de Cartas - Animación Deslizar y Girar</title>
+    <title>Juego de Cartas - Logros Integrados</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* --- Estilos (sin cambios, excepto la adición del botón si se hace con CSS puro) --- */
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#2d3748 0%,#1a202c 100%);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;color:#2d374d; position: relative;} /* Añadido position: relative para el botón absoluto */
+        /* --- Styles (mostly unchanged, ensure consistency) --- */
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#2d3748 0%,#1a202c 100%);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;color:#2d374d; position: relative;}
         h1{font-family:'Playfair Display',serif}
 
-        /* Estilo para el botón de salir (añadido) */
+        /* Exit button style */
         #exit-button {
             position: absolute;
-            top: 1rem; /* Ajusta según sea necesario */
-            right: 1rem; /* Ajusta según sea necesario */
-            z-index: 50; /* Asegura que esté sobre otros elementos si es necesario */
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
         }
 
-        /* --- Estructura y Estilos de Carta (Restaurada para Giro) --- */
+        /* --- Card Structure & Styles (Restored for Flip) --- */
         .card-container {
             display: inline-block;
             perspective: 1000px;
@@ -29,14 +29,14 @@
             width: 100px;
             height: 150px;
             vertical-align: top;
-            position: relative; /* Para el label y la perspectiva */
-            opacity: 0; /* Inicialmente invisible para animación de entrada */
+            position: relative;
+            opacity: 0; /* Initially invisible for entrance animation */
         }
-        /* Animación de entrada (deslizamiento) */
+        /* Entrance animation (slide) */
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(-80px) scale(0.9); /* Viene desde arriba */
+                transform: translateY(-80px) scale(0.9); /* Comes from top */
             }
             to {
                 opacity: 1;
@@ -47,7 +47,7 @@
             animation: slideIn 0.5s ease-out forwards;
         }
 
-        .card-container:hover .card-flipper { /* Efecto hover */
+        .card-container:hover .card-flipper { /* Hover effect */
              transform: translateY(-6px) scale(1.03) rotateY(var(--flipper-rotation, 0deg));
              box-shadow: 0 12px 24px rgba(0,0,0,.25),0 6px 12px rgba(0,0,0,.2);
         }
@@ -55,13 +55,13 @@
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.6s, box-shadow 0.25s ease-out; /* Duración del giro y hover */
+            transition: transform 0.6s, box-shadow 0.25s ease-out; /* Flip and hover duration */
             transform-style: preserve-3d;
-            transform: rotateY(var(--flipper-rotation, 0deg)); /* Variable para controlar giro */
+            transform: rotateY(var(--flipper-rotation, 0deg)); /* Variable to control flip */
             box-shadow: 0 8px 16px rgba(0,0,0,.2),0 4px 8px rgba(0,0,0,.15);
         }
         .card-flipper.is-flipped {
-            --flipper-rotation: 180deg; /* Activa el giro */
+            --flipper-rotation: 180deg; /* Activates the flip */
         }
         .card-face {
             position: absolute;
@@ -80,27 +80,27 @@
             user-select: none;
             overflow: hidden;
         }
-        .card-front { /* Anverso */
+        .card-front { /* Front face */
             background-color: #fff;
-            transform: rotateY(180deg); /* Oculto inicialmente */
+            transform: rotateY(180deg); /* Initially hidden */
             padding: 12px 8px;
         }
         .card-front.red { color: #e53e3e; }
         .card-front.black { color: #1a202c; }
-        .card-back-display { /* Dorso */
+        .card-back-display { /* Back face */
             background: linear-gradient(135deg, #4a5568, #2d3748);
             border: 3px solid #a0aec0;
             color: #a0aec0;
-            transform: rotateY(0deg); /* Visible inicialmente */
+            transform: rotateY(0deg); /* Initially visible */
         }
         .card-front .card-rank{font-size:2.25rem;line-height:1;align-self:flex-start;padding-left:6px; font-family:'Playfair Display',serif}
         .card-front .card-suit{font-size:3rem;line-height:1}
         .card-front .card-suit-bottom{font-size:1.75rem;align-self:flex-end;transform:rotate(180deg);padding-right:6px}
 
-        /* Estilo de la etiqueta de la carta */
+        /* Card label style */
         .card-label {
             position: absolute;
-            bottom: -24px; /* Ajustado: Posiciona 24px debajo del contenedor */
+            bottom: -24px; /* Adjusted: Position 24px below container */
             left: 0;
             right: 0;
             text-align: center;
@@ -111,7 +111,7 @@
             width: 100%;
             pointer-events: none;
         }
-        /* --- FIN Estilos Carta --- */
+        /* --- END Card Styles --- */
 
         button{transition:all .2s ease-in-out;cursor:pointer}
         button:disabled{opacity:.5;cursor:not-allowed}
@@ -123,8 +123,8 @@
         .message-error { background-color: #fff5f5; color: #c53030; border-color: #fed7d7; }
 
         #cards-area{
-            height: 280px; /* Altura fija */
-            width: 520px; /* Ancho fijo */
+            height: 280px; /* Fixed height */
+            width: 520px; /* Fixed width */
             margin-left: auto;
             margin-right: auto;
             background-color:#2f855a;
@@ -138,7 +138,7 @@
             padding: 1rem;
             padding-top: 4.5rem;
             position: relative;
-            overflow-y: hidden; /* Oculta el contenido vertical que desborde */
+            overflow-y: hidden; /* Hides vertical overflow */
         }
 
         #ingame-stats {
@@ -160,19 +160,17 @@
         @keyframes shake{0%,to{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
         .animate-shake{animation:shake .3s ease-in-out}
 
-        /* Animaciones Highlight (aplicadas al .card-front) */
-        @keyframes glowSuccess { 0%, 100% { box-shadow: 0 8px 16px rgba(0,0,0,.2), 0 4px 8px rgba(0,0,0,.15), 0 0 0 0 rgba(74, 222, 128, 0); } 50% { box-shadow: 0 10px 20px rgba(0,0,0,.25), 0 5px 10px rgba(0,0,0,.2), 0 0 15px 5px rgba(74, 222, 128, 0.7); } }
-        @keyframes glowError { 0%, 100% { box-shadow: 0 8px 16px rgba(0,0,0,.2), 0 4px 8px rgba(0,0,0,.15), 0 0 0 0 rgba(248, 113, 113, 0); } 50% { box-shadow: 0 10px 20px rgba(0,0,0,.25), 0 5px 10px rgba(0,0,0,.2), 0 0 15px 5px rgba(248, 113, 113, 0.7); } }
-        /* Aplicar al .card-front después del giro */
-        .card-front.card-highlight-success { animation: glowSuccessInternal 0.8s ease-in-out; }
-        .card-front.card-highlight-error { animation: glowErrorInternal 0.8s ease-in-out; }
+        /* Highlight Animations (applied to .card-front) */
         @keyframes glowSuccessInternal { 0%, 100% { box-shadow: inset 0 0 0 0 rgba(74, 222, 128, 0); } 50% { box-shadow: inset 0 0 10px 3px rgba(74, 222, 128, 0.6); } }
         @keyframes glowErrorInternal { 0%, 100% { box-shadow: inset 0 0 0 0 rgba(248, 113, 113, 0); } 50% { box-shadow: inset 0 0 10px 3px rgba(248, 113, 113, 0.6); } }
+        .card-front.card-highlight-success { animation: glowSuccessInternal 0.8s ease-in-out; }
+        .card-front.card-highlight-error { animation: glowErrorInternal 0.8s ease-in-out; }
 
-        /* Animación de salida (aplicada al .card-container) */
+        /* Exit animation (applied to .card-container) */
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px) scale(0.95); } }
-        .card-container.card-exit { animation-name: fadeOut; animation-duration: 0.4s; animation-timing-function: ease-in; animation-fill-mode: forwards; opacity: 1; /* Iniciar visible */ }
+        .card-container.card-exit { animation-name: fadeOut; animation-duration: 0.4s; animation-timing-function: ease-in; animation-fill-mode: forwards; opacity: 1; /* Start visible */ }
 
+        /* Range slider styles */
         input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #cbd5e0; border-radius: 5px; cursor: pointer; outline: none; transition: background 0.15s ease-in-out; }
         input[type=range]:hover { background: #a0aec0; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #4299e1; border-radius: 50%; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: background 0.15s ease-in-out; }
@@ -180,7 +178,7 @@
         input[type=range]::-moz-range-thumb { width: 20px; height: 20px; background: #4299e1; border-radius: 50%; cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: background 0.15s ease-in-out; }
         input[type=range]:hover::-moz-range-thumb { background: #2b6cb0; }
 
-        /* --- Estilos para Animación de Barajado --- */
+        /* --- Shuffle Animation Styles --- */
         #shuffle-animation {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
@@ -196,7 +194,7 @@
             visibility: visible;
             transition: opacity 0.3s ease-in-out;
         }
-        .card-back { /* Dorso para animación barajado */
+        .card-back { /* Back for shuffle animation */
             width: 80px;
             height: 120px;
             background: linear-gradient(135deg, #4a5568, #2d3748);
@@ -225,27 +223,25 @@
         #shuffle-animation .card-back:nth-child(5) { --tx-start: 120px;  --ty-start: -30px; --r-start: 15deg; --tx-mid: -100px;  --ty-mid: 0px;    --r-mid: 25deg; animation-delay: 0.2s; }
 
 
-        /* Media Query para Móviles */
+        /* Media Query for Mobiles */
         @media (max-width: 767px) {
-            /* Ajustar botón de salir en móvil */
+            /* Adjust exit button on mobile */
             #exit-button {
                 top: 0.5rem;
                 right: 0.5rem;
-                padding: 0.4rem 0.6rem; /* Hacerlo un poco más pequeño */
-                font-size: 0.8rem; /* Fuente más pequeña */
+                padding: 0.4rem 0.6rem; /* Make it slightly smaller */
+                font-size: 0.8rem; /* Smaller font */
             }
 
             .game-container { width: auto; max-width: 95%; padding: 1rem; padding-top: 3.5rem; }
             #cards-area {
                 padding-top: 5rem;
-                /* height: 260px; */ /* Eliminado para altura automática */
-                height: auto; /* Altura automática para ajustarse al contenido */
-                width: 100%; /* Ancho completo móvil */
+                height: auto; /* Auto height to fit content */
+                width: 100%; /* Full mobile width */
                 margin-left: 0;
                 margin-right: 0;
                 justify-content: center;
-                /* overflow-y: hidden; */ /* Eliminado para permitir crecimiento */
-                min-height: 260px; /* Mantenemos una altura mínima por estética */
+                min-height: 260px; /* Maintain minimum height for aesthetics */
             }
             #ingame-stats { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
             #round-controls .controls-container button { font-size: 0.9rem; padding: 0.4rem 0.8rem; }
@@ -253,19 +249,19 @@
             #round-controls .controls-container button[data-guess="♦"],
             #round-controls .controls-container button[data-guess="♣"],
             #round-controls .controls-container button[data-guess="♠"] { width: 3rem; height: 3rem; font-size: 1.75rem; padding: 0; }
-            /* Ajustar tamaño carta en móvil */
+            /* Adjust card size on mobile */
             .card-container { width: 85px; height: 128px; margin: 6px; }
             .card-front .card-rank { font-size: 1.8rem; }
             .card-front .card-suit { font-size: 2.5rem; }
             .card-front .card-suit-bottom { font-size: 1.4rem; }
-            .card-back-display { /* Estilos dorso si son necesarios */ }
+            .card-back-display { /* Back styles if needed */ }
             .card-label {
-                 bottom: -22px; /* Ajustar posición label en móvil también */
+                 bottom: -22px; /* Adjust label position on mobile too */
                  font-size: 0.8rem;
             }
-            /* Ajustar tamaño de animación barajado en móvil */
+            /* Adjust shuffle animation size on mobile */
             .card-back { width: 60px; height: 90px; }
-             /* Ajustar variables de animación para móvil si es necesario */
+             /* Adjust animation variables for mobile if needed */
             #shuffle-animation .card-back:nth-child(1) { --tx-start: -80px; --ty-start: -20px; --tx-mid: 40px; --ty-mid: 30px; }
             #shuffle-animation .card-back:nth-child(2) { --tx-start: -40px; --ty-start: 15px; --tx-mid: -20px; --ty-mid: -35px; }
             #shuffle-animation .card-back:nth-child(3) { --tx-start: 0px; --ty-start: 30px; --tx-mid: -50px; --ty-mid: 15px; }
@@ -348,8 +344,7 @@
     </div>
 
     <script>
-        // --- Script (sin cambios) ---
-        // --- Elementos del DOM ---
+        // --- DOM Elements ---
         const bettingSection = document.getElementById('betting-section');
         const gameSection = document.getElementById('game-section');
         const betAmountInput = document.getElementById('bet-amount');
@@ -374,13 +369,13 @@
         const betSliderValue = document.getElementById('bet-slider-value');
         const shuffleAnimationOverlay = document.getElementById('shuffle-animation');
 
-        // --- Estado del Juego ---
+        // --- Game State ---
         let deck = [];
         let currentBet = 0;
         let potentialWinnings = 0;
         let currentRound = 0;
-        let cardsOnTable = []; // Guarda los objetos { suit, rank, value, color }
-        let cardElementsOnTable = []; // Guarda referencias a los elementos DOM de las cartas
+        let cardsOnTable = []; // Stores { suit, rank, value, color } objects
+        let cardElementsOnTable = []; // Stores references to card DOM elements
         let gameOver = false;
         const STARTING_BALANCE = 5000;
         let playerBalance = STARTING_BALANCE;
@@ -390,10 +385,10 @@
         let nextGameIsGuided = false;
         let guidedGameInProgress = false;
 
-        // --- Estadísticas ---
+        // --- Stats ---
         let stats = { gamesPlayed: 0, gamesWon: 0, highestWin: 0, longestStreak: 0, maxBalance: STARTING_BALANCE };
 
-        // --- Constantes del Juego ---
+        // --- Game Constants ---
         const SUITS = ["♥", "♦", "♣", "♠"];
         const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
         const MIN_BET = 1;
@@ -401,13 +396,21 @@
         const ROUND_5_MULTIPLIER = 50;
         const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
         const STATS_LOCAL_STORAGE_KEY = 'cardGamePlayerStats_v3';
+        // <<< NEW: Achievement Key (must match Roulette's key) >>>
+        const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1';
         const SHUFFLE_ANIMATION_DURATION = 1400;
         const SLIDE_ANIMATION_DURATION = 500;
         const FLIP_ANIMATION_DURATION = 600;
         const HIGHLIGHT_DURATION = 800;
         const EXIT_ANIMATION_DURATION = 400;
 
-        // --- Funciones de Utilidad ---
+        // <<< NEW: Achievement Data (copied from Roulette) >>>
+        const achievementsData = [
+            { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 }
+        ];
+        let unlockedAchievements = []; // <<< NEW: Array for unlocked achievement IDs
+
+        // --- Utility Functions ---
         function getCardValue(rank) { if (rank === 'A') return 14; if (rank === 'K') return 13; if (rank === 'Q') return 12; if (rank === 'J') return 11; return parseInt(rank) || 0; }
         function getCardColor(suit) { return (suit === "♥" || suit === "♦") ? 'Red' : 'Black'; }
         function createDeck() { const newDeck = []; SUITS.forEach(suit => { RANKS.forEach(rank => { newDeck.push({ suit, rank, value: getCardValue(rank), color: getCardColor(suit) }); }); }); return newDeck; }
@@ -416,15 +419,139 @@
         function forceNextCard(conditionFn) { for (let i = deck.length - 1; i >= 0; i--) { if (conditionFn(deck[i])) { const forcedCard = deck.splice(i, 1)[0]; console.log(`Modo Guiado: Forzando carta ${forcedCard.rank}${forcedCard.suit}`); return forcedCard; } } console.warn("Modo Guiado: No se encontró carta forzada, sacando al azar."); return drawCard(); }
 
         // --- LocalStorage Functions ---
-        function loadGameData() { const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY); playerBalance = parseInt(savedBalance); if (isNaN(playerBalance) || playerBalance < 0) { playerBalance = STARTING_BALANCE; } const savedStats = localStorage.getItem(STATS_LOCAL_STORAGE_KEY); if (savedStats) { try { stats = JSON.parse(savedStats); stats.gamesPlayed = stats.gamesPlayed || 0; stats.gamesWon = stats.gamesWon || 0; stats.highestWin = stats.highestWin || 0; stats.longestStreak = stats.longestStreak || 0; stats.maxBalance = Math.max(stats.maxBalance || STARTING_BALANCE, playerBalance); } catch (e) { console.error("Error parsing stats", e); stats = { gamesPlayed: 0, gamesWon: 0, highestWin: 0, longestStreak: 0, maxBalance: playerBalance }; } } else { stats.maxBalance = playerBalance; } nextGameIsGuided = false; guidedGameInProgress = false; }
-        function saveGameData() { try { localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerBalance.toString()); localStorage.setItem(STATS_LOCAL_STORAGE_KEY, JSON.stringify(stats)); } catch (e) { console.error("Error saving data", e); showMessage("Error: No se pudo guardar el progreso.", "error"); } }
+        function loadGameData() {
+            // Load Balance
+            const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
+            playerBalance = parseInt(savedBalance);
+            if (isNaN(playerBalance) || playerBalance < 0) {
+                playerBalance = STARTING_BALANCE;
+            }
+            // Load Stats
+            const savedStats = localStorage.getItem(STATS_LOCAL_STORAGE_KEY);
+            if (savedStats) {
+                try {
+                    stats = JSON.parse(savedStats);
+                    stats.gamesPlayed = stats.gamesPlayed || 0;
+                    stats.gamesWon = stats.gamesWon || 0;
+                    stats.highestWin = stats.highestWin || 0;
+                    stats.longestStreak = stats.longestStreak || 0;
+                    stats.maxBalance = Math.max(stats.maxBalance || STARTING_BALANCE, playerBalance);
+                } catch (e) {
+                    console.error("Error parsing stats", e);
+                    stats = { gamesPlayed: 0, gamesWon: 0, highestWin: 0, longestStreak: 0, maxBalance: playerBalance };
+                }
+            } else {
+                stats.maxBalance = playerBalance;
+            }
+            // <<< NEW: Load Achievements >>>
+            loadUnlockedAchievements();
+            // Reset guided mode flags
+            nextGameIsGuided = false;
+            guidedGameInProgress = false;
+        }
 
-        // --- Funciones de Actualización de Estadísticas ---
+        function saveGameData() {
+            try {
+                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerBalance.toString());
+                localStorage.setItem(STATS_LOCAL_STORAGE_KEY, JSON.stringify(stats));
+                // <<< NEW: Save Achievements (although checkAndUnlockAchievements also saves) >>>
+                // saveUnlockedAchievements(); // It's safer to let checkAndUnlockAchievements handle saving
+            } catch (e) {
+                console.error("Error saving data", e);
+                showMessage("Error: No se pudo guardar el progreso.", "error");
+            }
+        }
+
+        // --- <<< NEW: Achievement Functions (copied from Roulette) >>> ---
+        function loadUnlockedAchievements() {
+            try {
+                const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                if (savedAchievements) {
+                    const parsedAchievements = JSON.parse(savedAchievements);
+                    if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
+                        unlockedAchievements = parsedAchievements;
+                    } else {
+                        console.warn("Invalid achievement format in localStorage. Resetting.");
+                        unlockedAchievements = [];
+                        localStorage.removeItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                    }
+                } else {
+                    unlockedAchievements = [];
+                }
+            } catch (error) {
+                console.error("Error loading achievements:", error);
+                unlockedAchievements = [];
+            }
+             console.log("Loaded achievements:", unlockedAchievements); // Debug log
+        }
+
+        function saveUnlockedAchievements() {
+            try {
+                localStorage.setItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY, JSON.stringify(unlockedAchievements));
+                 console.log("Saved achievements:", unlockedAchievements); // Debug log
+            } catch (error) {
+                console.error("Error saving achievements:", error);
+            }
+        }
+
+        /**
+         * Checks if any achievements are unlocked based on the current balance
+         * and adds their rewards. Updates localStorage for balance and achievements.
+         * Returns an object with details about newly unlocked achievements and rewards.
+         */
+        function checkAndUnlockAchievements() {
+            const newlyUnlocked = [];
+            let totalRewardAdded = 0;
+            let balanceChanged = false;
+            let achievementsChanged = false;
+
+            // Ensure the latest list is loaded
+            loadUnlockedAchievements();
+            const currentBalance = playerBalance; // Use the current global balance
+
+            achievementsData.forEach(ach => {
+                // Check if target is met and NOT already unlocked
+                if (currentBalance >= ach.target && !unlockedAchievements.includes(ach.id)) {
+                    console.log(`Unlocking achievement: ${ach.name} (Target: ${ach.target}, Reward: ${ach.reward})`);
+                    unlockedAchievements.push(ach.id); // Add ID to the list
+                    totalRewardAdded += ach.reward; // Sum the reward
+                    newlyUnlocked.push(ach); // Store the achievement object for messages, etc.
+                    achievementsChanged = true;
+                    balanceChanged = true;
+                }
+            });
+
+            // If achievements were unlocked, update balance and save everything
+            if (newlyUnlocked.length > 0) {
+                playerBalance += totalRewardAdded; // Update the global balance
+                console.log(`Total reward added: ${totalRewardAdded}. New balance: ${playerBalance}`);
+
+                // Save the new list of achievements and the updated balance
+                saveUnlockedAchievements();
+                try {
+                    localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerBalance.toString());
+                    console.log("Balance saved after achievement rewards:", playerBalance);
+                } catch (error) {
+                    console.error("Error saving balance after achievement rewards:", error);
+                }
+            }
+
+            return {
+                newlyUnlocked, // Array of newly unlocked achievement objects
+                balanceChanged,
+                achievementsChanged,
+                totalRewardAdded
+            };
+        }
+        // --- <<< END NEW: Achievement Functions >>> ---
+
+
+        // --- Stat Update Functions ---
         function updateMaxBalance() { if (playerBalance > stats.maxBalance) { stats.maxBalance = playerBalance; } }
         function updateLongestStreak() { if (currentGameStreak > stats.longestStreak) { stats.longestStreak = currentGameStreak; } }
         function endGameStatsUpdate(winAmount = 0, gameActuallyWon = false) { stats.gamesPlayed++; updateLongestStreak(); if (winAmount > stats.highestWin) { stats.highestWin = winAmount; } if (gameActuallyWon) { stats.gamesWon++; } currentGameStreak = 0; guidedGameInProgress = false; }
 
-        // --- Funciones de UI ---
+        // --- UI Functions ---
          function showMessage(text, type = 'info') {
             messageDiv.textContent = text;
             let baseClasses = "font-medium min-h-[60px] flex items-center justify-center p-4 rounded-lg border shadow-sm transition-opacity duration-300 ease-in-out ";
@@ -437,7 +564,7 @@
             });
         }
 
-        // --- Función createCardElement (Restaurada para Giro) ---
+        // --- createCardElement Function (Restored for Flip) ---
         function createCardElement(card, label = null) {
             const containerDiv = document.createElement('div');
             containerDiv.classList.add('card-container');
@@ -460,7 +587,7 @@
                 const labelDiv = document.createElement('div');
                 labelDiv.classList.add('card-label');
                 labelDiv.textContent = label;
-                containerDiv.appendChild(labelDiv); // Añadir label al container principal
+                containerDiv.appendChild(labelDiv); // Add label to main container
             }
 
             containerDiv.flipper = flipperDiv;
@@ -478,9 +605,9 @@
         function disableRoundButtons(disabled) { roundControls.querySelectorAll('button').forEach(btn => btn.disabled = disabled); }
         function displayStats() { statPlayed.textContent = stats.gamesPlayed; statWon.textContent = stats.gamesWon; statMaxWin.textContent = `${stats.highestWin} €`; statMaxStreak.textContent = stats.longestStreak; statMaxBalance.textContent = `${stats.maxBalance} €`; }
 
-        // --- Función `updateUI` Principal ---
+        // --- Main `updateUI` Function ---
         function updateUI() {
-            playerBalanceDisplaySpan.textContent = playerBalance;
+            playerBalanceDisplaySpan.textContent = playerBalance.toLocaleString('es-ES'); // Format balance
             const maxPossibleBet = Math.max(MIN_BET, playerBalance);
             const noBalance = playerBalance < MIN_BET;
 
@@ -494,9 +621,9 @@
             } else if (betAmountInput) { betAmountInput.max = maxPossibleBet; if (currentRound === 0) { betAmountInput.value = Math.max(MIN_BET, Math.min(lastBetAmount, maxPossibleBet)); } betAmountInput.disabled = noBalance; startGameBtn.disabled = noBalance; }
 
             currentRoundDisplay.textContent = currentRound === 5 ? '5 (Final)' : (currentRound > 0 ? `${currentRound}` : '-');
-            initialBetDisplay.textContent = `${currentBet} €`;
+            initialBetDisplay.textContent = `${currentBet.toLocaleString('es-ES')} €`; // Format bet
 
-            // --- Lógica de Controles de Ronda ---
+            // --- Round Control Logic ---
             roundControls.innerHTML = '';
              if(messageDiv.classList.contains('visible')) {
                 messageDiv.style.opacity = 0;
@@ -516,7 +643,7 @@
                      case 3: const minV=Math.min(prevCard1Value, prevCard2Value); const maxV=Math.max(prevCard1Value, prevCard2Value); const minR=RANKS[minV - 2] || '?'; const maxR=RANKS[maxV - 2] || '?'; controlsHtml=createRound3Controls(); messageText=(prevCard1Value === prevCard2Value) ? `Ronda 3: Iguales (${previousCardRank}). Elige 'Fuera'.` : `Ronda 3: ¿Dentro o Fuera (${minR} - ${maxR})?`; break;
                      case 4: controlsHtml = createRound4Controls(); messageText = "Ronda 4: Adivina el Palo"; break;
                  }
-                 const retireButtonHtml = createRoundButton(`Retirarse (${currentRetireAmount} €)`, "Retire", "bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500", "retire-btn");
+                 const retireButtonHtml = createRoundButton(`Retirarse (${currentRetireAmount.toLocaleString('es-ES')} €)`, "Retire", "bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500", "retire-btn");
                  roundControls.innerHTML = `<p class="text-lg font-semibold text-gray-700 mb-3">${messageText.split(':')[1]?.trim() || messageText}</p><div class="controls-container">${controlsHtml}${retireButtonHtml}</div>`;
                  roundControls.querySelectorAll('button[data-guess]:not(.retire-btn)').forEach(btn => btn.addEventListener('click', handleGuess));
                  const retireBtn = roundControls.querySelector('.retire-btn');
@@ -530,7 +657,7 @@
                  showMessage("Ronda 5: ¡Duelo Final!", "info");
             } else if (inRound5ChoicePhase) {
                 const winningsR4 = currentBet * CUMULATIVE_ROUND_MULTIPLIERS[4]; const grandPrizeR5 = currentBet * ROUND_5_MULTIPLIER;
-                roundControls.innerHTML = `<p class="text-lg font-semibold text-gray-700 mb-3">Ronda Final: ¡Todo o Nada!</p><div class="controls-container">${createRoundButton(`Cobrar ${winningsR4} €`, 'collect', 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500', 'r5-choice-btn', null, 'choice')}${createRoundButton(`¡Arriesgar TODO por ${grandPrizeR5} €!`, 'gamble', 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500', 'r5-choice-btn', null, 'choice')}</div>`;
+                roundControls.innerHTML = `<p class="text-lg font-semibold text-gray-700 mb-3">Ronda Final: ¡Todo o Nada!</p><div class="controls-container">${createRoundButton(`Cobrar ${winningsR4.toLocaleString('es-ES')} €`, 'collect', 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500', 'r5-choice-btn', null, 'choice')}${createRoundButton(`¡Arriesgar TODO por ${grandPrizeR5.toLocaleString('es-ES')} €!`, 'gamble', 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500', 'r5-choice-btn', null, 'choice')}</div>`;
                 roundControls.querySelectorAll('.r5-choice-btn').forEach(btn => btn.addEventListener('click', handleRound5Choice));
                  showMessage("¡Decisión Final!", "info");
             } else {
@@ -550,7 +677,7 @@
             displayStats();
         }
 
-        // --- Lógica Principal del Juego ---
+        // --- Main Game Logic ---
         function startGame() {
             const bet = parseInt(betAmountInput.value);
             if (isNaN(bet) || bet < MIN_BET) { showMessage(`Apuesta inválida. Mínimo ${MIN_BET} €.`, "error"); betAmountInput.focus(); betAmountInput.classList.add('border-red-500', 'animate-shake'); setTimeout(() => betAmountInput.classList.remove('border-red-500', 'animate-shake'), 600); return; }
@@ -572,7 +699,9 @@
                     currentBet = bet; potentialWinnings = bet; currentRound = 1;
                     cardsOnTable = []; cardElementsOnTable = [];
                     gameOver = false; inRound5ChoicePhase = false; currentGameStreak = 0;
-                    playerBalance -= currentBet; updateMaxBalance();
+                    playerBalance -= currentBet;
+                    // DO NOT save balance here yet, achievements might add rewards
+                    updateMaxBalance(); // Update max balance stat *before* potential achievement rewards
                     if (nextGameIsGuided) { guidedGameInProgress = true; nextGameIsGuided = false; console.log("Modo guiado iniciado."); }
                     else { guidedGameInProgress = false; }
 
@@ -583,7 +712,7 @@
         }
 
 
-        // --- Función handleGuess (Modificada para Deslizar y Girar) ---
+        // --- handleGuess Function (Modified for Slide & Flip & Achievements) ---
         function handleGuess(event) {
             if (gameOver || inRound5ChoicePhase) return;
             const targetButton = event.target.closest('button');
@@ -593,6 +722,7 @@
             const guess = targetButton.dataset.guess;
             let drawnCard = null;
 
+            // Guided mode logic (unchanged)
             if (guidedGameInProgress) {
                  console.log(`Modo Guiado activo para Ronda ${currentRound}`);
                  try {
@@ -616,21 +746,22 @@
             cardsArea.appendChild(cardElementWrapper);
             cardElementsOnTable.push(cardElementWrapper);
 
-            // 1. Animar Deslizamiento
+            // 1. Animate Slide
             requestAnimationFrame(() => {
                 cardElementWrapper.classList.add('card-enter-active');
             });
 
-            // 2. Esperar fin de deslizamiento y Girar
+            // 2. Wait for slide end and Flip
             setTimeout(() => {
                 flipper.classList.add('is-flipped');
 
-                // 3. Esperar fin del giro y Evaluar
+                // 3. Wait for flip end and Evaluate
                 setTimeout(() => {
                     let correctGuess = false;
                     const lastCardOnTable = cardsOnTable.length > 0 ? cardsOnTable[cardsOnTable.length - 1] : null;
                     const secondLastCardOnTable = cardsOnTable.length > 1 ? cardsOnTable[cardsOnTable.length - 2] : null;
 
+                    // Evaluation logic (unchanged)
                     switch (currentRound) {
                         case 1: correctGuess = (drawnCard.color === guess); break;
                         case 2: const pV2 = lastCardOnTable?.value ?? 0; const cV2=drawnCard.value; correctGuess = (guess === 'Higher') ? cV2 > pV2 : cV2 < pV2; if (cV2 === pV2) correctGuess = false; break;
@@ -641,7 +772,7 @@
                     cardsOnTable.push(drawnCard);
                     if (guidedGameInProgress && !correctGuess) { guidedGameInProgress = false; console.log("Modo Guiado desactivado por fallo.");}
 
-                    // 4. Aplicar Highlight y Continuar
+                    // 4. Apply Highlight and Continue
                     if (correctGuess) {
                         currentGameStreak++; updateLongestStreak();
                         potentialWinnings = currentBet * CUMULATIVE_ROUND_MULTIPLIERS[currentRound];
@@ -650,7 +781,7 @@
 
                         if (currentRound === 4) {
                             inRound5ChoicePhase = true;
-                            showMessage(`¡Ronda 4 SUPERADA! Acumulado: ${potentialWinnings} €. ¿Arriesgar?`, "info");
+                            showMessage(`¡Ronda 4 SUPERADA! Acumulado: ${potentialWinnings.toLocaleString('es-ES')} €. ¿Arriesgar?`, "info");
                             updateUI();
                         } else {
                             currentRound++;
@@ -662,8 +793,16 @@
                         cardFront.classList.add('card-highlight-error');
                         setTimeout(() => cardFront.classList.remove('card-highlight-error'), HIGHLIGHT_DURATION);
                         endGameStatsUpdate(0, false);
-                        showMessage(`Incorrecto: Salió ${drawnCard.rank}${drawnCard.suit}. Perdiste ${currentBet} €. Saldo: ${playerBalance} €`, "error");
-                        potentialWinnings = 0; gameOver = true; guidedGameInProgress = false; saveGameData(); updateUI();
+                        // <<< MODIFIED: Check achievements even on loss, as balance might still meet a target >>>
+                        const achievementResult = checkAndUnlockAchievements(); // Check achievements
+                        let lossMessage = `Incorrecto: Salió ${drawnCard.rank}${drawnCard.suit}. Perdiste ${currentBet.toLocaleString('es-ES')} €. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
+                        if (achievementResult.newlyUnlocked.length > 0) {
+                             lossMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                        }
+                        showMessage(lossMessage, "error");
+                        potentialWinnings = 0; gameOver = true; guidedGameInProgress = false;
+                        // saveGameData(); // Achievement check already saves balance
+                        updateUI();
                     }
 
                 }, FLIP_ANIMATION_DURATION + 50);
@@ -672,7 +811,7 @@
         }
 
 
-        // --- Funciones Ronda 5 (Modificada para Deslizar y Girar) ---
+        // --- Round 5 Functions (Modified for Slide & Flip & Achievements) ---
         function handleRound5Choice(event) {
             if (!inRound5ChoicePhase) return;
             const targetButton = event.target.closest('button');
@@ -682,9 +821,21 @@
             inRound5ChoicePhase = false;
             if (choice === 'collect') {
                 const winningsR4 = currentBet * CUMULATIVE_ROUND_MULTIPLIERS[4];
-                playerBalance += winningsR4; potentialWinnings = winningsR4; updateMaxBalance(); endGameStatsUpdate(winningsR4, true);
-                showMessage(`¡Felicidades! Cobraste ${winningsR4} €. Saldo final: ${playerBalance} €`, "success");
-                gameOver = true; guidedGameInProgress = false; saveGameData(); updateUI();
+                playerBalance += winningsR4; // Add winnings first
+                potentialWinnings = winningsR4;
+                // <<< NEW: Check achievements AFTER adding winnings >>>
+                const achievementResult = checkAndUnlockAchievements();
+                updateMaxBalance(); // Update max balance stat *after* potential rewards
+                endGameStatsUpdate(winningsR4, true); // Log game win stat
+
+                let successMessage = `¡Felicidades! Cobraste ${winningsR4.toLocaleString('es-ES')} €. Saldo final: ${playerBalance.toLocaleString('es-ES')} €`;
+                 if (achievementResult.newlyUnlocked.length > 0) {
+                     successMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                 }
+                showMessage(successMessage, "success");
+                gameOver = true; guidedGameInProgress = false;
+                // saveGameData(); // Achievement check already saves balance
+                updateUI();
             } else if (choice === 'gamble') {
                 startRound5();
             }
@@ -708,16 +859,29 @@
                 cardsOnTable = [];
                 cardElementsOnTable = [];
 
-                if (deck.length < 2) { const wR4=currentBet*CUMULATIVE_ROUND_MULTIPLIERS[4]; showMessage("Error: No quedan cartas. Cobrando R4.", "error"); potentialWinnings=wR4;playerBalance+=potentialWinnings;updateMaxBalance();endGameStatsUpdate(potentialWinnings, true);gameOver=true;guidedGameInProgress=false;saveGameData();updateUI(); return; }
+                if (deck.length < 2) {
+                    const wR4=currentBet*CUMULATIVE_ROUND_MULTIPLIERS[4];
+                    showMessage("Error: No quedan cartas. Cobrando R4.", "error");
+                    potentialWinnings=wR4;
+                    playerBalance+=potentialWinnings; // Add winnings
+                    // <<< NEW: Check achievements >>>
+                    checkAndUnlockAchievements();
+                    updateMaxBalance();
+                    endGameStatsUpdate(potentialWinnings, true);
+                    gameOver=true; guidedGameInProgress=false;
+                    // saveGameData(); // Achievement check saves
+                    updateUI();
+                    return;
+                }
 
                 const playerCard = drawCard(); const dealerCard = drawCard();
-                const playerCardElementWrapper = createCardElement(playerCard, "Jugador"); // Cambiado label
-                const dealerCardElementWrapper = createCardElement(dealerCard, "Banquero"); // Cambiado label
+                const playerCardElementWrapper = createCardElement(playerCard, "Jugador");
+                const dealerCardElementWrapper = createCardElement(dealerCard, "Banquero");
                 const playerFlipper = playerCardElementWrapper.flipper; const dealerFlipper = dealerCardElementWrapper.flipper;
                 const playerFront = playerCardElementWrapper.cardFront; const dealerFront = dealerCardElementWrapper.cardFront;
                 cardsArea.appendChild(playerCardElementWrapper); cardsArea.appendChild(dealerCardElementWrapper);
 
-                // 1. Animar Deslizamiento (con stagger)
+                // 1. Animate Slide (with stagger)
                 let slideDelay = 0;
                 [playerCardElementWrapper, dealerCardElementWrapper].forEach(el => {
                     setTimeout(() => {
@@ -728,7 +892,7 @@
                     slideDelay += 150;
                 });
 
-                // 2. Esperar fin de deslizamiento y Girar (con stagger)
+                // 2. Wait for slide end and Flip (with stagger)
                 let flipDelay = SLIDE_ANIMATION_DURATION + 50;
                 [playerFlipper, dealerFlipper].forEach(flipper => {
                      setTimeout(() => {
@@ -737,29 +901,57 @@
                      flipDelay += 150;
                 });
 
-                // 3. Esperar fin del último giro y Evaluar/Highlight
+                // 3. Wait for last flip end and Evaluate/Highlight
                 const timeUntilEvaluation = flipDelay + FLIP_ANIMATION_DURATION;
                 setTimeout(() => {
                     const playerValue = playerCard.value; const dealerValue = dealerCard.value; const winR5 = playerValue > dealerValue;
                     let finalMessage = ""; let messageType = "info";
+                    let achievementResult = { newlyUnlocked: [], totalRewardAdded: 0 }; // Default
+
                     if (winR5) {
-                        const grandPrize = currentBet * ROUND_5_MULTIPLIER; playerBalance += grandPrize; potentialWinnings = grandPrize; updateMaxBalance(); endGameStatsUpdate(grandPrize, true);
-                        finalMessage = `¡CORTE GANADOR! (${playerCard.rank}${playerCard.suit} > ${dealerCard.rank}${dealerCard.suit}). ¡Premio gordo de ${grandPrize} €! Saldo: ${playerBalance} €`; messageType = "success";
+                        const grandPrize = currentBet * ROUND_5_MULTIPLIER;
+                        playerBalance += grandPrize; // Add winnings
+                        potentialWinnings = grandPrize;
+                        // <<< NEW: Check achievements AFTER adding winnings >>>
+                        achievementResult = checkAndUnlockAchievements();
+                        updateMaxBalance(); // Update max balance stat *after* potential rewards
+                        endGameStatsUpdate(grandPrize, true); // Log game win stat
+
+                        finalMessage = `¡CORTE GANADOR! (${playerCard.rank}${playerCard.suit} > ${dealerCard.rank}${dealerCard.suit}). ¡Premio gordo de ${grandPrize.toLocaleString('es-ES')} €! Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
+                        messageType = "success";
                         playerFront.classList.add('card-highlight-success'); dealerFront.classList.add('card-highlight-error');
                     } else {
-                        endGameStatsUpdate(0, false); potentialWinnings = 0; const reason = playerValue === dealerValue ? `¡Empate!` : `${playerCard.rank}${playerCard.suit} no supera a ${dealerCard.rank}${dealerCard.suit}.`;
-                        finalMessage = `¡Fin del juego! ${reason} Perdiste ${currentBet} €. Saldo: ${playerBalance} €`; messageType = "error";
+                        endGameStatsUpdate(0, false);
+                        potentialWinnings = 0;
+                        // <<< NEW: Check achievements even on loss >>>
+                        achievementResult = checkAndUnlockAchievements();
+                        updateMaxBalance(); // Update max balance stat *after* potential rewards
+
+                        const reason = playerValue === dealerValue ? `¡Empate!` : `${playerCard.rank}${playerCard.suit} no supera a ${dealerCard.rank}${dealerCard.suit}.`;
+                        finalMessage = `¡Fin del juego! ${reason} Perdiste ${currentBet.toLocaleString('es-ES')} €. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
+                        messageType = "error";
                         playerFront.classList.add('card-highlight-error'); if (playerValue < dealerValue) { dealerFront.classList.add('card-highlight-success'); }
                     }
+
+                     // <<< NEW: Append achievement message if any >>>
+                     if (achievementResult.newlyUnlocked.length > 0) {
+                         finalMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                         // Ensure message type reflects win if only achievement was gained
+                         if (messageType === 'error' && achievementResult.totalRewardAdded > 0) messageType = 'info';
+                         else if (messageType !== 'success') messageType = 'success';
+                     }
+
                     setTimeout(() => { playerFront.classList.remove('card-highlight-success', 'card-highlight-error'); dealerFront.classList.remove('card-highlight-success', 'card-highlight-error'); }, HIGHLIGHT_DURATION);
-                    gameOver = true; guidedGameInProgress = false; showMessage(finalMessage, messageType); saveGameData(); updateUI();
+                    gameOver = true; guidedGameInProgress = false; showMessage(finalMessage, messageType);
+                    // saveGameData(); // Achievement check already saves balance
+                    updateUI();
                 }, timeUntilEvaluation);
 
             }, oldCardElements.length > 0 ? EXIT_ANIMATION_DURATION : 0);
         }
 
 
-        // --- handleRetire y resetGame (Modificados para usar .card-container) ---
+        // --- handleRetire and resetGame (Modified for .card-container & Achievements) ---
         function handleRetire(event) {
             if (gameOver || currentRound === 0 || inRound5ChoicePhase) return;
             const targetButton = event.target.closest('button'); if (!targetButton || targetButton.disabled) return;
@@ -769,8 +961,33 @@
             cardElements.forEach(el => el.classList.add('card-exit'));
 
             setTimeout(() => {
-                if (winningsToCollect >= currentBet) { playerBalance += winningsToCollect; potentialWinnings = winningsToCollect; updateMaxBalance(); endGameStatsUpdate(winningsToCollect, false); showMessage(`Te retiras. Cobras ${winningsToCollect} €. Saldo: ${playerBalance} €`, "success"); saveGameData(); }
-                else { endGameStatsUpdate(0, false); showMessage(`Error al retirar. Saldo: ${playerBalance} €`, "error"); saveGameData(); }
+                let achievementResult = { newlyUnlocked: [], totalRewardAdded: 0 };
+                if (winningsToCollect >= currentBet) {
+                    playerBalance += winningsToCollect; // Add winnings
+                    potentialWinnings = winningsToCollect;
+                    // <<< NEW: Check achievements >>>
+                    achievementResult = checkAndUnlockAchievements();
+                    updateMaxBalance(); // Update max balance stat *after* potential rewards
+                    endGameStatsUpdate(winningsToCollect, false); // Not a full game win, but record winnings
+
+                    let retireMessage = `Te retiras. Cobras ${winningsToCollect.toLocaleString('es-ES')} €. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
+                    if (achievementResult.newlyUnlocked.length > 0) {
+                         retireMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                    }
+                    showMessage(retireMessage, "success");
+                    // saveGameData(); // Achievement check saves
+                } else {
+                    endGameStatsUpdate(0, false);
+                    // <<< NEW: Check achievements even if retiring with 0 (shouldn't happen with current logic, but safe) >>>
+                    achievementResult = checkAndUnlockAchievements();
+                    updateMaxBalance();
+                    let errorMessage = `Error al retirar. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
+                    if (achievementResult.newlyUnlocked.length > 0) {
+                         errorMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                    }
+                    showMessage(errorMessage, "error");
+                    // saveGameData(); // Achievement check saves
+                }
                 gameOver = true; guidedGameInProgress = false;
                 cardElements.forEach(el => el.remove());
                 cardsOnTable = []; cardElementsOnTable = [];
@@ -794,21 +1011,45 @@
             }, cardElements.length > 0 ? EXIT_ANIMATION_DURATION : 0);
         }
 
-        // --- Event Listeners Estáticos ---
+        // --- Static Event Listeners ---
         startGameBtn.addEventListener('click', startGame);
         newGameBtn.addEventListener('click', resetGame);
         getFundsBtn.addEventListener('click', () => { if (playerBalance < MIN_BET) { playerBalance = STARTING_BALANCE; nextGameIsGuided = true; updateMaxBalance(); saveGameData(); showMessage("¡Saldo restaurado! La próxima partida será guiada para ayudarte.", "success"); updateUI(); } });
         toggleStatsBtn.addEventListener('click', () => { statsSection.classList.toggle('hidden'); toggleStatsBtn.textContent = statsSection.classList.contains('hidden') ? '⚙️' : '❌'; });
         playerBalanceDisplayContainer.addEventListener('dblclick', () => { if (currentRound === 0 && !gameOver) { nextGameIsGuided = true; console.log("Modo guiado secreto activado."); playerBalanceDisplayContainer.style.transition = 'transform 0.1s ease-in-out'; playerBalanceDisplayContainer.style.transform = 'scale(1.05)'; setTimeout(() => { playerBalanceDisplayContainer.style.transform = 'scale(1)'; }, 100); } });
 
-        // --- Event Listeners para Sincronización Slider/Input ---
+        // --- Event Listeners for Slider/Input Sync ---
          if (betSlider && betAmountInput && betSliderValue) {
              betSlider.addEventListener('input', () => { const value = betSlider.value; betAmountInput.value = value; betSliderValue.textContent = `${value} €`; });
              betAmountInput.addEventListener('input', () => { let value = parseInt(betAmountInput.value); const min = parseInt(betSlider.min); const max = parseInt(betSlider.max); if (isNaN(value)) value = min; if (value < min) value = min; if (value > max) value = max; betSlider.value = value; betSliderValue.textContent = `${value} €`; });
              betAmountInput.addEventListener('change', () => { let value = parseInt(betAmountInput.value); const min = parseInt(betSlider.min); const max = parseInt(betSlider.max); if (isNaN(value) || value < min) { value = min; } else if (value > max) { value = max; } betAmountInput.value = value; betSlider.value = value; betSliderValue.textContent = `${value} €`; lastBetAmount = value; });
          }
 
-        // --- Inicialización ---
+        // <<< NEW: Event Listeners for External Storage/Focus Updates >>>
+        window.addEventListener('storage', (event) => {
+            if (event.key === BALANCE_LOCAL_STORAGE_KEY) {
+                console.log('Balance changed externally. Reloading.');
+                loadGameData(); // Reloads balance, stats, and achievements
+                updateUI();
+            }
+            if (event.key === STATS_LOCAL_STORAGE_KEY) {
+                console.log('Stats changed externally. Reloading.');
+                loadGameData(); // Reloads balance, stats, and achievements
+                updateUI();
+            }
+             if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
+                 console.log('Achievements changed externally. Reloading.');
+                 loadUnlockedAchievements(); // Just reload achievements
+                 // No need to updateUI unless balance changed, which would trigger the other listener
+             }
+        });
+        window.addEventListener('focus', () => {
+            console.log('Window focused, reloading game data.');
+            loadGameData(); // Reloads balance, stats, and achievements
+            updateUI();
+        });
+
+        // --- Initialization ---
         loadGameData();
         updateUI();
 

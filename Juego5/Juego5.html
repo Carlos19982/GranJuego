@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blackjack Moderno</title>
+    <title>Blackjack Moderno - Logros Integrados</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos CSS del Juego */
+        /* --- Styles (mostly unchanged) --- */
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(to bottom right, #104f2e, #062f1c);
@@ -21,20 +21,19 @@
             min-height: 100vh;
             padding: 20px;
             overflow-x: hidden;
-            /* Evitar selección de texto */
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            position: relative; /* Añadido para posicionar botón salir */
+            position: relative;
         }
 
-        /* Estilo para el botón de salir (añadido) */
+        /* Exit button style */
         #exit-button-blackjack {
             position: absolute;
-            top: 1rem; /* 16px */
-            right: 1rem; /* 16px */
-            z-index: 101; /* Encima de la animación de barajado */
+            top: 1rem;
+            right: 1rem;
+            z-index: 101;
         }
 
         .game-container {
@@ -191,11 +190,11 @@
             font-size: 16px;
             margin-right: 10px;
         }
-        /* Color original de la apuesta */
+        /* Original bet color */
         #player-money, #current-bet-display {
             font-weight: bold;
-            color: #fefcbf; /* Amarillo pálido */
-            transition: color 0.3s ease-in-out; /* Transición suave de color */
+            color: #fefcbf; /* Pale yellow */
+            transition: color 0.3s ease-in-out; /* Smooth color transition */
         }
         #deck-info {
             margin-top: 10px;
@@ -203,7 +202,7 @@
             color: #94a3b8;
         }
 
-        /* --- Estilos para Animación de Barajado --- */
+        /* --- Shuffle Animation Styles --- */
         #shuffle-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out, visibility 0s linear 0.3s; overflow: hidden; }
         #shuffle-animation.visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease-in-out; }
         .card-back { width: 80px; height: 120px; background: linear-gradient(135deg, #4a5568, #2d3748); border: 3px solid #a0aec0; border-radius: 8px; position: absolute; box-shadow: 0 4px 8px rgba(0,0,0,.3); transform-origin: center center; opacity: 1; visibility: visible; }
@@ -215,12 +214,12 @@
         #shuffle-animation .card-back:nth-child(4) { --tx-start: 60px;   --ty-start: 20px;  --r-start: 5deg;   --tx-mid: 90px;   --ty-mid: -30px;  --r-mid: -20deg; animation-delay: 0.15s; }
         #shuffle-animation .card-back:nth-child(5) { --tx-start: 120px;  --ty-start: -30px; --r-start: 15deg;  --tx-mid: -100px; --ty-mid: 0px;    --r-mid: 25deg; animation-delay: 0.2s; }
          @media (max-width: 767px) {
-             /* Ajustar botón salir en móvil */
+             /* Adjust exit button on mobile */
              #exit-button-blackjack {
                  top: 0.5rem;
                  right: 0.5rem;
-                 padding: 0.4rem 0.6rem; /* Hacerlo un poco más pequeño */
-                 font-size: 0.8rem; /* Fuente más pequeña */
+                 padding: 0.4rem 0.6rem; /* Make it slightly smaller */
+                 font-size: 0.8rem; /* Smaller font */
              }
              .card-back { width: 60px; height: 90px; }
              #shuffle-animation .card-back:nth-child(1) { --tx-start: -80px; --ty-start: -20px; --tx-mid: 40px; --ty-mid: 30px; }
@@ -271,13 +270,15 @@
     </div>
 
     <script>
-        // --- Constantes y Variables Globales ---
+        // --- Constants and Global Variables ---
         const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
+        // <<< NEW: Achievement Key >>>
+        const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1';
         const DEFAULT_INITIAL_BALANCE = 1000;
         const MIN_BET = 10;
         const SHUFFLE_ANIMATION_DURATION_MS = 1500;
-        const CHEAT_FEEDBACK_COLOR = '#22c55e'; // Verde para feedback
-        const ORIGINAL_BET_COLOR = '#fefcbf'; // Amarillo pálido original
+        const CHEAT_FEEDBACK_COLOR = '#22c55e'; // Green for feedback
+        const ORIGINAL_BET_COLOR = '#fefcbf'; // Original pale yellow
 
         let deck = [];
         let playerCards = []; let dealerCards = [];
@@ -286,9 +287,15 @@
         let hiddenCard = null; let canHit = false;
         let playerMoney = DEFAULT_INITIAL_BALANCE; let currentBet = 0;
         let cheatModeActive = false;
-        let cheatFeedbackTimeout = null; // Para controlar el temporizador del color
+        let cheatFeedbackTimeout = null; // To control the color timer
 
-        // --- Elementos del DOM ---
+        // <<< NEW: Achievement Data >>>
+        const achievementsData = [
+            { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 }
+        ];
+        let unlockedAchievements = []; // <<< NEW: Array for unlocked achievement IDs
+
+        // --- DOM Elements ---
         const dealerCardsElement = document.getElementById('dealer-cards');
         const playerCardsElement = document.getElementById('player-cards');
         const dealerScoreElement = document.getElementById('dealer-score');
@@ -304,42 +311,249 @@
         const placeBetButton = document.getElementById('place-bet-button');
         const playerMoneyElement = document.getElementById('player-money');
         const playerMoneyContainer = document.getElementById('player-money-container');
-        const currentBetDisplay = document.getElementById('current-bet-display'); // Referencia al span del valor de la apuesta
+        const currentBetDisplay = document.getElementById('current-bet-display'); // Reference to the bet value span
         const deckInfoElement = document.getElementById('deck-info');
         const shuffleAnimationOverlay = document.getElementById('shuffle-animation');
 
-        // --- Definición de la Baraja ---
+        // --- Deck Definition ---
         const suits = ["hearts", "diamonds", "clubs", "spades"];
         const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
         const suitSymbols = { "hearts": "♥", "diamonds": "♦", "clubs": "♣", "spades": "♠" };
 
-        // --- Funciones de Gestión del Dinero (LocalStorage) ---
-        function loadPlayerMoney() { try { const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY); if (savedBalance !== null) { const parsedBalance = parseInt(savedBalance); if (!isNaN(parsedBalance)) { return parsedBalance; } else { console.warn('Saldo guardado inválido, usando defecto.'); localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_INITIAL_BALANCE.toString()); return DEFAULT_INITIAL_BALANCE; } } else { console.log('No se encontró saldo, usando defecto y guardándolo.'); localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_INITIAL_BALANCE.toString()); return DEFAULT_INITIAL_BALANCE; } } catch (error) { console.error("Error al leer/guardar saldo:", error); return DEFAULT_INITIAL_BALANCE; } }
-        function updatePlayerMoney(newBalance) { try { playerMoney = newBalance; localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, newBalance.toString()); playerMoneyElement.textContent = newBalance; betInput.max = newBalance; console.log(`Saldo actualizado a: ${newBalance}`); } catch (error) { console.error("Error al actualizar el saldo:", error); } }
+        // --- Money Management Functions (LocalStorage) ---
+        function loadPlayerMoney() {
+            try {
+                const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
+                if (savedBalance !== null) {
+                    const parsedBalance = parseInt(savedBalance);
+                    if (!isNaN(parsedBalance)) {
+                        return parsedBalance;
+                    } else {
+                        console.warn('Saldo guardado inválido, usando defecto.');
+                        localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_INITIAL_BALANCE.toString());
+                        return DEFAULT_INITIAL_BALANCE;
+                    }
+                } else {
+                    console.log('No se encontró saldo, usando defecto y guardándolo.');
+                    localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_INITIAL_BALANCE.toString());
+                    return DEFAULT_INITIAL_BALANCE;
+                }
+            } catch (error) {
+                console.error("Error al leer/guardar saldo:", error);
+                return DEFAULT_INITIAL_BALANCE;
+            }
+        }
+        // MODIFIED: updatePlayerMoney only updates the variable and UI, saving is handled elsewhere (e.g., by achievements)
+        function updatePlayerMoneyDisplay() {
+             try {
+                 playerMoneyElement.textContent = playerMoney.toLocaleString('es-ES'); // Format balance
+                 betInput.max = playerMoney;
+                 console.log(`UI de Saldo actualizada a: ${playerMoney}`);
+             } catch (error) {
+                 console.error("Error al actualizar la UI del saldo:", error);
+             }
+         }
 
-        // --- Funciones del Juego ---
+        // --- <<< NEW: Achievement Functions (copied) >>> ---
+        function loadUnlockedAchievements() {
+            try {
+                const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                if (savedAchievements) {
+                    const parsedAchievements = JSON.parse(savedAchievements);
+                    if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
+                        unlockedAchievements = parsedAchievements;
+                    } else {
+                        console.warn("Invalid achievement format in localStorage. Resetting.");
+                        unlockedAchievements = [];
+                        localStorage.removeItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                    }
+                } else {
+                    unlockedAchievements = [];
+                }
+            } catch (error) {
+                console.error("Error loading achievements:", error);
+                unlockedAchievements = [];
+            }
+             console.log("Loaded achievements:", unlockedAchievements);
+        }
+
+        function saveUnlockedAchievements() {
+            try {
+                localStorage.setItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY, JSON.stringify(unlockedAchievements));
+                 console.log("Saved achievements:", unlockedAchievements);
+            } catch (error) {
+                console.error("Error saving achievements:", error);
+            }
+        }
+
+        /**
+         * Checks achievements, adds rewards, and saves balance/achievements.
+         * Returns details about newly unlocked achievements.
+         */
+        function checkAndUnlockAchievements() {
+            const newlyUnlocked = [];
+            let totalRewardAdded = 0;
+            let balanceChanged = false;
+            let achievementsChanged = false;
+
+            loadUnlockedAchievements(); // Ensure latest list is loaded
+            const currentBalance = playerMoney; // Use current global balance
+
+            achievementsData.forEach(ach => {
+                if (currentBalance >= ach.target && !unlockedAchievements.includes(ach.id)) {
+                    console.log(`Unlocking achievement: ${ach.name} (Target: ${ach.target}, Reward: ${ach.reward})`);
+                    unlockedAchievements.push(ach.id);
+                    totalRewardAdded += ach.reward;
+                    newlyUnlocked.push(ach);
+                    achievementsChanged = true;
+                    balanceChanged = true;
+                }
+            });
+
+            if (newlyUnlocked.length > 0) {
+                playerMoney += totalRewardAdded; // Update global balance variable
+                console.log(`Total reward added: ${totalRewardAdded}. New balance: ${playerMoney}`);
+
+                // Save new achievements list and updated balance
+                saveUnlockedAchievements();
+                try {
+                    localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerMoney.toString());
+                    console.log("Balance saved after achievement rewards:", playerMoney);
+                } catch (error) {
+                    console.error("Error saving balance after achievement rewards:", error);
+                }
+            }
+
+            return {
+                newlyUnlocked,
+                balanceChanged,
+                achievementsChanged,
+                totalRewardAdded
+            };
+        }
+        // --- <<< END NEW: Achievement Functions >>> ---
+
+
+        // --- Game Functions ---
         function createDeck() { deck = []; for (let suit of suits) { for (let value of values) { deck.push({ suit, value }); } } }
         function shuffleDeckCore() { if (deck.length === 0) { createDeck(); } for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; } console.log("Baraja barajada (núcleo)."); updateDeckInfo(); }
         function animateAndShuffleDeck() { return new Promise(resolve => { shuffleAnimationOverlay.classList.add('visible'); const originalMessage = messageBox.textContent; messageBox.textContent = "Barajando..."; setTimeout(() => { shuffleDeckCore(); shuffleAnimationOverlay.classList.remove('visible'); setTimeout(() => { if (originalMessage && !originalMessage.includes("Barajando")) { messageBox.textContent = originalMessage + " (Baraja barajada)"; } else { messageBox.textContent = "Baraja barajada. " + messageBox.textContent.replace("Barajando...", ""); } }, 100); resolve(); }, SHUFFLE_ANIMATION_DURATION_MS); }); }
         function getCardValue(value) { if (value === "A") return 11; if (["K", "Q", "J", "10"].includes(value)) return 10; return parseInt(value); }
         function calculateScore(hand, aceCount) { let score = hand.reduce((sum, card) => sum + getCardValue(card.value), 0); while (score > 21 && aceCount > 0) { score -= 10; aceCount--; } return score; }
         function createCardElement(card, isHidden = false) { const cardElement = document.createElement('div'); cardElement.classList.add('card', card.suit); if (isHidden) { cardElement.classList.add('hidden'); cardElement.innerHTML = `<span class="value">?</span><span class="suit">?</span>`; } else { cardElement.innerHTML = ` <span class="value">${card.value}</span> <span class="suit">${suitSymbols[card.suit]}</span> `; } return cardElement; }
-        function updateUI() { playerMoneyElement.textContent = playerMoney; currentBetDisplay.textContent = currentBet; dealerCardsElement.innerHTML = ''; playerCardsElement.innerHTML = ''; dealerCards.forEach((card, index) => { dealerCardsElement.appendChild(createCardElement(card, index === 0 && hiddenCard)); }); playerCards.forEach(card => { playerCardsElement.appendChild(createCardElement(card)); }); playerScoreElement.textContent = playerScore; dealerScoreElement.textContent = hiddenCard ? '?' : dealerScore; updateDeckInfo(); }
+        function updateUI() {
+            updatePlayerMoneyDisplay(); // Use the new display-only function
+            currentBetDisplay.textContent = currentBet.toLocaleString('es-ES'); // Format bet
+            dealerCardsElement.innerHTML = ''; playerCardsElement.innerHTML = '';
+            dealerCards.forEach((card, index) => { dealerCardsElement.appendChild(createCardElement(card, index === 0 && hiddenCard)); });
+            playerCards.forEach(card => { playerCardsElement.appendChild(createCardElement(card)); });
+            playerScoreElement.textContent = playerScore;
+            dealerScoreElement.textContent = hiddenCard ? '?' : dealerScore;
+            updateDeckInfo();
+        }
         function updateDeckInfo() { deckInfoElement.textContent = `Cartas restantes: ${deck.length}`; }
 
-        function initializeGame() { playerMoney = loadPlayerMoney(); createDeck(); shuffleDeckCore(); updateUI(); betInput.max = playerMoney; messageBox.textContent = `Tienes ${playerMoney}€. Introduce tu apuesta (mín. ${MIN_BET}€).`; }
-        function placeBetAndStartRound() { const betAmount = parseInt(betInput.value); if (isNaN(betAmount) || betAmount <= 0) { messageBox.textContent = "Por favor, introduce una apuesta válida."; return; } if (betAmount < MIN_BET) { messageBox.textContent = `La apuesta mínima es ${MIN_BET}€.`; return; } if (betAmount > playerMoney) { messageBox.textContent = "No tienes suficiente dinero para esa apuesta."; return; } currentBet = betAmount; updatePlayerMoney(playerMoney - currentBet); currentBetDisplay.textContent = currentBet; /* Actualiza el valor de la apuesta */ betInput.disabled = true; placeBetButton.disabled = true; bettingArea.classList.add('hidden'); startRound(); }
+        // <<< MODIFIED: initializeGame loads achievements >>>
+        function initializeGame() {
+            playerMoney = loadPlayerMoney();
+            loadUnlockedAchievements(); // Load achievements
+            createDeck();
+            shuffleDeckCore();
+            updateUI();
+            betInput.max = playerMoney;
+            messageBox.textContent = `Tienes ${playerMoney.toLocaleString('es-ES')}€. Introduce tu apuesta (mín. ${MIN_BET}€).`;
+        }
+        function placeBetAndStartRound() {
+            const betAmount = parseInt(betInput.value);
+            if (isNaN(betAmount) || betAmount <= 0) { messageBox.textContent = "Por favor, introduce una apuesta válida."; return; }
+            if (betAmount < MIN_BET) { messageBox.textContent = `La apuesta mínima es ${MIN_BET}€.`; return; }
+            if (betAmount > playerMoney) { messageBox.textContent = "No tienes suficiente dinero para esa apuesta."; return; }
+            currentBet = betAmount;
+            playerMoney -= currentBet; // Deduct bet from variable
+            // DO NOT save balance here yet
+            updatePlayerMoneyDisplay(); // Update UI only
+            currentBetDisplay.textContent = currentBet.toLocaleString('es-ES'); // Format bet
+            betInput.disabled = true; placeBetButton.disabled = true; bettingArea.classList.add('hidden');
+            startRound();
+        }
         function findAndForce21() { let aceIndex = -1; let tenIndex = -1; for (let i = deck.length - 1; i >= 0; i--) { if (deck[i].value === 'A') { aceIndex = i; break; } } if (aceIndex !== -1) { for (let i = deck.length - 1; i >= 0; i--) { if (i !== aceIndex && ['10', 'J', 'Q', 'K'].includes(deck[i].value)) { tenIndex = i; break; } } } if (aceIndex !== -1 && tenIndex !== -1) { const card1 = deck.splice(Math.max(aceIndex, tenIndex), 1)[0]; const card2 = deck.splice(Math.min(aceIndex, tenIndex), 1)[0]; return card1.value === 'A' ? [card1, card2] : [card2, card1]; } return null; }
 
-        function startRound() { playerCards = []; dealerCards = []; playerScore = 0; dealerScore = 0; playerAceCount = 0; dealerAceCount = 0; hiddenCard = null; canHit = true; (async () => { let playerCard1, playerCard2; let forced21 = false; if (cheatModeActive) { console.log("Intentando activar cheat 'Forzar 21'..."); let forcedCards = findAndForce21(); if (forcedCards) { playerCard1 = forcedCards[0]; playerCard2 = forcedCards[1]; playerCards = [playerCard1, playerCard2]; forced21 = true; console.log("Cheat activado: ¡21 forzado!"); messageBox.textContent = "Modo Trampa: ¡21 Forzado!"; } else { console.log("Cheat activado, pero no se pudieron encontrar cartas para forzar 21."); messageBox.textContent = "Modo Trampa: No se pudo forzar 21."; } cheatModeActive = false; /* Ya no se usa: playerMoneyContainer.classList.remove('cheat-active-feedback'); */ } if (!forced21) { await dealCard(playerCards, 'player'); await dealCard(playerCards, 'player'); } await dealCard(dealerCards, 'dealer'); await dealCard(dealerCards, 'dealer'); hiddenCard = dealerCards[0]; dealerScore = getCardValue(dealerCards[1].value); if (dealerCards[1].value === 'A') dealerAceCount = 1; playerAceCount = playerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0); playerScore = calculateScore(playerCards, playerAceCount); updateUI(); actionButtons.classList.remove('hidden'); newRoundArea.classList.add('hidden'); hitButton.disabled = false; standButton.disabled = false; if (!forced21) { messageBox.textContent = "Tu turno. ¿Pedir carta o plantarse?"; } if (playerScore === 21) { if (!forced21) { messageBox.textContent = "¡Blackjack!"; } const dealerRealScore = calculateScore(dealerCards, dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0)); let winAmount = 0; if (dealerRealScore === 21) { messageBox.textContent += " ¡Ambos tenéis Blackjack! ¡Empate!"; winAmount = currentBet; } else { messageBox.textContent += " ¡Has ganado!"; winAmount = Math.floor(currentBet * 2.5); } canHit = false; endRound(winAmount); } })(); }
+        function startRound() { playerCards = []; dealerCards = []; playerScore = 0; dealerScore = 0; playerAceCount = 0; dealerAceCount = 0; hiddenCard = null; canHit = true; (async () => { let playerCard1, playerCard2; let forced21 = false; if (cheatModeActive) { console.log("Intentando activar cheat 'Forzar 21'..."); let forcedCards = findAndForce21(); if (forcedCards) { playerCard1 = forcedCards[0]; playerCard2 = forcedCards[1]; playerCards = [playerCard1, playerCard2]; forced21 = true; console.log("Cheat activado: ¡21 forzado!"); messageBox.textContent = "Modo Trampa: ¡21 Forzado!"; } else { console.log("Cheat activado, pero no se pudieron encontrar cartas para forzar 21."); messageBox.textContent = "Modo Trampa: No se pudo forzar 21."; } cheatModeActive = false; /* No longer used: playerMoneyContainer.classList.remove('cheat-active-feedback'); */ } if (!forced21) { await dealCard(playerCards, 'player'); await dealCard(playerCards, 'player'); } await dealCard(dealerCards, 'dealer'); await dealCard(dealerCards, 'dealer'); hiddenCard = dealerCards[0]; dealerScore = getCardValue(dealerCards[1].value); if (dealerCards[1].value === 'A') dealerAceCount = 1; playerAceCount = playerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0); playerScore = calculateScore(playerCards, playerAceCount); updateUI(); actionButtons.classList.remove('hidden'); newRoundArea.classList.add('hidden'); hitButton.disabled = false; standButton.disabled = false; if (!forced21) { messageBox.textContent = "Tu turno. ¿Pedir carta o plantarse?"; } if (playerScore === 21) { if (!forced21) { messageBox.textContent = "¡Blackjack!"; } const dealerRealScore = calculateScore(dealerCards, dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0)); let winAmount = 0; if (dealerRealScore === 21) { messageBox.textContent += " ¡Ambos tenéis Blackjack! ¡Empate!"; winAmount = currentBet; } else { messageBox.textContent += " ¡Has ganado!"; winAmount = Math.floor(currentBet * 2.5); } canHit = false; endRound(winAmount); } })(); }
         async function dealCard(hand, recipient) { if (deck.length === 0) { await animateAndShuffleDeck(); } if (deck.length === 0) { console.error("¡Error crítico! La baraja sigue vacía después de barajar."); messageBox.textContent = "Error crítico de baraja. Recarga la página."; return null; } const card = deck.pop(); hand.push(card); if (card.value === "A") { if (recipient === 'player') playerAceCount++; else if (recipient === 'dealer' && (!hiddenCard || hand.length > 1)) dealerAceCount++; } if (recipient === 'player') { playerScore = calculateScore(playerCards, playerAceCount); } else if (!hiddenCard) { dealerScore = calculateScore(dealerCards, dealerAceCount); } updateDeckInfo(); return card; }
         function revealDealerAndPlayTurn() { hiddenCard = null; dealerAceCount = dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0); dealerScore = calculateScore(dealerCards, dealerAceCount); updateUI(); messageBox.textContent = "Turno del crupier..."; setTimeout(dealerTurn, 1000); }
-        async function hit() { if (!canHit) return; const dealtCard = await dealCard(playerCards, 'player'); if (!dealtCard) return; updateUI(); if (playerScore > 21) { messageBox.textContent = `¡Te has pasado (${playerScore})! Has perdido ${currentBet}€.`; canHit = false; endRound(0); } else if (playerScore === 21) { messageBox.textContent = "¡21! Turno del crupier."; canHit = false; hitButton.disabled = true; standButton.disabled = true; revealDealerAndPlayTurn(); } else { messageBox.textContent = "¿Pedir otra carta o plantarse?"; } }
+        async function hit() { if (!canHit) return; const dealtCard = await dealCard(playerCards, 'player'); if (!dealtCard) return; updateUI(); if (playerScore > 21) { messageBox.textContent = `¡Te has pasado (${playerScore})! Has perdido ${currentBet.toLocaleString('es-ES')}€.`; canHit = false; endRound(0); } else if (playerScore === 21) { messageBox.textContent = "¡21! Turno del crupier."; canHit = false; hitButton.disabled = true; standButton.disabled = true; revealDealerAndPlayTurn(); } else { messageBox.textContent = "¿Pedir otra carta o plantarse?"; } }
         function stand() { if (!canHit) return; canHit = false; hitButton.disabled = true; standButton.disabled = true; revealDealerAndPlayTurn(); }
         async function dealerTurn() { dealerScoreElement.textContent = dealerScore; while (dealerScore < 17) { if (deck.length === 0) { await animateAndShuffleDeck(); continue; } messageBox.textContent = "Crupier pide carta..."; await dealCard(dealerCards, 'dealer'); updateUI(); await new Promise(resolve => setTimeout(resolve, 800)); dealerScore = calculateScore(dealerCards, dealerAceCount); dealerScoreElement.textContent = dealerScore; } determineWinner(); }
-        function determineWinner() { dealerScoreElement.textContent = dealerScore; let winAmount = 0; if (playerScore > 21) { /* Ya perdido */ } else if (dealerScore > 21) { messageBox.textContent = `¡El crupier se ha pasado (${dealerScore})! ¡Has ganado ${currentBet * 2}€!`; winAmount = currentBet * 2; } else if (playerScore > dealerScore) { messageBox.textContent = `¡Has ganado (${playerScore} vs ${dealerScore})! Ganas ${currentBet * 2}€!`; winAmount = currentBet * 2; } else if (playerScore < dealerScore) { messageBox.textContent = `Has perdido (${playerScore} vs ${dealerScore}). Pierdes ${currentBet}€.`; } else { messageBox.textContent = `¡Empate (${playerScore})! Recuperas tu apuesta de ${currentBet}€.`; winAmount = currentBet; } endRound(winAmount); }
-        function endRound(winAmount = 0) { hitButton.disabled = true; standButton.disabled = true; actionButtons.classList.add('hidden'); newRoundArea.classList.remove('hidden'); if (hiddenCard) { hiddenCard = null; dealerAceCount = dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0); dealerScore = calculateScore(dealerCards, dealerAceCount); dealerScoreElement.textContent = dealerScore; } updatePlayerMoney(playerMoney + winAmount); currentBet = 0; currentBetDisplay.textContent = currentBet; /* Asegura que la apuesta actual se muestre como 0 */ if (playerMoney < MIN_BET) { messageBox.textContent += " ¡Te has quedado sin dinero! Fin del juego."; newRoundButton.disabled = true; } else { if (!messageBox.textContent.includes("Ganado") && !messageBox.textContent.includes("Perdido") && !messageBox.textContent.includes("Empate") && !messageBox.textContent.includes("Forzado")) { messageBox.textContent += " Pulsa 'Siguiente Ronda' para volver a apostar."; } else { messageBox.textContent += " Pulsa 'Siguiente Ronda'."; } } }
-        function prepareNextRound() { bettingArea.classList.remove('hidden'); betInput.disabled = false; placeBetButton.disabled = false; newRoundArea.classList.add('hidden'); playerCardsElement.innerHTML = ''; dealerCardsElement.innerHTML = ''; playerScoreElement.textContent = '0'; dealerScoreElement.textContent = '0'; messageBox.textContent = `Tienes ${playerMoney}€. Introduce tu apuesta (mín. ${MIN_BET}€).`; /* Asegura que el color de la apuesta sea el original */ currentBetDisplay.style.color = ORIGINAL_BET_COLOR; }
+        function determineWinner() {
+            dealerScoreElement.textContent = dealerScore;
+            let winAmount = 0;
+            let resultMessage = ""; // Build message here
+
+            if (playerScore > 21) {
+                resultMessage = `¡Te has pasado (${playerScore})! Has perdido ${currentBet.toLocaleString('es-ES')}€.`;
+            } else if (dealerScore > 21) {
+                resultMessage = `¡El crupier se ha pasado (${dealerScore})! ¡Has ganado ${(currentBet * 2).toLocaleString('es-ES')}€!`;
+                winAmount = currentBet * 2;
+            } else if (playerScore > dealerScore) {
+                resultMessage = `¡Has ganado (${playerScore} vs ${dealerScore})! Ganas ${(currentBet * 2).toLocaleString('es-ES')}€!`;
+                winAmount = currentBet * 2;
+            } else if (playerScore < dealerScore) {
+                resultMessage = `Has perdido (${playerScore} vs ${dealerScore}). Pierdes ${currentBet.toLocaleString('es-ES')}€.`;
+            } else {
+                resultMessage = `¡Empate (${playerScore})! Recuperas tu apuesta de ${currentBet.toLocaleString('es-ES')}€.`;
+                winAmount = currentBet;
+            }
+            endRound(winAmount, resultMessage); // Pass the base message to endRound
+        }
+
+        // <<< MODIFIED: endRound integrates achievement check and message building >>>
+        function endRound(winAmount = 0, baseResultMessage = "") {
+            hitButton.disabled = true;
+            standButton.disabled = true;
+            actionButtons.classList.add('hidden');
+            newRoundArea.classList.remove('hidden');
+
+            // Reveal dealer's card if it was hidden
+            if (hiddenCard) {
+                hiddenCard = null;
+                dealerAceCount = dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0);
+                dealerScore = calculateScore(dealerCards, dealerAceCount);
+                dealerScoreElement.textContent = dealerScore;
+            }
+
+            // 1. Update playerMoney variable (without saving yet)
+            playerMoney += winAmount;
+            console.log(`Balance after win/loss: ${playerMoney}`);
+
+            // 2. Check for achievements and add rewards (this saves the final balance and achievements)
+            const achievementResult = checkAndUnlockAchievements();
+
+            // 3. Update the UI with the final balance
+            updatePlayerMoneyDisplay();
+
+            // 4. Construct the final message including achievement info
+            let finalMessage = baseResultMessage; // Start with the message from determineWinner
+            if (achievementResult.newlyUnlocked.length > 0) {
+                finalMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+            }
+
+            // Append 'Game Over' message if out of funds
+            if (playerMoney < MIN_BET) {
+                finalMessage += " ¡Te has quedado sin dinero! Fin del juego.";
+                newRoundButton.disabled = true;
+            } else {
+                 finalMessage += " Pulsa 'Siguiente Ronda'.";
+                 newRoundButton.disabled = false; // Ensure button is enabled if funds allow
+            }
+
+            messageBox.textContent = finalMessage; // Display the final combined message
+
+            // Reset current bet for the next round display
+            currentBet = 0;
+            currentBetDisplay.textContent = currentBet.toLocaleString('es-ES');
+        }
+
+        function prepareNextRound() { bettingArea.classList.remove('hidden'); betInput.disabled = false; placeBetButton.disabled = false; newRoundArea.classList.add('hidden'); playerCardsElement.innerHTML = ''; dealerCardsElement.innerHTML = ''; playerScoreElement.textContent = '0'; dealerScoreElement.textContent = '0'; messageBox.textContent = `Tienes ${playerMoney.toLocaleString('es-ES')}€. Introduce tu apuesta (mín. ${MIN_BET}€).`; /* Ensure bet color is original */ currentBetDisplay.style.color = ORIGINAL_BET_COLOR; }
 
         // --- Event Listeners ---
         placeBetButton.addEventListener('click', placeBetAndStartRound);
@@ -347,10 +561,10 @@
         standButton.addEventListener('click', stand);
         newRoundButton.addEventListener('click', prepareNextRound);
 
-        // Listener para activar/desactivar el modo "Forzar 21"
+        // Listener to activate/deactivate "Force 21" cheat mode
         playerMoneyContainer.addEventListener('dblclick', () => {
             cheatModeActive = !cheatModeActive;
-            // Limpia cualquier temporizador pendiente si se hace doble clic de nuevo rápido
+            // Clear any pending timer if double-clicked again quickly
             if (cheatFeedbackTimeout) {
                 clearTimeout(cheatFeedbackTimeout);
                 cheatFeedbackTimeout = null;
@@ -358,26 +572,52 @@
 
             if (cheatModeActive) {
                 console.log("Cheat 'Forzar 21' ACTIVADO para la próxima ronda.");
-                // Cambia color de la apuesta actual a verde
+                // Change current bet color to green
                 currentBetDisplay.style.color = CHEAT_FEEDBACK_COLOR;
-                // Programa que vuelva al color original después de 2 segundos
+                // Schedule return to original color after 2 seconds
                 cheatFeedbackTimeout = setTimeout(() => {
                     currentBetDisplay.style.color = ORIGINAL_BET_COLOR;
-                    cheatFeedbackTimeout = null; // Limpia la referencia al temporizador
+                    cheatFeedbackTimeout = null; // Clear timer reference
                 }, 2000);
             } else {
                 console.log("Cheat 'Forzar 21' DESACTIVADO.");
-                // Asegura que el color vuelva al original inmediatamente si se desactiva
+                // Ensure color returns to original immediately if deactivated
                 currentBetDisplay.style.color = ORIGINAL_BET_COLOR;
             }
         });
 
-        // --- Inicio del Juego ---
+        // --- Game Start ---
         window.onload = initializeGame;
 
-        // --- Listeners para Cambios Externos (LocalStorage/Focus) ---
-        window.addEventListener('storage', (event) => { if (event.key === BALANCE_LOCAL_STORAGE_KEY) { console.log('Detectado cambio en el saldo desde otra pestaña/ventana.'); if (bettingArea.classList.contains('hidden')) { console.log('Ronda activa, el saldo se actualizará al finalizar.'); } else { playerMoney = loadPlayerMoney(); updateUI(); messageBox.textContent = `Saldo actualizado a ${playerMoney}€. Introduce tu apuesta.`; } } });
-        window.addEventListener('focus', () => { console.log('Ventana enfocada, actualizando saldo si no hay ronda activa.'); if (!bettingArea.classList.contains('hidden')) { playerMoney = loadPlayerMoney(); updateUI(); messageBox.textContent = `Tienes ${playerMoney}€. Introduce tu apuesta (mín. ${MIN_BET}€).`; } });
+        // --- Listeners for External Changes (LocalStorage/Focus) ---
+        // <<< MODIFIED: Load achievements on external changes >>>
+        window.addEventListener('storage', (event) => {
+            if (event.key === BALANCE_LOCAL_STORAGE_KEY) {
+                console.log('Detectado cambio en el saldo desde otra pestaña/ventana.');
+                 playerMoney = loadPlayerMoney(); // Reload balance variable
+                 loadUnlockedAchievements(); // Reload achievements
+                 if (!bettingArea.classList.contains('hidden')) { // Only update UI if not in active round
+                    updateUI();
+                    messageBox.textContent = `Saldo actualizado a ${playerMoney.toLocaleString('es-ES')}€. Introduce tu apuesta.`;
+                 } else {
+                    console.log('Ronda activa, el saldo se actualizará al finalizar.');
+                 }
+            }
+             if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
+                 console.log('Detectado cambio en los logros desde otra pestaña.');
+                 loadUnlockedAchievements(); // Reload achievements
+                 // Optionally update UI if achievements directly affect it
+             }
+        });
+        window.addEventListener('focus', () => {
+            console.log('Ventana enfocada, actualizando saldo y logros si no hay ronda activa.');
+             playerMoney = loadPlayerMoney(); // Reload balance variable
+             loadUnlockedAchievements(); // Reload achievements
+             if (!bettingArea.classList.contains('hidden')) { // Only update UI if not in active round
+                 updateUI();
+                 messageBox.textContent = `Tienes ${playerMoney.toLocaleString('es-ES')}€. Introduce tu apuesta (mín. ${MIN_BET}€).`;
+             }
+        });
 
     </script>
 </body>
