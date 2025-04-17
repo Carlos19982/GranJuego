@@ -795,26 +795,3 @@
     </script>
 </body>
 </html>
-```
-
-**Resumen de los cambios clave:**
-
-1.  **Constantes:** Añadidas las constantes `BALANCE_LOCAL_STORAGE_KEY`, `GAME6_INVESTMENT_SESSION_KEY` y `DEFAULT_BALANCE` al inicio del script para que coincidan con las usadas en `index.html`.
-2.  **Variable `initialInvestment`:** Se guarda la inversión inicial leída de `sessionStorage` en esta variable global dentro del script del juego.
-3.  **Funciones de Saldo Global:** Añadidas las funciones `getCurrentGlobalBalance` y `saveGlobalBalance` (adaptadas de `index.html`) para leer y escribir el saldo global en `localStorage`.
-4.  **Función `calculatePortfolioValue`:** Creada para obtener el valor actual de la cartera de forma independiente cuando sea necesario (al salir).
-5.  **Listener para el Botón "Menú" (`handleExitClick`):**
-    * Se obtiene el elemento del botón Menú (`#exit-button`).
-    * Se añade un `event listener` para el evento `click`.
-    * **Dentro del listener `handleExitClick`:**
-        * Se previene la redirección por defecto (`event.preventDefault()`).
-        * Se calcula el `finalTotalValue` (dinero actual + valor actual de la cartera).
-        * Se calcula la `netGainLoss` (ganancia/pérdida) restando la `initialInvestment` del `finalTotalValue`.
-        * Se lee el `currentGlobalBalance` de `localStorage`.
-        * Se calcula el `newGlobalBalance`.
-        * Se guarda el `newGlobalBalance` en `localStorage` usando `saveGlobalBalance`.
-        * Se elimina la clave de la inversión inicial de `sessionStorage`.
-        * Finalmente, se realiza la redirección a la URL del botón (`../index.html`).
-6.  **Limpieza:** Eliminada la función `saveGameState` que ya no era necesaria, ya que el estado relevante (saldo global) se actualiza al pulsar "Menú".
-
-Ahora, cuando termines de jugar al simulador y pulses el botón "Menú", tu Saldo Global en la página principal debería actualizarse correctamente con las ganancias o pérdidas que hayas tenido en la simulaci
