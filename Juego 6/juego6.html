@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Bolsa - Comentarios Eliminados</title>
+    <title>Simulador de Bolsa - Con Botón Menú</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -39,6 +39,8 @@
         .history-type-TP { @apply font-semibold text-green-800; }
         /* Estilo para inputs pequeños */
         .portfolio-qty-input { @apply w-14 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:ring-1 focus:ring-blue-500 focus:border-blue-500; }
+         /* Estilo para el botón de menú */
+        .menu-link-button { @apply inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out text-sm no-underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500; }
 
     </style>
      <link rel="preconnect" href="https://rsms.me/">
@@ -50,9 +52,9 @@
         <header class="mb-8 p-4 bg-white rounded-lg shadow-md">
              <h1 class="text-2xl md:text-3xl font-bold text-gray-800 text-center mb-4">Simulador de Bolsa</h1>
              <div class="flex flex-wrap justify-around text-center text-sm md:text-base text-gray-700">
-                 <div class="info-item mx-2 my-1"><span class="font-semibold">Dinero:</span> $<span id="cash">Cargando...</span></div>
+                 <div class="info-item mx-2 my-1"><span class="font-semibold">Dinero:</span> $<span id="cash">10.000,00</span></div>
                  <div class="info-item mx-2 my-1"><span class="font-semibold">Valor Cartera:</span> $<span id="portfolio-value">0,00</span></div>
-                 <div class="info-item mx-2 my-1"><span class="font-semibold">Valor Total:</span> $<span id="total-value">Cargando...</span></div>
+                 <div class="info-item mx-2 my-1"><span class="font-semibold">Valor Total:</span> $<span id="total-value">10.000,00</span></div>
              </div>
          </header>
 
@@ -79,7 +81,7 @@
              </section>
         </main>
 
-        <footer class="text-center space-y-4">
+        <footer class="text-center space-y-4 pb-8">
              <div id="message-box" class="p-3 bg-gray-100 border border-gray-300 rounded-md text-gray-700 min-h-[40px] text-sm md:text-base">
                  ¡Bienvenido! El mercado se actualiza cada 10 segundos. Activa SL (-4%) o TP (+5%) en tu cartera si lo deseas.
              </div>
@@ -87,6 +89,11 @@
                  <button id="pause-resume-btn" class="pause-button">Pausar</button>
                  <button id="history-btn" onclick="showHistory()" class="history-button">Mostrar Historial</button>
              </div>
+             <div class="mt-4">
+                 <a href="../index.html" id="exit-button" class="menu-link-button">
+                     &larr; Menú
+                 </a>
+            </div>
         </footer>
 
         <div id="history-modal" class="modal hidden">
@@ -104,25 +111,31 @@
     </div>
 
     <script>
+        // --- Constantes de Storage (IMPORTANTE: deben coincidir con index.html) ---
+        const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
+        const GAME6_INVESTMENT_SESSION_KEY = 'game6InitialInvestment';
+        const DEFAULT_BALANCE = 5000; // Saldo por defecto si no se encuentra en localStorage
+
         // --- Configuración Inicial ---
-        // ** MODIFICADO: Declarar 'cash' sin valor inicial aquí **
-        let cash;
-        let portfolio = {}; // Cartera de acciones del jugador
-        let stocks = [ // Lista de acciones disponibles en el mercado
-            { symbol: 'TECH', name: 'Tech Corp 💻', price: 150.00, lastPrice: 150.00, volatility: 0.032, trend: 0.00002, history: [], showOnChart: true, color: '#3B82F6' },
-            { symbol: 'FOOD', name: 'Foodies Inc 🍔', price: 50.00, lastPrice: 50.00, volatility: 0.016, trend: 0.00001, history: [], showOnChart: false, color: '#F59E0B' },
-            { symbol: 'GAME', name: 'GameDev Co 🎮', price: 80.00, lastPrice: 80.00, volatility: 0.048, trend: -0.00001, history: [], showOnChart: false, color: '#8B5CF6' },
-            { symbol: 'FIN', name: 'Finance Hub 💰', price: 200.00, lastPrice: 200.00, volatility: 0.024, trend: 0.000015, history: [], showOnChart: true, color: '#10B981' },
-            { symbol: 'ECO', name: 'Eco Energy 🌿', price: 70.00, lastPrice: 70.00, volatility: 0.040, trend: 0.00003, history: [], showOnChart: false, color: '#6B7280' }
+        let cash = 10000; // Se sobrescribirá con la inversión inicial
+        let portfolio = {};
+        const initialStockData = [
+            { symbol: 'TECH', name: 'Tech Corp 💻', price: 150.00, volatility: 0.032, trend: 0.00002, color: '#3B82F6' },
+            { symbol: 'FOOD', name: 'Foodies Inc 🍔', price: 50.00, volatility: 0.016, trend: 0.00001, color: '#F59E0B' },
+            { symbol: 'GAME', name: 'GameDev Co 🎮', price: 80.00, volatility: 0.048, trend: -0.00001, color: '#8B5CF6' },
+            { symbol: 'FIN', name: 'Finance Hub 💰', price: 200.00, volatility: 0.024, trend: 0.000015, color: '#10B981' },
+            { symbol: 'ECO', name: 'Eco Energy 🌿', price: 70.00, volatility: 0.040, trend: 0.00003, color: '#6B7280' }
         ];
-        let transactionHistory = []; // Historial de transacciones
-        const stopLossThreshold = -4.0; // Umbral de Stop-Loss en %
-        const takeProfitThreshold = 5.0; // Umbral de Take-Profit en %
-        let gameInterval; // Temporizador del juego
-        let isPaused = false; // Estado de pausa
-        const updateInterval = 10000; // Intervalo de actualización del mercado (10 segundos)
-        const maxHistoryLength = 60; // Máximo de puntos de datos en el gráfico
-        let tickCounter = 0; // Contador de actualizaciones del mercado
+        let stocks = [];
+        let transactionHistory = [];
+        const stopLossThreshold = -4.0;
+        const takeProfitThreshold = 5.0;
+        let gameInterval;
+        let isPaused = false;
+        const updateInterval = 10000; // 10 segundos
+        const maxHistoryLength = 60;
+        let tickCounter = 0;
+        let initialInvestment = 0; // Guardará la inversión inicial leída de sessionStorage
 
         // --- Elementos del DOM ---
         const cashEl = document.getElementById('cash');
@@ -136,50 +149,60 @@
         const chartCanvas = document.getElementById('stockChart');
         const historyModal = document.getElementById('history-modal');
         const historyListEl = document.getElementById('history-list');
-        let stockChart = null; // Referencia al objeto del gráfico
+        const exitButton = document.getElementById('exit-button'); // Botón Menú
+        let stockChart = null;
 
         // --- Funciones del Juego ---
 
-        // Muestra mensajes al usuario
+        /**
+         * Muestra un mensaje al usuario en el área designada.
+         * @param {string} msg - El mensaje a mostrar.
+         * @param {string} [type='info'] - El tipo de mensaje ('info', 'success', 'error').
+         */
         function showMessage(msg, type = 'info') {
-             messageBoxEl.textContent = msg;
-             // Limpiar clases anteriores
-             messageBoxEl.classList.remove('bg-red-100', 'border-red-400', 'text-red-700', 'bg-green-100', 'border-green-400', 'text-green-700', 'bg-yellow-100', 'border-yellow-400', 'text-yellow-700', 'bg-gray-100', 'border-gray-300', 'text-gray-700');
-             // Añadir clases según el tipo
-             switch (type) {
-                 case 'error': messageBoxEl.classList.add('bg-red-100', 'border-red-400', 'text-red-700'); break;
-                 case 'success': messageBoxEl.classList.add('bg-green-100', 'border-green-400', 'text-green-700'); break;
-                 case 'info': default: messageBoxEl.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700'); break;
-             }
-         }
-
-        // Formatea un número como moneda
-        function formatCurrency(amount) {
-             return amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-         }
-
-        // Formatea una fecha y hora
-        function formatTimestamp(date) {
-             return date.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-         }
-
-        // Actualiza la visualización del dinero en efectivo y valor total
-        function updateGameInfo() {
-            cashEl.textContent = formatCurrency(cash);
-            // Calcular valor total (dinero + valor de cartera)
-            let currentPortfolioValue = 0;
-            Object.keys(portfolio).forEach(symbol => {
-                const stock = stocks.find(s => s.symbol === symbol);
-                if (stock && portfolio[symbol] && portfolio[symbol].quantity > 0) {
-                    currentPortfolioValue += portfolio[symbol].quantity * stock.price;
-                }
-            });
-            portfolioValueEl.textContent = formatCurrency(currentPortfolioValue); // Actualizar también valor cartera aquí
-            totalValueEl.textContent = formatCurrency(cash + currentPortfolioValue);
+            messageBoxEl.textContent = msg;
+            messageBoxEl.classList.remove('bg-red-100', 'border-red-400', 'text-red-700', 'bg-green-100', 'border-green-400', 'text-green-700', 'bg-yellow-100', 'border-yellow-400', 'text-yellow-700', 'bg-gray-100', 'border-gray-300', 'text-gray-700');
+            switch (type) {
+                case 'error': messageBoxEl.classList.add('bg-red-100', 'border-red-400', 'text-red-700'); break;
+                case 'success': messageBoxEl.classList.add('bg-green-100', 'border-green-400', 'text-green-700'); break;
+                case 'info': default: messageBoxEl.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700'); break;
+            }
         }
 
+        /**
+         * Formatea un número como moneda española.
+         * @param {number} amount - La cantidad a formatear.
+         * @returns {string} La cantidad formateada como string.
+         */
+        function formatCurrency(amount) {
+            // Asegurarse de que es un número antes de formatear
+            if (typeof amount !== 'number' || isNaN(amount)) {
+                return '0,00'; // O un valor por defecto apropiado
+            }
+            return amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
-        // Construye la lista inicial de acciones disponibles en el mercado
+        /**
+         * Formatea una fecha y hora para mostrarla.
+         * @param {Date} date - El objeto Date a formatear.
+         * @returns {string} La fecha y hora formateada.
+         */
+        function formatTimestamp(date) {
+            if (!(date instanceof Date)) return 'Fecha inválida';
+            return date.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        /**
+         * Actualiza la visualización del dinero disponible.
+         */
+        function updateGameInfo() {
+            cashEl.textContent = formatCurrency(cash);
+            // El valor de la cartera y total se actualizan en renderPortfolio()
+        }
+
+        /**
+         * Construye la lista inicial de acciones disponibles en el mercado.
+         */
         function buildStockMarketList() {
             stockMarketEl.innerHTML = '';
             if (stocks.length === 0) {
@@ -190,7 +213,6 @@
                 const stockDiv = document.createElement('div');
                 stockDiv.id = `stock-item-${stock.symbol}`;
                 stockDiv.className = 'stock-item border border-gray-200 rounded-lg p-3 shadow-sm flex flex-wrap justify-between items-center';
-                // HTML para cada acción, incluyendo toggle para gráfico y botones de compra
                 stockDiv.innerHTML = `
                     <div class="flex-grow flex items-center mb-2 md:mb-0 mr-4">
                         <div class="relative inline-block w-10 mr-3 align-middle select-none transition duration-200 ease-in">
@@ -199,7 +221,8 @@
                         </div>
                         <div class="stock-info">
                             <div class="stock-name font-semibold text-gray-700">${stock.name} (${stock.symbol})</div>
-                            <div class="stock-price text-sm text-gray-600">Precio: <span id="price-value-${stock.symbol}">$${formatCurrency(stock.price)}</span>
+                            <div class="stock-price text-sm text-gray-600">
+                                Precio: <span id="price-value-${stock.symbol}">$${formatCurrency(stock.price)}</span>
                                 <span class="price-change-indicator font-bold ml-2" id="change-indicator-${stock.symbol}"></span>
                             </div>
                         </div>
@@ -207,13 +230,17 @@
                     <div class="actions flex items-center space-x-2 mt-2 md:mt-0 w-full md:w-auto justify-end">
                         <input type="number" id="buy-qty-${stock.symbol}" min="1" value="1" class="portfolio-qty-input">
                         <button onclick="buyStock('${stock.symbol}')" class="buy-button">Comprar</button>
-                    </div>`;
+                    </div>
+                `;
                 stockMarketEl.appendChild(stockDiv);
-                updateStockItemDisplay(stock); // Actualizar indicador de cambio inicial
+                updateStockItemDisplay(stock);
             });
         }
 
-        // Actualiza la visualización de una acción específica en la lista del mercado
+        /**
+         * Actualiza la visualización de un item de acción específico.
+         * @param {object} stock - El objeto de la acción a actualizar.
+         */
         function updateStockItemDisplay(stock) {
             const priceValueEl = document.getElementById(`price-value-${stock.symbol}`);
             const changeIndicatorEl = document.getElementById(`change-indicator-${stock.symbol}`);
@@ -228,7 +255,9 @@
             changeIndicatorEl.className = `price-change-indicator font-bold ml-2 ${changeClass}`;
         }
 
-        // Actualiza los precios en la lista del mercado (sin reconstruir todo)
+        /**
+         * Actualiza la visualización de todas las acciones en el mercado.
+         */
         function renderStockMarket() {
             stocks.forEach(stock => {
                 if (document.getElementById(`stock-item-${stock.symbol}`)) {
@@ -237,37 +266,57 @@
             });
         }
 
-        // Renderiza la sección de la cartera del jugador
-        function renderPortfolio() {
-            portfolioEl.innerHTML = ''; // Limpiar cartera actual
-            const portfolioSymbols = Object.keys(portfolio);
+        /**
+         * Calcula el valor actual total de la cartera.
+         * @returns {number} El valor total de las acciones en cartera.
+         */
+        function calculatePortfolioValue() {
             let currentPortfolioValue = 0;
+            const portfolioSymbols = Object.keys(portfolio);
+
+            portfolioSymbols.forEach(symbol => {
+                const stock = stocks.find(s => s.symbol === symbol);
+                const portfolioItem = portfolio[symbol];
+                if (stock && portfolioItem && portfolioItem.quantity > 0) {
+                    currentPortfolioValue += portfolioItem.quantity * stock.price;
+                }
+            });
+            return currentPortfolioValue;
+        }
+
+
+        /**
+         * Renderiza la sección de la cartera del usuario y actualiza los valores globales.
+         */
+        function renderPortfolio() {
+            portfolioEl.innerHTML = '';
+            const portfolioSymbols = Object.keys(portfolio);
+            let currentPortfolioValue = 0; // Recalcular aquí para la visualización
 
             if (portfolioSymbols.length === 0) {
                 portfolioEl.appendChild(emptyPortfolioMsgEl);
-                emptyPortfolioMsgEl.style.display = 'block'; // Mostrar mensaje si está vacía
+                emptyPortfolioMsgEl.style.display = 'block';
             } else {
-                emptyPortfolioMsgEl.style.display = 'none'; // Ocultar mensaje si hay acciones
+                emptyPortfolioMsgEl.style.display = 'none';
                 portfolioSymbols.forEach(symbol => {
                     const stock = stocks.find(s => s.symbol === symbol);
                     const portfolioItem = portfolio[symbol];
 
-                    // Validar si la acción aún existe y la cantidad es positiva
                     if (!stock || !portfolioItem || portfolioItem.quantity <= 0) {
-                        if (portfolio[symbol]) delete portfolio[symbol]; // Limpiar si ya no es válida
-                        return; // Saltar esta acción
+                        if (portfolio[symbol]) delete portfolio[symbol];
+                        return;
                     };
 
-                    const currentMarketValue = portfolioItem.quantity * stock.price;
+                    const marketValue = portfolioItem.quantity * stock.price;
                     const costBasis = portfolioItem.quantity * portfolioItem.avgPrice;
-                    const gainLoss = currentMarketValue - costBasis;
+                    const gainLoss = marketValue - costBasis;
                     const gainLossPercent = portfolioItem.avgPrice !== 0 ? (gainLoss / costBasis) * 100 : 0;
                     const gainLossClass = gainLoss >= 0 ? 'price-up' : 'price-down';
-                    currentPortfolioValue += currentMarketValue; // Sumar al valor total de la cartera
+
+                    currentPortfolioValue += marketValue; // Sumar al valor total para visualización
 
                     const portfolioDiv = document.createElement('div');
                     portfolioDiv.className = 'portfolio-item border border-gray-200 rounded-lg p-3 shadow-sm';
-                    // HTML para cada elemento de la cartera
                     portfolioDiv.innerHTML = `
                         <div class="portfolio-info mb-3">
                             <div class="portfolio-name font-semibold text-gray-700">${stock.name} (${symbol})</div>
@@ -275,7 +324,7 @@
                                 <div>Cantidad: ${portfolioItem.quantity}</div>
                                 <div>Precio Prom.: $${formatCurrency(portfolioItem.avgPrice)}</div>
                                 <div>Precio Actual: $${formatCurrency(stock.price)}</div>
-                                <div>Valor Mercado: $${formatCurrency(currentMarketValue)}</div>
+                                <div>Valor Mercado: $${formatCurrency(marketValue)}</div>
                             </div>
                             <div class="portfolio-gainloss text-sm mt-2 ${gainLossClass}">
                                 <span class="font-semibold">G/P:</span> $${formatCurrency(gainLoss)} (${formatCurrency(gainLossPercent)}%)
@@ -283,7 +332,7 @@
                         </div>
                         <div class="sl-tp-controls border-t border-gray-200 pt-3 mt-3 flex items-center justify-start space-x-6">
                             <div class="flex items-center space-x-2">
-                                <label for="sl-toggle-${symbol}" class="sl-tp-label">SL (-${Math.abs(stopLossThreshold)}%)</label>
+                                <label for="sl-toggle-${symbol}" class="sl-tp-label">SL (${stopLossThreshold}%)</label>
                                 <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
                                     <input type="checkbox" name="sl-toggle-${symbol}" id="sl-toggle-${symbol}" class="toggle-checkbox" ${portfolioItem.slActive ? 'checked' : ''} onchange="toggleStopLoss('${symbol}')"/>
                                     <label for="sl-toggle-${symbol}" class="toggle-label"></label>
@@ -298,390 +347,273 @@
                             </div>
                         </div>
                         <div class="manual-sell-controls border-t border-gray-200 pt-3 mt-3 flex items-center justify-start space-x-2">
-                            <label for="sell-portfolio-qty-${symbol}" class="text-sm font-medium text-gray-700">Vender:</label>
-                            <input type="number" id="sell-portfolio-qty-${symbol}" min="1" value="1" class="portfolio-qty-input">
-                            <button onclick="sellFromPortfolio('${symbol}')" class="sell-button">Vender</button>
-                        </div>`;
+                             <label for="sell-portfolio-qty-${symbol}" class="text-sm font-medium text-gray-700">Vender:</label>
+                             <input type="number" id="sell-portfolio-qty-${symbol}" min="1" value="1" class="portfolio-qty-input">
+                             <button onclick="sellFromPortfolio('${symbol}')" class="sell-button">Vender</button>
+                        </div>
+                    `;
                     portfolioEl.appendChild(portfolioDiv);
                 });
             }
-            // Actualizar valor de cartera y total en la cabecera (redundante con updateGameInfo, pero asegura consistencia)
+
+            // Actualizar valores globales en la cabecera
             portfolioValueEl.textContent = formatCurrency(currentPortfolioValue);
             totalValueEl.textContent = formatCurrency(cash + currentPortfolioValue);
         }
 
-        // Lógica para comprar acciones
+        /**
+         * Compra una cantidad específica de una acción.
+         * @param {string} symbol - El símbolo de la acción a comprar.
+         */
         function buyStock(symbol) {
             if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
-
             const quantityInput = document.getElementById(`buy-qty-${symbol}`);
             const quantity = parseInt(quantityInput.value);
             const stock = stocks.find(s => s.symbol === symbol);
 
-            if (!stock || isNaN(quantity) || quantity <= 0) {
-                showMessage('Cantidad inválida.', 'error');
-                quantityInput.focus();
-                return;
-            }
-
+            if (!stock || isNaN(quantity) || quantity <= 0) { showMessage('Cantidad inválida.', 'error'); quantityInput.focus(); return; }
             const cost = stock.price * quantity;
-            if (cost > cash) {
-                showMessage('No tienes suficiente dinero.', 'error');
-                return;
-            }
+            if (cost > cash) { showMessage('No tienes suficiente dinero.', 'error'); return; }
 
             const buyPrice = stock.price;
-            cash -= cost; // Reducir dinero
+            cash -= cost;
 
-            // Actualizar cartera
-            if (portfolio[symbol]) { // Si ya tiene acciones de este tipo
+            if (portfolio[symbol]) {
                 const existingQuantity = portfolio[symbol].quantity;
                 const existingAvgPrice = portfolio[symbol].avgPrice;
-                // Recalcular precio promedio ponderado
                 portfolio[symbol].avgPrice = ((existingAvgPrice * existingQuantity) + cost) / (existingQuantity + quantity);
                 portfolio[symbol].quantity += quantity;
-            } else { // Si es la primera compra de esta acción
-                portfolio[symbol] = {
-                    quantity: quantity,
-                    avgPrice: buyPrice,
-                    slActive: false, // SL/TP desactivados por defecto
-                    tpActive: false
-                };
+            } else {
+                portfolio[symbol] = { quantity: quantity, avgPrice: buyPrice, slActive: false, tpActive: false };
             }
 
-            addTransaction('BUY', symbol, quantity, buyPrice); // Añadir al historial
+            addTransaction('BUY', symbol, quantity, buyPrice);
             showMessage(`Compraste ${quantity} acciones de ${symbol} por $${formatCurrency(cost)}`, 'success');
-            quantityInput.value = '1'; // Resetear input de cantidad
-            updateGameInfo(); // Actualizar cabecera
-            renderPortfolio(); // Actualizar vista de cartera
-            saveGameState(); // Guardar estado
+            quantityInput.value = '1';
+            updateGameInfo();
+            renderPortfolio();
+            // No guardamos estado aquí, solo al salir
         }
 
-        // Inicia la venta desde la vista de cartera
-        function sellFromPortfolio(symbol) {
+        /**
+         * Inicia la venta manual desde la sección de cartera.
+         * @param {string} symbol - El símbolo de la acción a vender.
+         */
+         function sellFromPortfolio(symbol) {
              if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
              const inputId = `sell-portfolio-qty-${symbol}`;
              const quantityInput = document.getElementById(inputId);
              if (!quantityInput) { console.error(`Input not found: ${inputId}`); return; }
              const quantity = parseInt(quantityInput.value);
-
-             // Llama a la función principal de venta
-             const success = sellStock(symbol, quantity, false, ''); // false = no es auto-sell
-
-             // Resetear input si la venta fue exitosa o si se intentó vender algo
-             if (success || (!success && quantity > 0)) {
-                 quantityInput.value = '1';
-             }
+             const success = sellStock(symbol, quantity, false, '');
+             if (success || (!success && quantity > 0)) { quantityInput.value = '1'; }
          }
 
-        // Lógica principal para vender acciones (manual o automática)
+        /**
+         * Vende una cantidad específica de una acción.
+         * @param {string} symbol - El símbolo de la acción a vender.
+         * @param {number} quantityToSell - La cantidad a vender.
+         * @param {boolean} [isAutoSell=false] - Indica si es una venta automática (SL/TP).
+         * @param {string} [triggerType=''] - El tipo de trigger si es automática ('SL' o 'TP').
+         * @returns {boolean} True si la venta fue exitosa, False en caso contrario.
+         */
         function sellStock(symbol, quantityToSell = 0, isAutoSell = false, triggerType = '') {
-            // No permitir venta manual si está pausado
-            if (!isAutoSell && isPaused) {
-                showMessage('El mercado está pausado. Reanuda para operar.', 'error');
-                return false; // Indicar fallo
-            }
-
+            if (!isAutoSell && isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return false; }
             const stock = stocks.find(s => s.symbol === symbol);
             const quantity = quantityToSell;
 
-            // Validaciones
-            if (!stock || isNaN(quantity) || quantity <= 0) {
-                if (!isAutoSell) showMessage('Cantidad inválida.', 'error');
-                return false;
-            }
-            if (!portfolio[symbol] || portfolio[symbol].quantity < quantity) {
-                if (!isAutoSell) showMessage(`No tienes suficientes acciones de ${symbol} para vender.`, 'error');
-                return false;
-            }
+            if (!stock || isNaN(quantity) || quantity <= 0) { if (!isAutoSell) showMessage('Cantidad inválida.', 'error'); return false; }
+            if (!portfolio[symbol] || portfolio[symbol].quantity < quantity) { if (!isAutoSell) showMessage(`No tienes suficientes acciones de ${symbol} para vender.`, 'error'); return false; }
 
             const sellPrice = stock.price;
-            const avgPrice = portfolio[symbol].avgPrice; // Precio promedio de compra para calcular G/P
+            const avgPrice = portfolio[symbol].avgPrice;
             const revenue = sellPrice * quantity;
-            cash += revenue; // Añadir dinero
+            cash += revenue;
+
             const soldQuantity = quantity;
+            portfolio[symbol].quantity -= quantity;
 
-            portfolio[symbol].quantity -= quantity; // Reducir cantidad en cartera
-
-            // Determinar tipo de transacción y mensaje
             let transactionType = 'SELL';
             let messageType = 'success';
             if (isAutoSell) {
-                transactionType = triggerType; // SL o TP
-                messageType = triggerType === 'SL' ? 'error' : 'success'; // Mensaje rojo para SL
+                transactionType = triggerType;
+                messageType = triggerType === 'SL' ? 'error' : 'success';
             }
 
-            addTransaction(transactionType, symbol, soldQuantity, sellPrice, avgPrice); // Añadir al historial
+            addTransaction(transactionType, symbol, soldQuantity, sellPrice, avgPrice);
 
-            // Eliminar la acción de la cartera si se vendieron todas
-            if (portfolio[symbol].quantity === 0) {
-                delete portfolio[symbol];
-            }
+            if (portfolio[symbol].quantity === 0) { delete portfolio[symbol]; }
 
-            // Mostrar mensaje adecuado
             if (isAutoSell) {
                 if (triggerType === 'SL') showMessage(`¡STOP-LOSS (${stopLossThreshold}%) ACTIVADO! Vendidas ${soldQuantity} acciones de ${symbol} a $${formatCurrency(sellPrice)}.`, messageType);
                 else if (triggerType === 'TP') showMessage(`¡TAKE-PROFIT (+${takeProfitThreshold}%) ACTIVADO! Vendidas ${soldQuantity} acciones de ${symbol} a $${formatCurrency(sellPrice)}.`, messageType);
-                else showMessage(`¡Venta Automática! Vendidas ${soldQuantity} acciones de ${symbol} a $${formatCurrency(sellPrice)}.`, 'info'); // Caso genérico (no debería ocurrir)
-            } else {
-                showMessage(`Vendiste ${soldQuantity} acciones de ${symbol} por $${formatCurrency(revenue)}`, messageType);
-            }
+                else showMessage(`¡Venta Automática! Vendidas ${soldQuantity} acciones de ${symbol} a $${formatCurrency(sellPrice)}.`, 'info');
+            } else { showMessage(`Vendiste ${soldQuantity} acciones de ${symbol} por $${formatCurrency(revenue)}`, messageType); }
 
-            updateGameInfo(); // Actualizar cabecera
-            renderPortfolio(); // Actualizar vista de cartera
-            saveGameState(); // Guardar estado
-            return true; // Indicar éxito
+            updateGameInfo();
+            renderPortfolio();
+            // No guardamos estado aquí, solo al salir
+            return true;
         }
 
-        // Añade una transacción al historial
+        /**
+         * Añade una transacción al historial.
+         */
         function addTransaction(type, symbol, quantity, price, avgPrice = null) {
-            const transaction = {
-                type: type,         // BUY, SELL, SL, TP
-                symbol: symbol,
-                quantity: quantity,
-                price: price,       // Precio de ejecución
-                timestamp: new Date(),
-                avgPrice: avgPrice  // Precio promedio de compra (solo relevante para ventas)
-            };
+            const transaction = { type: type, symbol: symbol, quantity: quantity, price: price, timestamp: new Date(), avgPrice: avgPrice };
             transactionHistory.push(transaction);
         }
 
-        // Activa/desactiva Stop-Loss para una acción en cartera
+        /**
+         * Activa/desactiva el Stop-Loss.
+         */
         function toggleStopLoss(symbol) {
-            if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
-            if (portfolio[symbol]) {
-                portfolio[symbol].slActive = !portfolio[symbol].slActive;
-                showMessage(`Stop-Loss (${stopLossThreshold}%) para ${symbol} ${portfolio[symbol].slActive ? 'ACTIVADO' : 'DESACTIVADO'}.`, 'info');
-                saveGameState(); // Guardar el cambio
-                renderPortfolio(); // Re-renderizar para mostrar el toggle actualizado
-            }
+            if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); const cb = document.getElementById(`sl-toggle-${symbol}`); if(cb) cb.checked = !cb.checked; return; }
+            if (portfolio[symbol]) { portfolio[symbol].slActive = !portfolio[symbol].slActive; showMessage(`Stop-Loss (${stopLossThreshold}%) para ${symbol} ${portfolio[symbol].slActive ? 'ACTIVADO' : 'DESACTIVADO'}.`, 'info'); }
         }
 
-        // Activa/desactiva Take-Profit para una acción en cartera
+        /**
+         * Activa/desactiva el Take-Profit.
+         */
         function toggleTakeProfit(symbol) {
-            if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
-            if (portfolio[symbol]) {
-                portfolio[symbol].tpActive = !portfolio[symbol].tpActive;
-                showMessage(`Take-Profit (+${takeProfitThreshold}%) para ${symbol} ${portfolio[symbol].tpActive ? 'ACTIVADO' : 'DESACTIVADO'}.`, 'info');
-                saveGameState(); // Guardar el cambio
-                renderPortfolio(); // Re-renderizar para mostrar el toggle actualizado
-            }
+             if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); const cb = document.getElementById(`tp-toggle-${symbol}`); if(cb) cb.checked = !cb.checked; return; }
+            if (portfolio[symbol]) { portfolio[symbol].tpActive = !portfolio[symbol].tpActive; showMessage(`Take-Profit (+${takeProfitThreshold}%) para ${symbol} ${portfolio[symbol].tpActive ? 'ACTIVADO' : 'DESACTIVADO'}.`, 'info'); }
         }
 
-        // Comprueba si se deben ejecutar órdenes automáticas (SL/TP)
+        /**
+         * Revisa si alguna orden automática (SL/TP) debe ejecutarse.
+         */
         function checkAutoOrders() {
-            const ordersToExecute = []; // Lista de órdenes a ejecutar en este ciclo
-
+            const ordersToExecute = [];
             for (const symbol in portfolio) {
                 const portfolioItem = portfolio[symbol];
                 const stock = stocks.find(s => s.symbol === symbol);
-
-                // Validar datos necesarios
                 if (!stock || portfolioItem.quantity <= 0 || portfolioItem.avgPrice <= 0) continue;
 
                 const currentPrice = stock.price;
                 const avgPrice = portfolioItem.avgPrice;
                 const gainLossPercent = ((currentPrice - avgPrice) / avgPrice) * 100;
 
-                // Comprobar Stop-Loss
-                if (portfolioItem.slActive && gainLossPercent <= stopLossThreshold) {
-                    ordersToExecute.push({ symbol: symbol, type: 'SL' });
-                    continue; // Si se activa SL, no comprobar TP para la misma acción en este ciclo
-                }
-                // Comprobar Take-Profit
-                if (portfolioItem.tpActive && gainLossPercent >= takeProfitThreshold) {
-                    ordersToExecute.push({ symbol: symbol, type: 'TP' });
-                }
+                if (portfolioItem.slActive && gainLossPercent <= stopLossThreshold) { ordersToExecute.push({ symbol: symbol, type: 'SL' }); continue; }
+                if (portfolioItem.tpActive && gainLossPercent >= takeProfitThreshold) { ordersToExecute.push({ symbol: symbol, type: 'TP' }); }
             }
-
-            // Ejecutar órdenes encontradas
-            ordersToExecute.forEach(order => {
-                // Volver a comprobar si la acción sigue en cartera (podría haberse vendido manualmente)
-                if (portfolio[order.symbol]) {
-                    const quantityToSell = portfolio[order.symbol].quantity; // Vender toda la posición
-                    sellStock(order.symbol, quantityToSell, true, order.type); // true = es auto-sell
-                }
-            });
+            ordersToExecute.forEach(order => { if (portfolio[order.symbol]) { const quantityToSell = portfolio[order.symbol].quantity; sellStock(order.symbol, quantityToSell, true, order.type); } });
         }
 
-        // Simula el cambio de precio de las acciones
+        /**
+         * Simula el cambio de precio de las acciones.
+         */
         function simulatePriceChange() {
-            tickCounter++; // Incrementar contador de tiempo/ciclos
+            tickCounter++;
             stocks.forEach(stock => {
-                stock.lastPrice = stock.price; // Guardar precio anterior
-
-                // Calcular cambio basado en volatilidad y tendencia
-                const randomFactor = (Math.random() - 0.5) * 2; // Factor aleatorio entre -1 y 1
+                stock.lastPrice = stock.price;
+                const randomFactor = (Math.random() - 0.5) * 2;
                 const priceChangePercent = randomFactor * stock.volatility + stock.trend;
                 let newPrice = stock.price * (1 + priceChangePercent);
-                newPrice = Math.max(0.01, newPrice); // Asegurar que el precio no sea negativo o cero
-
-                stock.price = newPrice; // Actualizar precio
-
-                // Añadir al historial de precios para el gráfico
+                newPrice = Math.max(0.01, newPrice);
+                stock.price = newPrice;
                 stock.history.push({ tick: tickCounter, price: stock.price });
-                // Mantener el historial con un tamaño máximo
-                if (stock.history.length > maxHistoryLength) {
-                    stock.history.shift();
+                if (stock.history.length > maxHistoryLength) { stock.history.shift(); }
+            });
+        }
+
+        /**
+         * Inicializa el gráfico de Chart.js.
+         */
+        function initializeChart() {
+            const ctx = chartCanvas.getContext('2d');
+            stockChart = new Chart(ctx, {
+                type: 'line', data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: false, ticks: { callback: value => '$' + formatCurrency(value) } }, x: { ticks: { display: false }, grid: { display: false } } },
+                    plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false, callbacks: { label: context => `${context.dataset.label || ''}: $${formatCurrency(context.parsed.y)}` } } },
+                    animation: { duration: 200 }
                 }
             });
+            updateChart();
         }
 
-        // Inicializa el gráfico de precios
-        function initializeChart() {
-             const ctx = chartCanvas.getContext('2d');
-             stockChart = new Chart(ctx, {
-                 type: 'line', // Tipo de gráfico
-                 data: {
-                     labels: [], // Etiquetas eje X (tiempo/ticks)
-                     datasets: [] // Series de datos (una por acción visible)
-                 },
-                 options: {
-                     responsive: true, // Hacer el gráfico adaptable
-                     maintainAspectRatio: false, // Permitir que cambie la proporción
-                     scales: {
-                         y: { // Eje Y (Precio)
-                             beginAtZero: false, // No empezar siempre en cero
-                             ticks: { // Formato de las etiquetas del eje Y
-                                 callback: function(value) { return '$' + formatCurrency(value); }
-                             }
-                         },
-                         x: { // Eje X (Tiempo/Ticks)
-                             ticks: { display: false }, // Ocultar etiquetas del eje X
-                             grid: { display: false } // Ocultar rejilla vertical
-                         }
-                     },
-                     plugins: {
-                         legend: { position: 'top' }, // Posición de la leyenda
-                         tooltip: { // Configuración de tooltips al pasar el ratón
-                             mode: 'index',
-                             intersect: false,
-                             callbacks: {
-                                 label: function(context) { // Formato del texto en tooltip
-                                     let label = context.dataset.label || '';
-                                     if (label) label += ': ';
-                                     if (context.parsed.y !== null) label += '$' + formatCurrency(context.parsed.y);
-                                     return label;
-                                 }
-                             }
-                         }
-                     },
-                     animation: { duration: 200 } // Duración de la animación
-                 }
+        /**
+         * Actualiza los datos y la visualización del gráfico.
+         */
+        function updateChart() {
+             if (!stockChart) return;
+             const visibleStocks = stocks.filter(stock => stock.showOnChart);
+             let labels = [];
+             if (visibleStocks.length > 0 && visibleStocks[0].history.length > 0) { labels = visibleStocks[0].history.map(h => h.tick); }
+             else if (tickCounter > 0) { const startTick = Math.max(1, tickCounter - maxHistoryLength + 1); for (let i = startTick; i <= tickCounter; i++) labels.push(i); }
+             if (labels.length > maxHistoryLength) labels.splice(0, labels.length - maxHistoryLength);
+             stockChart.data.labels = labels;
+             stockChart.data.datasets = visibleStocks.map(stock => {
+                 const historyData = stock.history.slice(-labels.length).map(h => h.price);
+                 while (historyData.length < labels.length) historyData.unshift(null);
+                 return { label: stock.symbol, data: historyData, borderColor: stock.color, backgroundColor: stock.color + '33', tension: 0.1, pointRadius: 0, pointHoverRadius: 5 };
              });
-             updateChart(); // Dibujar gráfico inicial
+             stockChart.update();
          }
 
-
-        // Actualiza los datos del gráfico
-        function updateChart() {
-            if (!stockChart) return; // Salir si el gráfico no está inicializado
-
-            const visibleStocks = stocks.filter(stock => stock.showOnChart); // Acciones a mostrar
-            let labels = []; // Etiquetas para el eje X
-
-            // Generar etiquetas basadas en el historial de la primera acción visible o el contador de ticks
-            if (visibleStocks.length > 0 && visibleStocks[0].history.length > 0) {
-                labels = visibleStocks[0].history.map(h => h.tick);
-            } else if (tickCounter > 0) {
-                 const startTick = Math.max(1, tickCounter - maxHistoryLength + 1);
-                 for (let i = startTick; i <= tickCounter; i++) labels.push(i);
-            }
-            // Asegurar que las etiquetas no excedan la longitud máxima
-             if (labels.length > maxHistoryLength) labels.splice(0, labels.length - maxHistoryLength);
-
-
-            stockChart.data.labels = labels; // Actualizar etiquetas del gráfico
-
-            // Crear/Actualizar datasets para cada acción visible
-            stockChart.data.datasets = visibleStocks.map(stock => {
-                // Obtener los últimos precios del historial que coincidan con las etiquetas actuales
-                const historyData = stock.history.slice(-labels.length).map(h => h.price);
-                 // Rellenar con nulls al principio si el historial es más corto que las etiquetas
-                 while (historyData.length < labels.length) historyData.unshift(null);
-
-                return {
-                    label: stock.symbol, // Nombre de la serie
-                    data: historyData,   // Datos de precio
-                    borderColor: stock.color, // Color de la línea
-                    backgroundColor: stock.color + '33', // Color del área (con transparencia)
-                    tension: 0.1, // Suavizado de la línea
-                    pointRadius: 0, // Ocultar puntos
-                    pointHoverRadius: 5 // Mostrar puntos al pasar el ratón
-                };
-            });
-
-            stockChart.update(); // Actualizar el gráfico en el canvas
-        }
-
-        // Cambia la visibilidad de una acción en el gráfico
+        /**
+         * Cambia la visibilidad de una acción en el gráfico.
+         */
         function toggleChartVisibility(symbol) {
             const stock = stocks.find(s => s.symbol === symbol);
-            if (stock) {
-                stock.showOnChart = !stock.showOnChart; // Cambiar estado
-                updateChart(); // Actualizar gráfico
-            }
+            if (stock) { stock.showOnChart = !stock.showOnChart; updateChart(); }
         }
 
-        // Función principal que se ejecuta en cada intervalo de tiempo
+        /**
+         * Actualiza el estado del mercado periódicamente.
+         */
         function updateMarket() {
-            if (isPaused) return; // No hacer nada si está pausado
-
-            simulatePriceChange(); // Simular nuevos precios
-            renderStockMarket();   // Actualizar lista de mercado
-            renderPortfolio();     // Actualizar vista de cartera
-            checkAutoOrders();     // Comprobar y ejecutar SL/TP
-            updateChart();         // Actualizar gráfico
-            // Llamar a updateGameInfo al final para asegurar que el valor total está actualizado
-            updateGameInfo();
+            if (isPaused) return;
+            simulatePriceChange();
+            renderStockMarket();
+            renderPortfolio(); // Esto actualiza los valores globales visualmente
+            checkAutoOrders();
+            updateChart();
         }
 
-        // Pausa o reanuda la simulación
+        /**
+         * Pausa o reanuda la simulación del mercado.
+         */
         function togglePause() {
              isPaused = !isPaused;
              if (isPaused) {
-                 clearInterval(gameInterval); // Detener actualizaciones automáticas
+                 clearInterval(gameInterval);
                  pauseResumeBtn.textContent = 'Reanudar';
                  pauseResumeBtn.classList.remove('pause-button', 'bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
                  pauseResumeBtn.classList.add('resume-button', 'bg-red-600', 'hover:bg-red-700', 'focus:ring-red-500');
                  showMessage('Mercado pausado.', 'info');
              } else {
-                 gameInterval = setInterval(updateMarket, updateInterval); // Reanudar actualizaciones
+                 updateMarket(); // Actualizar inmediatamente al reanudar
+                 gameInterval = setInterval(updateMarket, updateInterval);
                  pauseResumeBtn.textContent = 'Pausar';
                  pauseResumeBtn.classList.remove('resume-button', 'bg-red-600', 'hover:bg-red-700', 'focus:ring-red-500');
                  pauseResumeBtn.classList.add('pause-button', 'bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
                  showMessage('Mercado reanudado.', 'info');
-                 // Ejecutar una actualización inmediata al reanudar para refrescar datos
-                 updateMarket();
              }
          }
 
-        // Muestra el modal del historial de transacciones
+        /**
+         * Muestra el modal con el historial de transacciones.
+         */
         function showHistory() {
-             // if (isPaused) { showMessage('Reanuda el mercado para ver el historial.', 'error'); return; } // Opcional: permitir ver historial pausado
-
-             historyListEl.innerHTML = ''; // Limpiar lista
+             historyListEl.innerHTML = '';
              if (transactionHistory.length === 0) {
                  historyListEl.innerHTML = '<li class="text-gray-500">No hay transacciones todavía.</li>';
              } else {
-                 // Mostrar historial en orden inverso (más reciente primero)
                  [...transactionHistory].reverse().forEach(tx => {
                      const li = document.createElement('li');
                      li.className = 'history-list-item';
-                     // Convertir timestamp si es string (al cargar desde localStorage)
                      const timestamp = typeof tx.timestamp === 'string' ? new Date(tx.timestamp) : tx.timestamp;
                      const stockInfo = stocks.find(s => s.symbol === tx.symbol);
-                     const stockName = stockInfo ? stockInfo.name : tx.symbol; // Usar nombre si está disponible
-
-                     // Calcular y mostrar Ganancia/Pérdida realizada en ventas
+                     const stockName = stockInfo ? stockInfo.name : tx.symbol;
                      let gainLossHTML = '';
                      if (['SELL', 'SL', 'TP'].includes(tx.type) && tx.avgPrice !== null && tx.avgPrice > 0) {
                          const realizedGainLoss = (tx.price - tx.avgPrice) * tx.quantity;
                          const gainLossClass = realizedGainLoss >= 0 ? 'price-up' : 'price-down';
                          gainLossHTML = `<div class="history-gain-loss ${gainLossClass}">Ganancia/Pérdida: $${formatCurrency(realizedGainLoss)}</div>`;
                      }
-
-                     // Construir HTML del elemento de historial
                      li.innerHTML = `
                          <div class="history-main-line">
                              <span class="history-type-${tx.type}">${tx.type}</span>
@@ -690,159 +622,199 @@
                              <span>@ $${formatCurrency(tx.price)}</span>
                              <span class="text-gray-500 text-xs float-right">${formatTimestamp(timestamp)}</span>
                          </div>
-                         ${gainLossHTML}`;
+                         ${gainLossHTML}
+                     `;
                      historyListEl.appendChild(li);
                  });
              }
-             historyModal.classList.remove('hidden'); // Mostrar modal
+             historyModal.classList.remove('hidden');
          }
 
-        // Cierra el modal del historial
+        /**
+         * Cierra el modal del historial.
+         */
         function closeHistory() {
-             historyModal.classList.add('hidden');
-         }
-
-        // Guarda el estado actual del juego en localStorage
-        function saveGameState() {
-            try {
-                // Guardar solo los precios actuales para restaurarlos si se recarga
-                const savedStockPrices = stocks.reduce((acc, stock) => {
-                    acc[stock.symbol] = stock.price;
-                    return acc;
-                }, {});
-
-                const gameState = {
-                    cash: cash,
-                    portfolio: portfolio,
-                    transactionHistory: transactionHistory,
-                    savedStockPrices: savedStockPrices // Guardar precios actuales
-                };
-                localStorage.setItem('stockGameState', JSON.stringify(gameState));
-                console.log("Game state saved.");
-            } catch (error) {
-                console.error("Error saving game state:", error);
-                showMessage("Error al guardar la partida.", "error");
-            }
+            historyModal.classList.add('hidden');
         }
 
-        // Carga el estado del juego desde localStorage
-        // ** MODIFICADO: Acepta el dinero inicial leído de sessionStorage **
-        function loadGameState(initialCashFromSession) {
+        /**
+         * Obtiene el saldo global actual desde localStorage.
+         * @returns {number} El saldo global actual o el valor por defecto.
+         */
+        function getCurrentGlobalBalance() {
             try {
-                const savedStateJSON = localStorage.getItem('stockGameState');
-                if (savedStateJSON) {
-                    const savedState = JSON.parse(savedStateJSON);
-
-                    // ** MODIFICADO: Cargar 'cash' del estado guardado si existe, si no, usar el valor de sessionStorage **
-                    cash = savedState.cash !== undefined ? savedState.cash : initialCashFromSession;
-                    portfolio = savedState.portfolio || {};
-                    // Convertir timestamps de string a Date al cargar
-                    transactionHistory = (savedState.transactionHistory || []).map(tx => ({
-                        ...tx,
-                        timestamp: new Date(tx.timestamp),
-                        // Asegurar que avgPrice existe (compatibilidad con partidas antiguas)
-                        avgPrice: tx.avgPrice !== undefined ? tx.avgPrice : null
-                    }));
-
-                    // Restaurar precios guardados y reiniciar historial de gráfico
-                    if (savedState.savedStockPrices) {
-                        stocks.forEach(stock => {
-                            if (savedState.savedStockPrices[stock.symbol] !== undefined) {
-                                stock.price = savedState.savedStockPrices[stock.symbol];
-                                stock.lastPrice = stock.price; // Sincronizar lastPrice
-                            }
-                            // Reiniciar historial de gráfico para evitar datos viejos
-                            stock.history = [{ tick: 0, price: stock.price }];
-                        });
-                    } else {
-                         // Si no hay precios guardados, reiniciar historial igualmente
-                         stocks.forEach(stock => {
-                            stock.history = [{ tick: 0, price: stock.price }];
-                         });
+                const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
+                if (savedBalance !== null) {
+                    const parsedBalance = parseInt(savedBalance);
+                    if (!isNaN(parsedBalance)) {
+                        return parsedBalance;
                     }
-
-                    console.log("Game state loaded from localStorage.");
-                    showMessage("Partida anterior cargada.", "info");
-                    return true; // Indicar que se cargó una partida
                 }
             } catch (error) {
-                console.error("Error loading game state:", error);
-                localStorage.removeItem('stockGameState'); // Limpiar estado corrupto
-                showMessage("Error al cargar la partida guardada. Empezando de nuevo.", "error");
-                // Si falla la carga, usar el dinero inicial de sessionStorage
-                cash = initialCashFromSession;
-                portfolio = {};
-                transactionHistory = [];
+                console.error("Error al leer el saldo global desde localStorage:", error);
             }
-
-            // Si no se cargó estado, inicializar con valor de sessionStorage y reiniciar historial
-            console.log("No saved game found or error loading. Starting fresh.");
-            cash = initialCashFromSession; // Usar valor de sessionStorage si no hay partida guardada
-            portfolio = {};
-            transactionHistory = [];
-            stocks.forEach(stock => {
-                 stock.history = [{ tick: 0, price: stock.price }]; // Reiniciar historial gráfico
-            });
-            return false; // Indicar que no se cargó partida
+            return DEFAULT_BALANCE; // Retorna el saldo por defecto si hay error o no existe
         }
 
-        // Inicializa el juego
+        /**
+         * Guarda el nuevo saldo global en localStorage.
+         * @param {number} newBalance - El nuevo saldo a guardar.
+         */
+        function saveGlobalBalance(newBalance) {
+             try {
+                 // Asegurarse de guardar un número entero
+                 const balanceToSave = Math.round(newBalance);
+                 if (isNaN(balanceToSave)) {
+                     console.error("Intento de guardar un saldo global inválido (NaN).");
+                     return;
+                 }
+                 localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balanceToSave.toString());
+                 console.log(`Nuevo saldo global guardado: ${balanceToSave}`);
+             } catch (error) {
+                 console.error("Error al guardar el saldo global en localStorage:", error);
+                 showMessage("Error al actualizar el saldo global.", "error");
+             }
+         }
+
+        /**
+         * Carga el estado inicial del juego (inversión) y configura las acciones.
+         */
+        function loadGameState() {
+             try {
+                 const initialInvestmentStr = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
+                 let parsedInvestment = 10000; // Default investment if not found or invalid
+
+                 if (initialInvestmentStr) {
+                     const tempInvestment = parseInt(initialInvestmentStr);
+                     if (!isNaN(tempInvestment) && tempInvestment > 0) {
+                         parsedInvestment = tempInvestment;
+                     } else {
+                         console.warn("Inversión inicial inválida en sessionStorage. Usando 10,000 por defecto.");
+                     }
+                 } else {
+                     console.warn("No se encontró inversión inicial en sessionStorage. Usando 10,000 por defecto.");
+                 }
+                 initialInvestment = parsedInvestment; // Guardar para cálculos al salir
+                 cash = initialInvestment; // Establecer el dinero inicial del juego
+
+             } catch (error) {
+                 console.error("Error al leer la inversión inicial de sessionStorage:", error);
+                 initialInvestment = 10000; // Usar valor por defecto en caso de error
+                 cash = initialInvestment;
+             }
+
+             // Limpiar estado previo de localStorage (si existiera, aunque no se usa para cargar)
+             localStorage.removeItem('stockGameState'); // Nombre de clave anterior, mantener por si acaso
+             console.log("Estado de juego previo (si existía) limpiado. Empezando con inversión.");
+
+             // Inicializar acciones
+             stocks = initialStockData.map(initialStock => ({
+                 ...initialStock,
+                 lastPrice: initialStock.price,
+                 history: [{ tick: 0, price: initialStock.price }],
+                 showOnChart: initialStock.showOnChart !== undefined ? initialStock.showOnChart : true
+             }));
+
+             transactionHistory = [];
+             portfolio = {};
+
+             showMessage(`Inversión inicial: $${formatCurrency(cash)}. ¡Bienvenido! El mercado se actualiza cada 10 segundos.`, "info");
+         }
+
+
+        /**
+         * Inicializa todos los componentes del juego al cargar la página.
+         */
         function initializeGame() {
-            // --- NUEVO: Leer inversión inicial de sessionStorage ---
-            const GAME6_INVESTMENT_SESSION_KEY = 'game6InitialInvestment';
-            let startingMoney = 10000; // Valor por defecto original del juego
-            try {
-                const storedInvestment = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
-                if (storedInvestment !== null) {
-                    const parsedInvestment = parseInt(storedInvestment);
-                    // Validar que sea uno de los valores permitidos
-                    if (!isNaN(parsedInvestment) && [1000, 5000, 10000].includes(parsedInvestment)) {
-                        startingMoney = parsedInvestment;
-                        console.log(`Inversión inicial leída de sessionStorage: ${startingMoney}€`);
-                        // Opcional: Limpiar la clave si solo debe usarse una vez por sesión
-                        // sessionStorage.removeItem(GAME6_INVESTMENT_SESSION_KEY);
-                    } else {
-                        console.warn(`Valor de inversión inválido en sessionStorage: ${storedInvestment}. Usando valor por defecto (${startingMoney}€).`);
-                    }
-                } else {
-                    console.warn(`Clave de inversión '${GAME6_INVESTMENT_SESSION_KEY}' no encontrada en sessionStorage. Usando valor por defecto (${startingMoney}€).`);
-                }
-            } catch (error) {
-                console.error("Error leyendo sessionStorage:", error);
-                // Usar valor por defecto en caso de error
-            }
-            // --- FIN NUEVO ---
-
-            // ** MODIFICADO: Pasar startingMoney a loadGameState **
-            const loaded = loadGameState(startingMoney);
-
-            // Construir UI inicial
+            loadGameState(); // Carga la inversión inicial y resetea estado
             buildStockMarketList();
-            renderPortfolio();
-            updateGameInfo(); // Actualizar cabecera con el 'cash' final (cargado o inicial)
-            initializeChart(); // Inicializar gráfico
+            renderPortfolio(); // Muestra cartera (vacía) y actualiza valores iniciales
+            updateGameInfo(); // Asegura que el 'cash' inicial se muestre
+            initializeChart();
+            gameInterval = setInterval(updateMarket, updateInterval);
+        }
 
-            // Mostrar mensaje de bienvenida si no se cargó partida
-            if (!loaded) {
-                showMessage(`¡Bienvenido! Empezando con ${formatCurrency(cash)}€. El mercado se actualiza cada ${updateInterval/1000} segundos.`, "info");
+        /**
+         * Maneja el clic en el botón "Menú" para actualizar el saldo global y redirigir.
+         * @param {Event} event - El evento de clic.
+         */
+        function handleExitClick(event) {
+            event.preventDefault(); // Evitar la navegación inmediata
+
+            console.log("Botón Menú presionado. Actualizando saldo global...");
+
+            try {
+                // 1. Calcular valor final en el simulador
+                const finalPortfolioValue = calculatePortfolioValue();
+                const finalTotalValue = cash + finalPortfolioValue;
+
+                // 2. Calcular ganancia/pérdida neta
+                const netGainLoss = finalTotalValue - initialInvestment;
+                console.log(`Inversión Inicial: ${formatCurrency(initialInvestment)}`);
+                console.log(`Valor Total Final: ${formatCurrency(finalTotalValue)} (Cash: ${formatCurrency(cash)}, Cartera: ${formatCurrency(finalPortfolioValue)})`);
+                console.log(`Ganancia/Pérdida Neta: ${formatCurrency(netGainLoss)}`);
+
+                // 3. Obtener saldo global actual
+                const currentGlobalBalance = getCurrentGlobalBalance();
+                console.log(`Saldo Global Actual: ${formatCurrency(currentGlobalBalance)}`);
+
+                // 4. Calcular nuevo saldo global
+                const newGlobalBalance = currentGlobalBalance + netGainLoss;
+                console.log(`Nuevo Saldo Global Calculado: ${formatCurrency(newGlobalBalance)}`);
+
+                // 5. Guardar nuevo saldo global
+                saveGlobalBalance(newGlobalBalance);
+
+                // 6. Limpiar sessionStorage para la próxima vez
+                sessionStorage.removeItem(GAME6_INVESTMENT_SESSION_KEY);
+                console.log("Clave de inversión inicial eliminada de sessionStorage.");
+
+            } catch (error) {
+                console.error("Error durante el proceso de actualización del saldo al salir:", error);
+                showMessage("Ocurrió un error al actualizar tu saldo global. Los cambios podrían no guardarse.", "error");
+                // Considerar si redirigir igualmente o no
             }
 
-            // Iniciar ciclo del juego
-            gameInterval = setInterval(updateMarket, updateInterval);
-         }
+            // 7. Redirigir al menú principal
+            console.log("Redirigiendo a:", event.target.href);
+            window.location.href = event.target.href;
+        }
+
 
         // --- Event Listeners ---
         pauseResumeBtn.addEventListener('click', togglePause);
-        // Cerrar modal de historial al hacer clic fuera
-        historyModal.addEventListener('click', (event) => {
-             if (event.target === historyModal) { closeHistory(); } });
+        historyModal.addEventListener('click', (event) => { if (event.target === historyModal) { closeHistory(); } });
+        exitButton.addEventListener('click', handleExitClick); // Añadido listener para el botón Menú
 
-        // Iniciar el juego al cargar la página
+        // Iniciar el juego cuando la ventana se haya cargado completamente
         window.onload = initializeGame;
 
-        // Opcional: Guardar estado al cerrar/recargar (puede ser intrusivo)
+        // No guardar estado al salir con beforeunload, se hace al pulsar Menú
         // window.addEventListener('beforeunload', saveGameState);
 
     </script>
 </body>
 </html>
+```
+
+**Resumen de los cambios clave:**
+
+1.  **Constantes:** Añadidas las constantes `BALANCE_LOCAL_STORAGE_KEY`, `GAME6_INVESTMENT_SESSION_KEY` y `DEFAULT_BALANCE` al inicio del script para que coincidan con las usadas en `index.html`.
+2.  **Variable `initialInvestment`:** Se guarda la inversión inicial leída de `sessionStorage` en esta variable global dentro del script del juego.
+3.  **Funciones de Saldo Global:** Añadidas las funciones `getCurrentGlobalBalance` y `saveGlobalBalance` (adaptadas de `index.html`) para leer y escribir el saldo global en `localStorage`.
+4.  **Función `calculatePortfolioValue`:** Creada para obtener el valor actual de la cartera de forma independiente cuando sea necesario (al salir).
+5.  **Listener para el Botón "Menú" (`handleExitClick`):**
+    * Se obtiene el elemento del botón Menú (`#exit-button`).
+    * Se añade un `event listener` para el evento `click`.
+    * **Dentro del listener `handleExitClick`:**
+        * Se previene la redirección por defecto (`event.preventDefault()`).
+        * Se calcula el `finalTotalValue` (dinero actual + valor actual de la cartera).
+        * Se calcula la `netGainLoss` (ganancia/pérdida) restando la `initialInvestment` del `finalTotalValue`.
+        * Se lee el `currentGlobalBalance` de `localStorage`.
+        * Se calcula el `newGlobalBalance`.
+        * Se guarda el `newGlobalBalance` en `localStorage` usando `saveGlobalBalance`.
+        * Se elimina la clave de la inversión inicial de `sessionStorage`.
+        * Finalmente, se realiza la redirección a la URL del botón (`../index.html`).
+6.  **Limpieza:** Eliminada la función `saveGameState` que ya no era necesaria, ya que el estado relevante (saldo global) se actualiza al pulsar "Menú".
+
+Ahora, cuando termines de jugar al simulador y pulses el botón "Menú", tu Saldo Global en la página principal debería actualizarse correctamente con las ganancias o pérdidas que hayas tenido en la simulaci
