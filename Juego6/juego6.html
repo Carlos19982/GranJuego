@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Bolsa - Con Botón Menú</title>
+    <title>Simulador de Bolsa - Tendencia Dinámica</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -93,7 +93,7 @@
                  <a href="../index.html" id="exit-button" class="menu-link-button">
                      &larr; Menú
                  </a>
-            </div>
+             </div>
         </footer>
 
         <div id="history-modal" class="modal hidden">
@@ -136,6 +136,13 @@
         const maxHistoryLength = 60;
         let tickCounter = 0;
         let initialInvestment = 0; // Guardará la inversión inicial leída de sessionStorage
+
+        // NEW: Constantes para Tendencia Dinámica
+        const TREND_UPDATE_TICKS = 5; // Cada cuántos ticks se actualiza la tendencia (5 * 10s = 50s)
+        const TREND_CHANGE_AMOUNT = 0.000005; // Cuánto cambia la tendencia cada vez
+        const MAX_TREND = 0.0001; // Límite superior para la tendencia
+        const MIN_TREND = -0.0001; // Límite inferior para la tendencia
+
 
         // --- Elementos del DOM ---
         const cashEl = document.getElementById('cash');
@@ -504,18 +511,42 @@
          * Simula el cambio de precio de las acciones.
          */
         function simulatePriceChange() {
-            tickCounter++;
+            // Esta función ahora solo calcula el cambio de precio basado en volatilidad y tendencia actual
             stocks.forEach(stock => {
                 stock.lastPrice = stock.price;
-                const randomFactor = (Math.random() - 0.5) * 2;
+                const randomFactor = (Math.random() - 0.5) * 2; // Factor aleatorio entre -1 y 1
+                // Usa el valor 'trend' actual del objeto stock, que puede haber sido modificado
                 const priceChangePercent = randomFactor * stock.volatility + stock.trend;
                 let newPrice = stock.price * (1 + priceChangePercent);
-                newPrice = Math.max(0.01, newPrice);
+                newPrice = Math.max(0.01, newPrice); // Evitar precios negativos o cero
                 stock.price = newPrice;
+
+                // Añadir al historial para el gráfico
                 stock.history.push({ tick: tickCounter, price: stock.price });
-                if (stock.history.length > maxHistoryLength) { stock.history.shift(); }
+                if (stock.history.length > maxHistoryLength) {
+                    stock.history.shift();
+                }
             });
         }
+
+        // NEW: Función para actualizar la tendencia de las acciones periódicamente
+        function updateStockTrends() {
+             stocks.forEach(stock => {
+                 // Decide aleatoriamente si aumentar o disminuir la tendencia
+                 const changeDirection = Math.random() < 0.5 ? -1 : 1;
+                 let newTrend = stock.trend + changeDirection * TREND_CHANGE_AMOUNT;
+
+                 // Asegurarse de que la tendencia se mantiene dentro de los límites
+                 newTrend = Math.max(MIN_TREND, Math.min(newTrend, MAX_TREND));
+
+                 // Solo actualizar si el cambio es significativo (opcional, para evitar micro-cambios)
+                 // if (Math.abs(newTrend - stock.trend) > TREND_CHANGE_AMOUNT / 10) {
+                    // console.log(`Trend changed for ${stock.symbol}: ${stock.trend.toFixed(6)} -> ${newTrend.toFixed(6)}`); // Debug
+                    stock.trend = newTrend;
+                 // }
+             });
+        }
+
 
         /**
          * Inicializa el gráfico de Chart.js.
@@ -566,7 +597,15 @@
          */
         function updateMarket() {
             if (isPaused) return;
-            simulatePriceChange();
+            tickCounter++; // Incrementar contador de ticks
+
+            // NEW: Actualizar tendencias cada N ticks
+            if (tickCounter % TREND_UPDATE_TICKS === 0) {
+                 console.log(`Tick ${tickCounter}: Updating trends...`); // Debug
+                 updateStockTrends();
+            }
+
+            simulatePriceChange(); // Simular cambio de precio usando la tendencia actual
             renderStockMarket();
             renderPortfolio(); // Esto actualiza los valores globales visualmente
             checkAutoOrders();
@@ -712,7 +751,9 @@
                  ...initialStock,
                  lastPrice: initialStock.price,
                  history: [{ tick: 0, price: initialStock.price }],
-                 showOnChart: initialStock.showOnChart !== undefined ? initialStock.showOnChart : true
+                 showOnChart: initialStock.showOnChart !== undefined ? initialStock.showOnChart : true,
+                 // FIX: Asegurarse de que 'trend' se copia correctamente
+                 trend: initialStock.trend
              }));
 
              transactionHistory = [];
@@ -794,4 +835,4 @@
 
     </script>
 </body>
-</html>
+</ht

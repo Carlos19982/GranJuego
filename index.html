@@ -134,6 +134,11 @@
             const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1';
             const LAST_SEEN_ACHIEVEMENTS_KEY = 'rouletteLastSeenAchievements_v1';
 
+            // FIX: Declarar variables de logros ANTES de las funciones que las usan
+            const achievementsData = [ { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 } ];
+            let unlockedAchievements = [];
+            let notificationTimeout = null;
+
             const balanceElement = document.getElementById('global-balance');
             const rotatePrompt = document.getElementById('rotate-prompt');
             const achievementsButton = document.getElementById('achievementsButton');
@@ -149,7 +154,7 @@
             createBalanceModalStructure();
             createGame6InvestmentModalStructure();
             setupGameButtonListeners();
-            loadAchievements();
+            loadAchievements(); // Ahora puede acceder a 'unlockedAchievements' porque está declarada antes
             checkForNewAchievementsNotification();
             setupExternalUpdateListeners();
 
@@ -201,10 +206,10 @@
                      </div>
                  `;
                  if (!existingModal) {
-                    document.body.appendChild(modal);
-                    modal.addEventListener('click', (event) => { if (event.target === modal) { /* closeBalanceModal(); */ } });
+                     document.body.appendChild(modal);
+                     modal.addEventListener('click', (event) => { if (event.target === modal) { /* closeBalanceModal(); */ } });
                  }
-            }
+             }
             function showBalanceModal(gameName, continueAction) {
                 const modal = document.getElementById('balance-info-modal');
                 const amountElement = document.getElementById('balance-modal-amount');
@@ -263,16 +268,16 @@
                  `;
 
                  if (!existingModal) {
-                    document.body.appendChild(modal);
-                    modal.addEventListener('click', (event) => {
+                     document.body.appendChild(modal);
+                     modal.addEventListener('click', (event) => {
                          if (event.target === modal) { closeGame6InvestmentModal(); }
-                    });
+                     });
                  }
 
                  const closeBtn = modal.querySelector('#game6-modal-close-btn');
                  if (closeBtn && !closeBtn.dataset.listenerAttached) {
-                    closeBtn.addEventListener('click', closeGame6InvestmentModal);
-                    closeBtn.dataset.listenerAttached = 'true';
+                     closeBtn.addEventListener('click', closeGame6InvestmentModal);
+                     closeBtn.dataset.listenerAttached = 'true';
                  }
              }
 
@@ -283,9 +288,9 @@
                      createGame6InvestmentModalStructure();
                      modal = document.getElementById('game6-investment-modal');
                      if (!modal || !modal.querySelector('#game6-amount-options')) {
-                        console.error("Fallo crítico: No se pudo crear o encontrar el modal de inversión. Redirigiendo.");
-                        window.location.href = targetUrl;
-                        return;
+                         console.error("Fallo crítico: No se pudo crear o encontrar el modal de inversión. Redirigiendo.");
+                         window.location.href = targetUrl;
+                         return;
                      }
                  }
 
@@ -419,11 +424,28 @@
                 });
             }
 
-            // --- Lógica de Logros (sin cambios) ---
-            const achievementsData = [ { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 } ];
-            let unlockedAchievements = [];
-            let notificationTimeout = null;
-            function loadAchievements() { try { const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY); if (savedAchievements) { const parsedAchievements = JSON.parse(savedAchievements); if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) { unlockedAchievements = parsedAchievements; } else { console.warn("Formato de logros guardado inválido. Reiniciando."); unlockedAchievements = []; } } else { unlockedAchievements = []; } } catch (error) { console.error("Error al cargar logros:", error); unlockedAchievements = []; } }
+            // --- Lógica de Logros ---
+            // FIX: Moved achievementsData and unlockedAchievements declaration to the top
+
+            function loadAchievements() {
+                try {
+                    const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+                    if (savedAchievements) {
+                        const parsedAchievements = JSON.parse(savedAchievements);
+                        if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
+                            unlockedAchievements = parsedAchievements; // Assign to the already declared variable
+                        } else {
+                            console.warn("Formato de logros guardado inválido. Reiniciando.");
+                            unlockedAchievements = [];
+                        }
+                    } else {
+                        unlockedAchievements = [];
+                    }
+                } catch (error) {
+                    console.error("Error al cargar logros:", error);
+                    unlockedAchievements = [];
+                }
+            }
             function displayAchievements() { if (!achievementsList) return; achievementsList.innerHTML = ''; achievementsData.forEach(ach => { const isUnlocked = unlockedAchievements.includes(ach.id); const li = document.createElement('li'); li.classList.add('achievement-item'); if (isUnlocked) { li.classList.add('unlocked'); } const formatNumber = (num) => num.toLocaleString('es-ES'); li.innerHTML = ` <div class="achievement-info"> <h3>${ach.name}</h3> <p>Objetivo: ${formatNumber(ach.target)}€</p> </div> <div class="achievement-status"> ${isUnlocked ? '<span class="icon-unlocked">✔️</span>' : '<span class="icon-locked">🔒</span>'} </div> `; li.title = isUnlocked ? `Desbloqueado!` : `Necesitas ${formatNumber(ach.target)}€ para desbloquear.`; achievementsList.appendChild(li); }); }
             function openAchievementsModal() { loadAchievements(); displayAchievements(); achievementsModal.style.display = 'block'; void achievementsModal.offsetWidth; achievementsModal.classList.remove('fade-out'); }
             function closeAchievementsModal() { achievementsModal.classList.add('fade-out'); setTimeout(() => { achievementsModal.style.display = 'none'; }, 290); }
@@ -443,3 +465,6 @@
 
 </body>
 </html>
+```
+
+El documento `JuegoBlackjack_Pasted_Version_Fixed` está abierto en el editor en este momen
