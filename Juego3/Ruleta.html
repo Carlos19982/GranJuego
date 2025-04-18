@@ -138,7 +138,7 @@
         /* Explicit grid positioning for desktop */
         .number-button.zero {
             grid-column: 1 / 2; /* First column */
-            grid-row: 1 / 4;    /* Span 3 rows */
+            grid-row: 1 / 4;     /* Span 3 rows */
             height: 100%; /* Fill cell height */
             aspect-ratio: auto; /* Allow non-square */
         }
@@ -152,7 +152,7 @@
         }
         .column-bets {
             grid-column: 14 / 15; /* Last column */
-            grid-row: 1 / 4;      /* Span 3 rows */
+            grid-row: 1 / 4;     /* Span 3 rows */
             display: grid; /* Inner grid for column bets */
             grid-template-columns: 1fr; /* Single column */
             grid-template-rows: repeat(3, 1fr); /* 3 equal rows */
@@ -343,7 +343,7 @@
             <div class="bet-options">
                 <button class="bet-table-button number-button zero" data-bet-type="number" data-number="0">0</button>
                 <div class="number-grid">
-                     </div>
+                    </div>
                  <div class="column-bets">
                      <button class="bet-table-button" data-bet-type="column-3">Columna 3 (2:1)</button>
                      <button class="bet-table-button" data-bet-type="column-2">Columna 2 (2:1)</button>
@@ -603,105 +603,105 @@
         // --- Funciones Dibujo y Ajuste (SIN CAMBIOS) ---
         function resizeCanvas() { /* ... código sin cambios ... */
              const rouletteArea = document.querySelector('.roulette-area');
-            const availableWidth = document.getElementById('game-container').clientWidth * 0.95; // Use 95% of container width
-            const maxHeightFromViewport = window.innerHeight * 0.65; // Limit height based on viewport
-            let size = Math.min(availableWidth, maxHeightFromViewport); // Choose the smaller dimension
-            // Ensure minimum size based on CSS min-width
-            size = Math.max(size, parseFloat(getComputedStyle(rouletteArea).minWidth) || 200);
-            size = Math.min(size, 700); // Apply max size limit
-            canvasSize = size;
+             const availableWidth = document.getElementById('game-container').clientWidth * 0.95; // Use 95% of container width
+             const maxHeightFromViewport = window.innerHeight * 0.65; // Limit height based on viewport
+             let size = Math.min(availableWidth, maxHeightFromViewport); // Choose the smaller dimension
+             // Ensure minimum size based on CSS min-width
+             size = Math.max(size, parseFloat(getComputedStyle(rouletteArea).minWidth) || 200);
+             size = Math.min(size, 700); // Apply max size limit
+             canvasSize = size;
 
-            // Apply calculated size to the container and canvas
-            if (rouletteArea) {
-                rouletteArea.style.width = `${canvasSize}px`;
-                rouletteArea.style.height = `${canvasSize}px`;
-            }
-            // Adjust border and pointer size based on canvas size
-            if (canvasSize <= 350) { borderWidth = 3; pointerHeight = 18; }
-            else if (canvasSize <= 450) { borderWidth = 4; pointerHeight = 20; }
-            else { borderWidth = 5; pointerHeight = 25; }
+             // Apply calculated size to the container and canvas
+             if (rouletteArea) {
+                 rouletteArea.style.width = `${canvasSize}px`;
+                 rouletteArea.style.height = `${canvasSize}px`;
+             }
+             // Adjust border and pointer size based on canvas size
+             if (canvasSize <= 350) { borderWidth = 3; pointerHeight = 18; }
+             else if (canvasSize <= 450) { borderWidth = 4; pointerHeight = 20; }
+             else { borderWidth = 5; pointerHeight = 25; }
 
-            canvas.width = canvasSize;
-            canvas.height = canvasSize;
-            canvas.style.borderWidth = `${borderWidth}px`;
-            centerX = canvas.width / 2;
-            centerY = canvas.height / 2;
-            radius = canvas.width / 2 - (borderWidth + 5); // Radius calculation considering border
+             canvas.width = canvasSize;
+             canvas.height = canvasSize;
+             canvas.style.borderWidth = `${borderWidth}px`;
+             centerX = canvas.width / 2;
+             centerY = canvas.height / 2;
+             radius = canvas.width / 2 - (borderWidth + 5); // Radius calculation considering border
 
-            // Position the pointer above the wheel
-            pointer.style.borderLeftWidth = `${pointerHeight * 0.6}px`;
-            pointer.style.borderRightWidth = `${pointerHeight * 0.6}px`;
-            pointer.style.borderTopWidth = `${pointerHeight}px`;
-            const pointerOffset = -(radius + pointerHeight / 2 + borderWidth + 2); // Calculate vertical offset
-            pointer.style.transform = `translate(-50%, -100%) translateY(${pointerOffset}px)`;
+             // Position the pointer above the wheel
+             pointer.style.borderLeftWidth = `${pointerHeight * 0.6}px`;
+             pointer.style.borderRightWidth = `${pointerHeight * 0.6}px`;
+             pointer.style.borderTopWidth = `${pointerHeight}px`;
+             const pointerOffset = -(radius + pointerHeight / 2 + borderWidth + 2); // Calculate vertical offset
+             pointer.style.transform = `translate(-50%, -100%) translateY(${pointerOffset}px)`;
 
-            drawRoulette(currentAngle); // Redraw the roulette with new dimensions
-        }
+             drawRoulette(currentAngle); // Redraw the roulette with new dimensions
+         }
         function drawSegment(index, angleOffset) { /* ... código sin cambios ... */
-            const angle = anglePerSegment * index + angleOffset; // Calculate start angle for the segment
-            const number = segments[index];
-            const color = segmentColors[number];
+             const angle = anglePerSegment * index + angleOffset; // Calculate start angle for the segment
+             const number = segments[index];
+             const color = segmentColors[number];
 
-            // Draw the segment wedge
-            ctx.beginPath();
-            ctx.fillStyle = color;
-            ctx.moveTo(centerX, centerY);
-            ctx.arc(centerX, centerY, radius, angle, angle + anglePerSegment);
-            ctx.closePath();
-            ctx.fill();
+             // Draw the segment wedge
+             ctx.beginPath();
+             ctx.fillStyle = color;
+             ctx.moveTo(centerX, centerY);
+             ctx.arc(centerX, centerY, radius, angle, angle + anglePerSegment);
+             ctx.closePath();
+             ctx.fill();
 
-            // Draw segment border
-            ctx.strokeStyle = '#bdc3c7'; // Light gray border
-            ctx.lineWidth = 1;
-            ctx.stroke();
+             // Draw segment border
+             ctx.strokeStyle = '#bdc3c7'; // Light gray border
+             ctx.lineWidth = 1;
+             ctx.stroke();
 
-            // Draw the number inside the segment
-            ctx.save(); // Save context state
-            ctx.fillStyle = '#ffffff'; // White text color
-            const fontSize = Math.max(9, Math.floor(radius * 0.08)); // Responsive font size
-            ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+             // Draw the number inside the segment
+             ctx.save(); // Save context state
+             ctx.fillStyle = '#ffffff'; // White text color
+             const fontSize = Math.max(9, Math.floor(radius * 0.08)); // Responsive font size
+             ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
+             ctx.textAlign = 'center';
+             ctx.textBaseline = 'middle';
 
-            // Calculate text position and rotation
-            const textAngle = angle + anglePerSegment / 2;
-            const textRadius = radius * 0.82; // Position text slightly inside the edge
-            const textX = centerX + textRadius * Math.cos(textAngle);
-            const textY = centerY + textRadius * Math.sin(textAngle);
+             // Calculate text position and rotation
+             const textAngle = angle + anglePerSegment / 2;
+             const textRadius = radius * 0.82; // Position text slightly inside the edge
+             const textX = centerX + textRadius * Math.cos(textAngle);
+             const textY = centerY + textRadius * Math.sin(textAngle);
 
-            ctx.translate(textX, textY); // Move origin to text position
-            ctx.rotate(textAngle + Math.PI / 2); // Rotate text to align with segment
-            ctx.fillText(number, 0, 0); // Draw the number
-            ctx.restore(); // Restore context state
-        }
+             ctx.translate(textX, textY); // Move origin to text position
+             ctx.rotate(textAngle + Math.PI / 2); // Rotate text to align with segment
+             ctx.fillText(number, 0, 0); // Draw the number
+             ctx.restore(); // Restore context state
+         }
         function drawRoulette(angleOffset = 0) { /* ... código sin cambios ... */
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-            // Draw all segments
-            for (let i = 0; i < numSegments; i++) {
-                drawSegment(i, angleOffset);
-            }
-            // Draw the center circle
-            ctx.beginPath();
-            ctx.fillStyle = '#f4a261'; // Center circle color
-            ctx.arc(centerX, centerY, radius * 0.15, 0, 2 * Math.PI); // Small center circle
-            ctx.fill();
-        }
+             ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+             // Draw all segments
+             for (let i = 0; i < numSegments; i++) {
+                 drawSegment(i, angleOffset);
+             }
+             // Draw the center circle
+             ctx.beginPath();
+             ctx.fillStyle = '#f4a261'; // Center circle color
+             ctx.arc(centerX, centerY, radius * 0.15, 0, 2 * Math.PI); // Small center circle
+             ctx.fill();
+         }
 
         // --- Lógica de Animación ---
         function rotateWheel() { /* ... código sin cambios ... */
-            spinTime += 1 / 60; // Increment time (assuming 60fps)
-            // Calculate rotation angle using ease-out function for smooth deceleration
-            const spinAmount = easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
-            currentAngle = spinAmount % (2 * Math.PI); // Keep angle within 0 to 2PI
-            drawRoulette(currentAngle); // Redraw the wheel at the new angle
+             spinTime += 1 / 60; // Increment time (assuming 60fps)
+             // Calculate rotation angle using ease-out function for smooth deceleration
+             const spinAmount = easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
+             currentAngle = spinAmount % (2 * Math.PI); // Keep angle within 0 to 2PI
+             drawRoulette(currentAngle); // Redraw the wheel at the new angle
 
-            // Stop animation when time is up
-            if (spinTime >= spinTimeTotal) {
-                stopRotateWheel();
-                return;
-            }
-            requestAnimationFrame(rotateWheel); // Request next frame
-        }
+             // Stop animation when time is up
+             if (spinTime >= spinTimeTotal) {
+                 stopRotateWheel();
+                 return;
+             }
+             requestAnimationFrame(rotateWheel); // Request next frame
+         }
         function stopRotateWheel() {
             isSpinning = false;
             // Re-enable betting buttons
@@ -731,184 +731,184 @@
             determineWinner(winningNumber, winningColor); // <<< LLAMADA A determineWinner >>>
         }
         function easeOut(t, b, c, d) { /* ... código sin cambios ... */
-            t /= d;
-            t--;
-            return c * (t * t * t + 1) + b;
-        }
+             t /= d;
+             t--;
+             return c * (t * t * t + 1) + b;
+         }
 
         // --- Lógica del Juego ---
         function handleBetPlacement(event) { /* ... código sin cambios ... */
-            if (isSpinning) return; // Don't allow betting while spinning
+             if (isSpinning) return; // Don't allow betting while spinning
 
-            const button = event.target.closest('.bet-table-button');
-            if (!button || button.disabled) return; // Ignore clicks not on enabled buttons
+             const button = event.target.closest('.bet-table-button');
+             if (!button || button.disabled) return; // Ignore clicks not on enabled buttons
 
-            const betType = button.dataset.betType;
-            let betValue = null; // For number bets
-            const betAmount = parseInt(betAmountInput.value);
+             const betType = button.dataset.betType;
+             let betValue = null; // For number bets
+             const betAmount = parseInt(betAmountInput.value);
 
-            // Validate bet amount
-            if (isNaN(betAmount) || betAmount <= 0) {
-                showMessage("Introduce una cantidad válida para apostar.");
-                betAmountInput.focus();
-                return;
-            }
-            // Validate balance
-            if (balance < betAmount) {
-                showMessage("Saldo insuficiente para añadir esta apuesta.");
-                return;
-            }
-            // Get number if it's a number bet
-            if (betType === 'number') {
-                betValue = parseInt(button.dataset.number);
-                if (isNaN(betValue)) {
-                    console.error("Error: Number button missing valid data-number.");
-                    return;
-                }
-            }
+             // Validate bet amount
+             if (isNaN(betAmount) || betAmount <= 0) {
+                 showMessage("Introduce una cantidad válida para apostar.");
+                 betAmountInput.focus();
+                 return;
+             }
+             // Validate balance
+             if (balance < betAmount) {
+                 showMessage("Saldo insuficiente para añadir esta apuesta.");
+                 return;
+             }
+             // Get number if it's a number bet
+             if (betType === 'number') {
+                 betValue = parseInt(button.dataset.number);
+                 if (isNaN(betValue)) {
+                     console.error("Error: Number button missing valid data-number.");
+                     return;
+                 }
+             }
 
-            // Create and add the new bet object
-            const newBet = {
-                amount: betAmount,
-                type: betType,
-                value: betValue, // Will be null for non-number bets
-            };
-            currentBets.push(newBet);
+             // Create and add the new bet object
+             const newBet = {
+                 amount: betAmount,
+                 type: betType,
+                 value: betValue, // Will be null for non-number bets
+             };
+             currentBets.push(newBet);
 
-            // Update UI
-            updateBetsList();
-            updateTotalBetAmountDisplay();
-            showMessage(`${getBetDescription(newBet)} (${betAmount}€) añadida. ¡Haz clic en la ruleta para girar!`);
+             // Update UI
+             updateBetsList();
+             updateTotalBetAmountDisplay();
+             showMessage(`${getBetDescription(newBet)} (${betAmount}€) añadida. ¡Haz clic en la ruleta para girar!`);
 
-            // Visual feedback for the clicked button
-            button.classList.add('active-bet');
-            setTimeout(() => button.classList.remove('active-bet'), 300); // Remove highlight after 300ms
-        }
+             // Visual feedback for the clicked button
+             button.classList.add('active-bet');
+             setTimeout(() => button.classList.remove('active-bet'), 300); // Remove highlight after 300ms
+         }
         function clearBets() { /* ... código sin cambios ... */
-             if (isSpinning) return; // Don't clear while spinning
-            currentBets = [];
-            updateBetsList();
-            updateTotalBetAmountDisplay();
-            showMessage("Apuestas limpiadas. Haz clic en el tapete para apostar.");
-            // Disable repeat button when bets are cleared manually
-            repeatBetButton.disabled = true;
-        }
+              if (isSpinning) return; // Don't clear while spinning
+             currentBets = [];
+             updateBetsList();
+             updateTotalBetAmountDisplay();
+             showMessage("Apuestas limpiadas. Haz clic en el tapete para apostar.");
+             // Disable repeat button when bets are cleared manually
+             repeatBetButton.disabled = true;
+         }
         function repeatLastBet() { /* ... código sin cambios ... */
-             if (isSpinning) return;
-            if (lastBets.length === 0) {
-                showMessage("No hay apuesta anterior para repetir.");
-                return;
-            }
+              if (isSpinning) return;
+             if (lastBets.length === 0) {
+                 showMessage("No hay apuesta anterior para repetir.");
+                 return;
+             }
 
-            // Calculate total cost of last bets
-            const totalLastBetAmount = lastBets.reduce((sum, bet) => sum + bet.amount, 0);
+             // Calculate total cost of last bets
+             const totalLastBetAmount = lastBets.reduce((sum, bet) => sum + bet.amount, 0);
 
-            // Check if balance is sufficient
-            if (balance < totalLastBetAmount) {
-                showMessage(`Saldo insuficiente para repetir la apuesta anterior (${totalLastBetAmount}€).`);
-                return;
-            }
+             // Check if balance is sufficient
+             if (balance < totalLastBetAmount) {
+                 showMessage(`Saldo insuficiente para repetir la apuesta anterior (${totalLastBetAmount}€).`);
+                 return;
+             }
 
-            // Clear current bets and apply last bets
-            currentBets = []; // Clear any existing bets first
-            lastBets.forEach(bet => {
-                // Create a new bet object from the last bet data
-                const repeatedBet = {
-                    amount: bet.amount,
-                    type: bet.type,
-                    value: bet.value
-                };
-                currentBets.push(repeatedBet);
-            });
+             // Clear current bets and apply last bets
+             currentBets = []; // Clear any existing bets first
+             lastBets.forEach(bet => {
+                 // Create a new bet object from the last bet data
+                 const repeatedBet = {
+                     amount: bet.amount,
+                     type: bet.type,
+                     value: bet.value
+                 };
+                 currentBets.push(repeatedBet);
+             });
 
-            // Update UI
-            updateBetsList();
-            updateTotalBetAmountDisplay();
-            showMessage(`Apuesta anterior repetida (${totalLastBetAmount}€). ¡Haz clic en la ruleta para girar!`);
-        }
+             // Update UI
+             updateBetsList();
+             updateTotalBetAmountDisplay();
+             showMessage(`Apuesta anterior repetida (${totalLastBetAmount}€). ¡Haz clic en la ruleta para girar!`);
+         }
         function spin() { /* ... código sin cambios (excepto que ya no llama a determineWinner) ... */
-             if (isSpinning) return;
-            if (currentBets.length === 0) {
-                showMessage("Añade una o más apuestas antes de girar.");
-                return;
-            }
+              if (isSpinning) return;
+             if (currentBets.length === 0) {
+                 showMessage("Añade una o más apuestas antes de girar.");
+                 return;
+             }
 
-            const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-            if (totalBetAmount > balance) {
-                showMessage("Error: Saldo insuficiente para las apuestas realizadas.");
-                return;
-            }
+             const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
+             if (totalBetAmount > balance) {
+                 showMessage("Error: Saldo insuficiente para las apuestas realizadas.");
+                 return;
+             }
 
-            // Deduct bet amount from balance
-            balance -= totalBetAmount;
-            updateBalanceDisplay();
-            // NO guardar balance aquí, se guarda después de añadir ganancias/recompensas
+             // Deduct bet amount from balance
+             balance -= totalBetAmount;
+             updateBalanceDisplay();
+             // NO guardar balance aquí, se guarda después de añadir ganancias/recompensas
 
-            showMessage("¡Girando!");
-            isSpinning = true;
-            // Disable betting buttons during spin
-            clearBetsButton.disabled = true;
-            repeatBetButton.disabled = true;
-            betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = true);
+             showMessage("¡Girando!");
+             isSpinning = true;
+             // Disable betting buttons during spin
+             clearBetsButton.disabled = true;
+             repeatBetButton.disabled = true;
+             betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = true);
 
-            // --- Cheat Mode Logic ---
-            if (cheatModeActive && currentBets.length > 0) {
+             // --- Cheat Mode Logic ---
+             if (cheatModeActive && currentBets.length > 0) {
                  // ... (lógica cheat sin cambios) ...
                  console.warn("MODO GUIADO ACTIVADO!");
-                const targetBet = currentBets[0]; // Target the first bet placed
-                let targetWinningNumber = -1; // Default to invalid
+                 const targetBet = currentBets[0]; // Target the first bet placed
+                 let targetWinningNumber = -1; // Default to invalid
 
-                // Determine a winning number based on the target bet type
-                switch (targetBet.type) {
-                    case 'number':      targetWinningNumber = targetBet.value; break;
-                    case 'color-red':   targetWinningNumber = redNumbers[Math.floor(Math.random() * redNumbers.length)]; break;
-                    case 'color-black': targetWinningNumber = blackNumbers[Math.floor(Math.random() * blackNumbers.length)]; break;
-                    case 'even':        targetWinningNumber = segments.filter(n => n !== 0 && n % 2 === 0)[Math.floor(Math.random() * 18)]; break;
-                    case 'odd':         targetWinningNumber = segments.filter(n => n % 2 !== 0)[Math.floor(Math.random() * 18)]; break;
-                    case 'low':         targetWinningNumber = segments.filter(n => n >= 1 && n <= 18)[Math.floor(Math.random() * 18)]; break;
-                    case 'high':        targetWinningNumber = segments.filter(n => n >= 19 && n <= 36)[Math.floor(Math.random() * 18)]; break;
-                    case 'dozen-1':     targetWinningNumber = segments.filter(n => n >= 1 && n <= 12)[Math.floor(Math.random() * 12)]; break;
-                    case 'dozen-2':     targetWinningNumber = segments.filter(n => n >= 13 && n <= 24)[Math.floor(Math.random() * 12)]; break;
-                    case 'dozen-3':     targetWinningNumber = segments.filter(n => n >= 25 && n <= 36)[Math.floor(Math.random() * 12)]; break;
-                    case 'column-1':    targetWinningNumber = column1[Math.floor(Math.random() * column1.length)]; break;
-                    case 'column-2':    targetWinningNumber = column2[Math.floor(Math.random() * column2.length)]; break;
-                    case 'column-3':    targetWinningNumber = column3[Math.floor(Math.random() * column3.length)]; break;
-                    default:            targetWinningNumber = Math.floor(Math.random() * 37); // Fallback to random if type unknown
-                }
-                // Avoid landing on 0 if the bet wasn't specifically on 0
-                if (targetWinningNumber === 0 && targetBet.type !== 'number') {
-                     targetWinningNumber = segments.filter(n => n !== 0)[Math.floor(Math.random() * 36)];
-                }
-                console.log(`Cheat Target: Win bet on ${getBetDescription(targetBet)}. Forcing number: ${targetWinningNumber}`);
+                 // Determine a winning number based on the target bet type
+                 switch (targetBet.type) {
+                     case 'number':      targetWinningNumber = targetBet.value; break;
+                     case 'color-red':   targetWinningNumber = redNumbers[Math.floor(Math.random() * redNumbers.length)]; break;
+                     case 'color-black': targetWinningNumber = blackNumbers[Math.floor(Math.random() * blackNumbers.length)]; break;
+                     case 'even':        targetWinningNumber = segments.filter(n => n !== 0 && n % 2 === 0)[Math.floor(Math.random() * 18)]; break;
+                     case 'odd':         targetWinningNumber = segments.filter(n => n % 2 !== 0)[Math.floor(Math.random() * 18)]; break;
+                     case 'low':         targetWinningNumber = segments.filter(n => n >= 1 && n <= 18)[Math.floor(Math.random() * 18)]; break;
+                     case 'high':        targetWinningNumber = segments.filter(n => n >= 19 && n <= 36)[Math.floor(Math.random() * 18)]; break;
+                     case 'dozen-1':     targetWinningNumber = segments.filter(n => n >= 1 && n <= 12)[Math.floor(Math.random() * 12)]; break;
+                     case 'dozen-2':     targetWinningNumber = segments.filter(n => n >= 13 && n <= 24)[Math.floor(Math.random() * 12)]; break;
+                     case 'dozen-3':     targetWinningNumber = segments.filter(n => n >= 25 && n <= 36)[Math.floor(Math.random() * 12)]; break;
+                     case 'column-1':    targetWinningNumber = column1[Math.floor(Math.random() * column1.length)]; break;
+                     case 'column-2':    targetWinningNumber = column2[Math.floor(Math.random() * column2.length)]; break;
+                     case 'column-3':    targetWinningNumber = column3[Math.floor(Math.random() * column3.length)]; break;
+                     default:            targetWinningNumber = Math.floor(Math.random() * 37); // Fallback to random if type unknown
+                 }
+                 // Avoid landing on 0 if the bet wasn't specifically on 0
+                 if (targetWinningNumber === 0 && targetBet.type !== 'number') {
+                      targetWinningNumber = segments.filter(n => n !== 0)[Math.floor(Math.random() * 36)];
+                 }
+                 console.log(`Cheat Target: Win bet on ${getBetDescription(targetBet)}. Forcing number: ${targetWinningNumber}`);
 
-                // Calculate the angle needed to land on the target number
-                const targetIndex = segments.findIndex(num => num === targetWinningNumber);
-                if (targetIndex !== -1) {
-                    const targetSegmentCenterAngle = (targetIndex + 0.5) * anglePerSegment;
-                    const targetFinalAngle = ( (3 * Math.PI / 2) - targetSegmentCenterAngle + 4 * Math.PI) % (2 * Math.PI); // Add buffer rotations
-                    spinAngleStart = targetFinalAngle + (Math.floor(Math.random() * 4) + 6) * (2 * Math.PI); // 6-9 extra rotations
-                    console.log(`Calculated spin angle for cheat: ${spinAngleStart.toFixed(2)} (Target Angle: ${targetFinalAngle.toFixed(2)})`);
-                } else {
-                    console.error(`Error: Could not find index for target number ${targetWinningNumber}. Using random spin.`);
-                    spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI); // Random spin as fallback
-                }
-                // Deactivate cheat mode after use
-                cheatModeActive = false;
-                // Remove visual indicator
-                const redBtn = document.querySelector('.bet-table-button-red');
-                const blackBtn = document.querySelector('.bet-table-button-black');
-                if (redBtn) redBtn.classList.remove('cheat-swap-red');
-                if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
-                if(cheatTimeoutId) clearTimeout(cheatTimeoutId);
-            } else {
-                // --- Normal Spin Logic ---
-                spinAngleStart = currentAngle + (Math.random() * 5 * (2*Math.PI)) + (5 * (2*Math.PI));
-            }
+                 // Calculate the angle needed to land on the target number
+                 const targetIndex = segments.findIndex(num => num === targetWinningNumber);
+                 if (targetIndex !== -1) {
+                     const targetSegmentCenterAngle = (targetIndex + 0.5) * anglePerSegment;
+                     const targetFinalAngle = ( (3 * Math.PI / 2) - targetSegmentCenterAngle + 4 * Math.PI) % (2 * Math.PI); // Add buffer rotations
+                     spinAngleStart = targetFinalAngle + (Math.floor(Math.random() * 4) + 6) * (2 * Math.PI); // 6-9 extra rotations
+                     console.log(`Calculated spin angle for cheat: ${spinAngleStart.toFixed(2)} (Target Angle: ${targetFinalAngle.toFixed(2)})`);
+                 } else {
+                     console.error(`Error: Could not find index for target number ${targetWinningNumber}. Using random spin.`);
+                     spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI); // Random spin as fallback
+                 }
+                 // Deactivate cheat mode after use
+                 cheatModeActive = false;
+                 // Remove visual indicator
+                 const redBtn = document.querySelector('.bet-table-button-red');
+                 const blackBtn = document.querySelector('.bet-table-button-black');
+                 if (redBtn) redBtn.classList.remove('cheat-swap-red');
+                 if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
+                 if(cheatTimeoutId) clearTimeout(cheatTimeoutId);
+             } else {
+                 // --- Normal Spin Logic ---
+                 spinAngleStart = currentAngle + (Math.random() * 5 * (2*Math.PI)) + (5 * (2*Math.PI));
+             }
 
-            spinTimeTotal = Math.random() * 3 + 4;
-            spinTime = 0;
-            rotateWheel();
-        }
+             spinTimeTotal = Math.random() * 3 + 4;
+             spinTime = 0;
+             rotateWheel();
+         }
 
         function determineWinner(winningNumber, winningColor) { // <<< MODIFICADO >>>
             let totalPayout = 0;
@@ -971,7 +971,7 @@
                      finalMessage = `${baseResultMessage}. ¡Ganaste ${totalEarned.toLocaleString('es-ES')}€ netos!${achievementMessage}`;
                      messageType = 'win';
                 } else if (totalEarned < 0) { // Ganancias apuesta < Pérdida apuesta, pero hubo recompensa
-                    finalMessage = `${baseResultMessage}. Perdiste ${Math.abs(totalEarned).toLocaleString('es-ES')}€ en total.${achievementMessage}`;
+                     finalMessage = `${baseResultMessage}. Perdiste ${Math.abs(totalEarned).toLocaleString('es-ES')}€ en total.${achievementMessage}`;
                      messageType = achievementResult.totalRewardAdded > 0 ? 'info' : 'lose'; // Si hubo recompensa, es info, si no, pérdida
                 } else { // Ganancias apuesta == Pérdida apuesta, solo recompensa
                      finalMessage = `${baseResultMessage}. Ni ganas ni pierdes.${achievementMessage}`;
@@ -984,7 +984,9 @@
 
             // 5. Actualizar UI y estado
             updateBalanceDisplay(); // Mostrar el balance final (con posibles recompensas)
-            // saveBalance(); // El balance ya se guarda DENTRO de checkAndUnlockAchievements si cambia
+
+            // FIX: Guardar siempre el balance después de calcular ganancias y comprobar logros
+            saveBalance(); // Asegura que el balance final se guarda en localStorage
 
             showMessage(finalMessage, messageType);
 
@@ -996,79 +998,79 @@
 
         // --- Funciones auxiliares (SIN CAMBIOS) ---
         function getColorName(colorCode) { /* ... código sin cambios ... */
-            if (colorCode === '#2ecc71') return 'Verde';
-            if (colorCode === '#c53030') return 'Rojo';
-            if (colorCode === '#1A202C') return 'Negro';
-            return 'Desconocido';
-        }
+             if (colorCode === '#2ecc71') return 'Verde';
+             if (colorCode === '#c53030') return 'Rojo';
+             if (colorCode === '#1A202C') return 'Negro';
+             return 'Desconocido';
+         }
         function showMessage(msg, type = 'info') { /* ... código sin cambios ... */
-            messageDisplay.textContent = msg;
-            // Change message color based on type (win/lose/info)
-            messageDisplay.style.color = type === 'win' ? '#2ecc71' : type === 'lose' ? '#e74c3c' : '#f0e68c';
-        }
+             messageDisplay.textContent = msg;
+             // Change message color based on type (win/lose/info)
+             messageDisplay.style.color = type === 'win' ? '#2ecc71' : type === 'lose' ? '#e74c3c' : '#f0e68c';
+         }
         function updateBetsList() { /* ... código sin cambios ... */
-             betsListDisplay.innerHTML = ''; // Clear previous list
-            if (currentBets.length === 0) {
-                betsListDisplay.innerHTML = '<li>No hay apuestas añadidas</li>';
-            } else {
-                currentBets.forEach((bet, index) => {
-                    const li = document.createElement('li');
-                    li.textContent = `(${index + 1}) ${bet.amount}€ a ${getBetDescription(bet)}`;
-                    betsListDisplay.appendChild(li);
-                });
-            }
-            // Scroll to the bottom of the list
-            betsListDisplay.scrollTop = betsListDisplay.scrollHeight;
-        }
+              betsListDisplay.innerHTML = ''; // Clear previous list
+             if (currentBets.length === 0) {
+                 betsListDisplay.innerHTML = '<li>No hay apuestas añadidas</li>';
+             } else {
+                 currentBets.forEach((bet, index) => {
+                     const li = document.createElement('li');
+                     li.textContent = `(${index + 1}) ${bet.amount}€ a ${getBetDescription(bet)}`;
+                     betsListDisplay.appendChild(li);
+                 });
+             }
+             // Scroll to the bottom of the list
+             betsListDisplay.scrollTop = betsListDisplay.scrollHeight;
+         }
         function getBetDescription(bet) { /* ... código sin cambios ... */
-            // Returns a user-friendly description of the bet type
-            switch (bet.type) {
-                case 'number': return `Número ${bet.value}`;
-                case 'color-red': return `Rojo`;
-                case 'color-black': return `Negro`;
-                case 'even': return `Par`;
-                case 'odd': return `Impar`;
-                case 'low': return `Falta (1-18)`;
-                case 'high': return `Pasa (19-36)`;
-                case 'dozen-1': return `1ª Docena (1-12)`;
-                case 'dozen-2': return `2ª Docena (13-24)`;
-                case 'dozen-3': return `3ª Docena (25-36)`;
-                case 'column-1': return `Columna 1`;
-                case 'column-2': return `Columna 2`;
-                case 'column-3': return `Columna 3`;
-                default: return `Desconocido`;
-            }
-        }
+             // Returns a user-friendly description of the bet type
+             switch (bet.type) {
+                 case 'number': return `Número ${bet.value}`;
+                 case 'color-red': return `Rojo`;
+                 case 'color-black': return `Negro`;
+                 case 'even': return `Par`;
+                 case 'odd': return `Impar`;
+                 case 'low': return `Falta (1-18)`;
+                 case 'high': return `Pasa (19-36)`;
+                 case 'dozen-1': return `1ª Docena (1-12)`;
+                 case 'dozen-2': return `2ª Docena (13-24)`;
+                 case 'dozen-3': return `3ª Docena (25-36)`;
+                 case 'column-1': return `Columna 1`;
+                 case 'column-2': return `Columna 2`;
+                 case 'column-3': return `Columna 3`;
+                 default: return `Desconocido`;
+             }
+         }
         function updateTotalBetAmountDisplay() { /* ... código sin cambios ... */
-            const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-            totalBetSpan.textContent = totalBetAmount.toLocaleString('es-ES'); // Formatear
-        }
+             const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
+             totalBetSpan.textContent = totalBetAmount.toLocaleString('es-ES'); // Formatear
+         }
 
         // --- Generar Cuadrícula de Números Dinámicamente (SIN CAMBIOS) ---
         function generateNumberGrid() { /* ... código sin cambios ... */
-             if (!numberGrid) {
-                console.error("Element .number-grid not found");
-                return;
-            }
-            numberGrid.innerHTML = ''; // Clear existing grid
-            // Define the order numbers appear on the betting table grid
-            const gridOrder = [
-                 3,  6,  9, 12, 15, 18, 21, 24, 27, 30, 33, 36, // Top row
-                 2,  5,  8, 11, 14, 17, 20, 23, 26, 29, 32, 35, // Middle row
-                 1,  4,  7, 10, 13, 16, 19, 22, 25, 28, 31, 34  // Bottom row
-            ];
-            gridOrder.forEach((num) => {
-                const button = document.createElement('button');
-                button.classList.add('bet-table-button', 'number-button');
-                button.dataset.betType = 'number';
-                button.dataset.number = num;
-                button.textContent = num;
-                // Add color class for styling
-                if (redNumbers.includes(num)) button.classList.add('red');
-                else if (blackNumbers.includes(num)) button.classList.add('black');
-                numberGrid.appendChild(button);
-            });
-        }
+              if (!numberGrid) {
+                 console.error("Element .number-grid not found");
+                 return;
+             }
+             numberGrid.innerHTML = ''; // Clear existing grid
+             // Define the order numbers appear on the betting table grid
+             const gridOrder = [
+                  3,  6,  9, 12, 15, 18, 21, 24, 27, 30, 33, 36, // Top row
+                  2,  5,  8, 11, 14, 17, 20, 23, 26, 29, 32, 35, // Middle row
+                  1,  4,  7, 10, 13, 16, 19, 22, 25, 28, 31, 34  // Bottom row
+             ];
+             gridOrder.forEach((num) => {
+                 const button = document.createElement('button');
+                 button.classList.add('bet-table-button', 'number-button');
+                 button.dataset.betType = 'number';
+                 button.dataset.number = num;
+                 button.textContent = num;
+                 // Add color class for styling
+                 if (redNumbers.includes(num)) button.classList.add('red');
+                 else if (blackNumbers.includes(num)) button.classList.add('black');
+                 numberGrid.appendChild(button);
+             });
+         }
 
         // --- Event Listeners ---
         canvas.addEventListener('click', spin);
@@ -1088,10 +1090,10 @@
                 loadHistory();
             }
              // <<< NUEVO: Escuchar cambios en logros >>>
-             if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
+              if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
                  console.log('Achievements changed externally. Reloading.');
                  loadUnlockedAchievements();
-             }
+              }
         });
         window.addEventListener('focus', () => {
             console.log('Window focused, reloading balance, history, and achievements.');
@@ -1102,32 +1104,32 @@
 
         // --- LISTENER MODO GUIADO (SIN CAMBIOS) ---
         balanceDisplay.addEventListener('dblclick', () => { /* ... código sin cambios ... */
-            cheatModeActive = !cheatModeActive; // Toggle cheat mode
-            if (cheatTimeoutId) { clearTimeout(cheatTimeoutId); cheatTimeoutId = null; } // Clear any existing timeout
+             cheatModeActive = !cheatModeActive; // Toggle cheat mode
+             if (cheatTimeoutId) { clearTimeout(cheatTimeoutId); cheatTimeoutId = null; } // Clear any existing timeout
 
-            const redBtn = document.querySelector('.bet-table-button-red');
-            const blackBtn = document.querySelector('.bet-table-button-black');
-            // Remove any existing cheat indicators
-            if (redBtn) redBtn.classList.remove('cheat-swap-red');
-            if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
+             const redBtn = document.querySelector('.bet-table-button-red');
+             const blackBtn = document.querySelector('.bet-table-button-black');
+             // Remove any existing cheat indicators
+             if (redBtn) redBtn.classList.remove('cheat-swap-red');
+             if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
 
-            if (cheatModeActive) {
-                console.warn("MODO GUIADO ACTIVADO (Próximo giro será forzado a la primera apuesta)");
-                showMessage("Modo Guiado ACTIVADO", "win");
-                // Add visual indicator (flashing colors on red/black buttons)
-                if (redBtn) redBtn.classList.add('cheat-swap-red');
-                if (blackBtn) blackBtn.classList.add('cheat-swap-black');
-                // Automatically disable visual indicator after 2 seconds
-                cheatTimeoutId = setTimeout(() => {
-                    if (redBtn) redBtn.classList.remove('cheat-swap-red');
-                    if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
-                    cheatTimeoutId = null;
-                }, 2000);
-            } else {
-                console.log("MODO GUIADO DESACTIVADO");
-                showMessage("Modo Guiado DESACTIVADO");
-            }
-        });
+             if (cheatModeActive) {
+                 console.warn("MODO GUIADO ACTIVADO (Próximo giro será forzado a la primera apuesta)");
+                 showMessage("Modo Guiado ACTIVADO", "win");
+                 // Add visual indicator (flashing colors on red/black buttons)
+                 if (redBtn) redBtn.classList.add('cheat-swap-red');
+                 if (blackBtn) blackBtn.classList.add('cheat-swap-black');
+                 // Automatically disable visual indicator after 2 seconds
+                 cheatTimeoutId = setTimeout(() => {
+                     if (redBtn) redBtn.classList.remove('cheat-swap-red');
+                     if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
+                     cheatTimeoutId = null;
+                 }, 2000);
+             } else {
+                 console.log("MODO GUIADO DESACTIVADO");
+                 showMessage("Modo Guiado DESACTIVADO");
+             }
+         });
 
         // --- Inicialización al cargar la página ---
         window.onload = () => {

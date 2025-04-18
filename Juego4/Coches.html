@@ -203,9 +203,10 @@
             updateBalanceDisplay();
         }
 
-        function saveBalance() { // Note: This might become less used if checkAndUnlockAchievements handles saving
+        function saveBalance() { // Saves the current global 'balance' variable to localStorage
             try {
                 localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString());
+                 console.log("Balance saved:", balance); // Debug log
             } catch (error) {
                 console.error("Error al guardar saldo en localStorage:", error);
             }
@@ -254,7 +255,9 @@
         }
 
         /**
-         * Checks achievements, adds rewards, and saves balance/achievements.
+         * Checks achievements, adds rewards to the global balance variable,
+         * and saves the updated achievements list to localStorage.
+         * IMPORTANT: This function NO LONGER saves the balance itself.
          * Returns details about newly unlocked achievements.
          */
         function checkAndUnlockAchievements() {
@@ -278,17 +281,19 @@
             });
 
             if (newlyUnlocked.length > 0) {
-                balance += totalRewardAdded; // Update global balance
-                console.log(`Total reward added: ${totalRewardAdded}. New balance: ${balance}`);
+                balance += totalRewardAdded; // Update global balance variable
+                console.log(`Total reward added: ${totalRewardAdded}. New balance VARIABLE: ${balance}`);
 
-                // Save new achievements list and updated balance
+                // Save ONLY the new achievements list
                 saveUnlockedAchievements();
-                try {
-                    localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString());
-                    console.log("Balance saved after achievement rewards:", balance);
-                } catch (error) {
-                    console.error("Error saving balance after achievement rewards:", error);
-                }
+
+                // FIX: REMOVED balance saving from here. It will be handled by saveBalance() in endRace.
+                // try {
+                //     localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString());
+                //     console.log("Balance saved after achievement rewards:", balance);
+                // } catch (error) {
+                //     console.error("Error saving balance after achievement rewards:", error);
+                // }
             }
 
             return {
@@ -576,26 +581,26 @@
         function checkBetButtonState() {
             // ... (checkBetButtonState code - unchanged) ...
              const amount = parseInt(betAmountInput.value, 10) || 0;
-            const isValidAmount = amount >= MIN_BET;
-            const hasEnoughBalance = amount <= balance;
+             const isValidAmount = amount >= MIN_BET;
+             const hasEnoughBalance = amount <= balance;
 
-            const canBet = raceState === 'idle' && selectedCarGroup !== null && isValidAmount && hasEnoughBalance;
-            betButton.disabled = !canBet;
+             const canBet = raceState === 'idle' && selectedCarGroup !== null && isValidAmount && hasEnoughBalance;
+             betButton.disabled = !canBet;
 
-            // Help/error messages in the UI
-             if (raceState === 'idle' && selectedCarGroup) {
-                if (!isValidAmount && betAmountInput.value !== '') {
-                     messageArea.textContent = `La apuesta mínima es ${MIN_BET}€.`;
-                } else if (!hasEnoughBalance) {
-                     messageArea.textContent = `Saldo insuficiente. Tienes ${balance.toLocaleString('es-ES')}€.`;
-                } else if (isValidAmount && hasEnoughBalance) {
-                    messageArea.textContent = `Apostando ${amount.toLocaleString('es-ES')}€ al coche ${selectedCarGroup.userData.id + 1}. ¡Pulsa APOSTAR!`;
-                } else {
-                     messageArea.textContent = `Coche ${selectedCarGroup.userData.id + 1} seleccionado. Introduce tu apuesta.`;
-                }
-            } else if (raceState === 'idle' && !selectedCarGroup) {
-                messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.';
-            }
+             // Help/error messages in the UI
+              if (raceState === 'idle' && selectedCarGroup) {
+                 if (!isValidAmount && betAmountInput.value !== '') {
+                      messageArea.textContent = `La apuesta mínima es ${MIN_BET}€.`;
+                 } else if (!hasEnoughBalance) {
+                      messageArea.textContent = `Saldo insuficiente. Tienes ${balance.toLocaleString('es-ES')}€.`;
+                 } else if (isValidAmount && hasEnoughBalance) {
+                     messageArea.textContent = `Apostando ${amount.toLocaleString('es-ES')}€ al coche ${selectedCarGroup.userData.id + 1}. ¡Pulsa APOSTAR!`;
+                 } else {
+                      messageArea.textContent = `Coche ${selectedCarGroup.userData.id + 1} seleccionado. Introduce tu apuesta.`;
+                 }
+             } else if (raceState === 'idle' && !selectedCarGroup) {
+                 messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.';
+             }
         }
 
         // --- Race Logic ---
@@ -608,8 +613,8 @@
 
             try {
                 console.log(`Apuesta realizada: Coche ID ${selectedCarGroup.userData.id}, Cantidad: ${betAmount}`);
-                balance -= betAmount;
-                // saveBalance(); // <<< REMOVED: Balance will be saved after potential achievement check in endRace
+                balance -= betAmount; // Deduct bet locally
+                // Balance will be saved at the end of the race via endRace -> saveBalance()
                 updateBalanceDisplay();
 
                 raceState = 'racing';
@@ -642,17 +647,14 @@
                 const playerWon = playerCarId === winnerId;
                 const betAmount = parseInt(betAmountInput.value, 10) || 0;
                 let payout = 0;
-                let achievementResult = { newlyUnlocked: [], totalRewardAdded: 0 }; // Default achievement result
 
                 if (playerWon) {
                     payout = betAmount * cars.length;
-                    balance += payout; // Add winnings to balance
-                    // <<< NEW: Check achievements AFTER adding winnings >>>
-                    achievementResult = checkAndUnlockAchievements();
-                } else {
-                    // <<< NEW: Check achievements even on loss >>>
-                    achievementResult = checkAndUnlockAchievements();
+                    balance += payout; // Add winnings to balance variable
                 }
+
+                // Check achievements AFTER calculating winnings but BEFORE saving balance
+                const achievementResult = checkAndUnlockAchievements(); // Updates balance variable if rewards are given
 
                 // Construct the result message
                 let resultMessage = `🏁 ¡Carrera terminada! Ganador: Coche ${winnerId + 1}. `;
@@ -671,11 +673,11 @@
                     resultMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
                 }
 
-                // Final balance update display (includes potential rewards)
-                updateBalanceDisplay();
-                // saveBalance(); // <<< REMOVED: Balance is saved within checkAndUnlockAchievements if needed
+                // FIX: Save the final balance (including winnings and potential rewards) reliably
+                saveBalance();
 
                 // Update UI
+                updateBalanceDisplay(); // Show final balance
                 messageArea.textContent = resultMessage;
                 uiContainer.style.display = 'flex';
                 betButton.classList.add('hidden');
@@ -695,36 +697,36 @@
         function resetRace() {
             // ... (resetRace code - unchanged) ...
              try {
-                console.log("Reseteando para nueva carrera...");
-                raceState = 'idle'; winnerCarGroup = null;
+                 console.log("Reseteando para nueva carrera...");
+                 raceState = 'idle'; winnerCarGroup = null;
 
-                // Reset cars and visual deselection
-                cars.forEach(car => {
-                    car.position.z = startZ; car.userData.baseSpeed = 0; car.userData.currentSpeed = 0;
-                    if (originalCarMaterials.has(car)) {
-                         const originalMaterial = originalCarMaterials.get(car);
-                         car.traverse((child) => { if (child.isMesh && child.userData.isBodyOrCabin) { child.material = originalMaterial; } });
-                    }
-                });
-                deselectCar(); // Clears selectedCarGroup and removes button highlights
+                 // Reset cars and visual deselection
+                 cars.forEach(car => {
+                     car.position.z = startZ; car.userData.baseSpeed = 0; car.userData.currentSpeed = 0;
+                     if (originalCarMaterials.has(car)) {
+                          const originalMaterial = originalCarMaterials.get(car);
+                          car.traverse((child) => { if (child.isMesh && child.userData.isBodyOrCabin) { child.material = originalMaterial; } });
+                     }
+                 });
+                 deselectCar(); // Clears selectedCarGroup and removes button highlights
 
-                // Restore UI
-                uiContainer.style.display = 'flex'; resetButton.classList.add('hidden'); betButton.classList.remove('hidden');
-                betAmountInput.disabled = false; betAmountInput.value = '';
-                 // Enable car buttons
-                document.querySelectorAll('.car-button').forEach(btn => btn.disabled = false);
-                messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.';
-                updateBalanceDisplay(); checkBetButtonState();
+                 // Restore UI
+                 uiContainer.style.display = 'flex'; resetButton.classList.add('hidden'); betButton.classList.remove('hidden');
+                 betAmountInput.disabled = false; betAmountInput.value = '';
+                  // Enable car buttons
+                 document.querySelectorAll('.car-button').forEach(btn => btn.disabled = false);
+                 messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.';
+                 updateBalanceDisplay(); checkBetButtonState();
 
-                // Reset camera
-                camera.position.set(0, 25, 35); controls.target.set(0, 0, -50); controls.update();
+                 // Reset camera
+                 camera.position.set(0, 25, 35); controls.target.set(0, 0, -50); controls.update();
 
-            } catch (error) {
-                console.error("Error crítico al resetear la carrera:", error);
-                if (uiContainer) uiContainer.style.display = 'flex'; if (betButton) betButton.classList.remove('hidden'); if (resetButton) resetButton.classList.add('hidden');
-                messageArea.textContent = "Error al resetear. Refresca la página."; raceState = 'idle';
-            }
-        }
+             } catch (error) {
+                 console.error("Error crítico al resetear la carrera:", error);
+                 if (uiContainer) uiContainer.style.display = 'flex'; if (betButton) betButton.classList.remove('hidden'); if (resetButton) resetButton.classList.add('hidden');
+                 messageArea.textContent = "Error al resetear. Refresca la página."; raceState = 'idle';
+             }
+         }
 
 
         // --- Main Animation/Render Loop ---

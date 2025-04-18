@@ -147,16 +147,16 @@
         }
          #stand-button {
              background-image: linear-gradient(to bottom, #f97316, #c2410c);
-         }
-          #stand-button:hover {
+        }
+         #stand-button:hover {
              background-image: linear-gradient(to bottom, #fb923c, #ea580c);
-         }
+        }
          #new-round-button {
              background-image: linear-gradient(to bottom, #3b82f6, #1d4ed8);
-         }
-          #new-round-button:hover {
+        }
+         #new-round-button:hover {
              background-image: linear-gradient(to bottom, #60a5fa, #2563eb);
-         }
+        }
         #message-box {
             margin-top: 25px;
             padding: 18px;
@@ -343,7 +343,7 @@
                 return DEFAULT_INITIAL_BALANCE;
             }
         }
-        // MODIFIED: updatePlayerMoney only updates the variable and UI, saving is handled elsewhere (e.g., by achievements)
+        // MODIFIED: updatePlayerMoney only updates the variable and UI, saving is handled elsewhere (e.g., by achievements or endRound)
         function updatePlayerMoneyDisplay() {
              try {
                  playerMoneyElement.textContent = playerMoney.toLocaleString('es-ES'); // Format balance
@@ -387,7 +387,9 @@
         }
 
         /**
-         * Checks achievements, adds rewards, and saves balance/achievements.
+         * Checks achievements, adds rewards to the global playerMoney variable,
+         * and saves the updated achievements list to localStorage.
+         * IMPORTANT: This function NO LONGER saves the balance itself.
          * Returns details about newly unlocked achievements.
          */
         function checkAndUnlockAchievements() {
@@ -412,16 +414,18 @@
 
             if (newlyUnlocked.length > 0) {
                 playerMoney += totalRewardAdded; // Update global balance variable
-                console.log(`Total reward added: ${totalRewardAdded}. New balance: ${playerMoney}`);
+                console.log(`Total reward added: ${totalRewardAdded}. New balance VARIABLE: ${playerMoney}`);
 
-                // Save new achievements list and updated balance
+                // Save ONLY the new achievements list
                 saveUnlockedAchievements();
-                try {
-                    localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerMoney.toString());
-                    console.log("Balance saved after achievement rewards:", playerMoney);
-                } catch (error) {
-                    console.error("Error saving balance after achievement rewards:", error);
-                }
+
+                // FIX: REMOVED balance saving from here. It will be handled by saveBalance() in endRound.
+                // try {
+                //     localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerMoney.toString());
+                //     console.log("Balance saved after achievement rewards:", playerMoney);
+                // } catch (error) {
+                //     console.error("Error saving balance after achievement rewards:", error);
+                // }
             }
 
             return {
@@ -519,19 +523,30 @@
                 dealerAceCount = dealerCards.reduce((count, card) => count + (card.value === 'A' ? 1 : 0), 0);
                 dealerScore = calculateScore(dealerCards, dealerAceCount);
                 dealerScoreElement.textContent = dealerScore;
+                // Redraw dealer cards to show the revealed card
+                dealerCardsElement.innerHTML = '';
+                dealerCards.forEach(card => dealerCardsElement.appendChild(createCardElement(card)));
             }
 
             // 1. Update playerMoney variable (without saving yet)
             playerMoney += winAmount;
             console.log(`Balance after win/loss: ${playerMoney}`);
 
-            // 2. Check for achievements and add rewards (this saves the final balance and achievements)
+            // 2. Check for achievements and add rewards (this updates playerMoney variable if needed)
             const achievementResult = checkAndUnlockAchievements();
 
-            // 3. Update the UI with the final balance
+            // 3. FIX: Save the final balance to localStorage reliably
+            try {
+                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerMoney.toString());
+                console.log("Final balance saved to localStorage:", playerMoney);
+            } catch (error) {
+                console.error("Error saving final balance:", error);
+            }
+
+            // 4. Update the UI with the final balance
             updatePlayerMoneyDisplay();
 
-            // 4. Construct the final message including achievement info
+            // 5. Construct the final message including achievement info
             let finalMessage = baseResultMessage; // Start with the message from determineWinner
             if (achievementResult.newlyUnlocked.length > 0) {
                 finalMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
@@ -597,10 +612,10 @@
                  playerMoney = loadPlayerMoney(); // Reload balance variable
                  loadUnlockedAchievements(); // Reload achievements
                  if (!bettingArea.classList.contains('hidden')) { // Only update UI if not in active round
-                    updateUI();
-                    messageBox.textContent = `Saldo actualizado a ${playerMoney.toLocaleString('es-ES')}€. Introduce tu apuesta.`;
+                     updateUI();
+                     messageBox.textContent = `Saldo actualizado a ${playerMoney.toLocaleString('es-ES')}€. Introduce tu apuesta.`;
                  } else {
-                    console.log('Ronda activa, el saldo se actualizará al finalizar.');
+                     console.log('Ronda activa, el saldo se actualizará al finalizar.');
                  }
             }
              if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
@@ -621,4 +636,4 @@
 
     </script>
 </body>
-</html>
+</ht

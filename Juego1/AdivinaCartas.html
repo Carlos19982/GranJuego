@@ -454,8 +454,8 @@
             try {
                 localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerBalance.toString());
                 localStorage.setItem(STATS_LOCAL_STORAGE_KEY, JSON.stringify(stats));
-                // <<< NEW: Save Achievements (although checkAndUnlockAchievements also saves) >>>
-                // saveUnlockedAchievements(); // It's safer to let checkAndUnlockAchievements handle saving
+                // Achievements are saved separately by saveUnlockedAchievements()
+                 console.log("Game Data Saved - Balance:", playerBalance, "Stats:", stats); // Debug log
             } catch (e) {
                 console.error("Error saving data", e);
                 showMessage("Error: No se pudo guardar el progreso.", "error");
@@ -496,8 +496,10 @@
 
         /**
          * Checks if any achievements are unlocked based on the current balance
-         * and adds their rewards. Updates localStorage for balance and achievements.
+         * and adds their rewards. Updates localStorage for achievements ONLY.
          * Returns an object with details about newly unlocked achievements and rewards.
+         * IMPORTANT: This function now ONLY updates the playerBalance variable,
+         * it DOES NOT save the balance to localStorage itself.
          */
         function checkAndUnlockAchievements() {
             const newlyUnlocked = [];
@@ -521,19 +523,21 @@
                 }
             });
 
-            // If achievements were unlocked, update balance and save everything
+            // If achievements were unlocked, update balance variable and save ONLY achievements
             if (newlyUnlocked.length > 0) {
-                playerBalance += totalRewardAdded; // Update the global balance
-                console.log(`Total reward added: ${totalRewardAdded}. New balance: ${playerBalance}`);
+                playerBalance += totalRewardAdded; // Update the global balance variable
+                console.log(`Total reward added: ${totalRewardAdded}. New balance VARIABLE: ${playerBalance}`);
 
-                // Save the new list of achievements and the updated balance
+                // Save the new list of achievements
                 saveUnlockedAchievements();
-                try {
-                    localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerBalance.toString());
-                    console.log("Balance saved after achievement rewards:", playerBalance);
-                } catch (error) {
-                    console.error("Error saving balance after achievement rewards:", error);
-                }
+
+                // FIX: REMOVED balance saving from here. It will be handled by saveGameData() later.
+                // try {
+                //     localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerBalance.toString());
+                //     console.log("Balance saved after achievement rewards:", playerBalance);
+                // } catch (error) {
+                //     console.error("Error saving balance after achievement rewards:", error);
+                // }
             }
 
             return {
@@ -553,16 +557,16 @@
 
         // --- UI Functions ---
          function showMessage(text, type = 'info') {
-            messageDiv.textContent = text;
-            let baseClasses = "font-medium min-h-[60px] flex items-center justify-center p-4 rounded-lg border shadow-sm transition-opacity duration-300 ease-in-out ";
-            let typeClasses = "";
-            switch (type) { case 'success': typeClasses = "bg-green-50 border-green-300 text-green-700"; break; case 'error': typeClasses = "bg-red-50 border-red-300 text-red-700"; break; case 'info': default: typeClasses = "bg-blue-50 border-blue-300 text-blue-700"; break; }
-            messageDiv.style.opacity = 0;
-            requestAnimationFrame(() => {
-                 messageDiv.className = baseClasses + typeClasses + ' visible';
-                 messageDiv.style.opacity = 1;
-            });
-        }
+             messageDiv.textContent = text;
+             let baseClasses = "font-medium min-h-[60px] flex items-center justify-center p-4 rounded-lg border shadow-sm transition-opacity duration-300 ease-in-out ";
+             let typeClasses = "";
+             switch (type) { case 'success': typeClasses = "bg-green-50 border-green-300 text-green-700"; break; case 'error': typeClasses = "bg-red-50 border-red-300 text-red-700"; break; case 'info': default: typeClasses = "bg-blue-50 border-blue-300 text-blue-700"; break; }
+             messageDiv.style.opacity = 0;
+             requestAnimationFrame(() => {
+                  messageDiv.className = baseClasses + typeClasses + ' visible';
+                  messageDiv.style.opacity = 1;
+             });
+         }
 
         // --- createCardElement Function (Restored for Flip) ---
         function createCardElement(card, label = null) {
@@ -626,8 +630,8 @@
             // --- Round Control Logic ---
             roundControls.innerHTML = '';
              if(messageDiv.classList.contains('visible')) {
-                messageDiv.style.opacity = 0;
-                setTimeout(() => { messageDiv.classList.remove('visible'); messageDiv.className = 'text-center font-medium'; }, 300);
+                 messageDiv.style.opacity = 0;
+                 setTimeout(() => { messageDiv.classList.remove('visible'); messageDiv.className = 'text-center font-medium'; }, 300);
              }
 
 
@@ -662,9 +666,9 @@
                  showMessage("¡Decisión Final!", "info");
             } else {
                  if (currentRound === 0 && !gameOver && !noBalance) {
-                    showMessage("Coloca tu apuesta para iniciar una nueva partida.", "info");
+                     showMessage("Coloca tu apuesta para iniciar una nueva partida.", "info");
                  } else if (noBalance && currentRound === 0){
-                    showMessage("¡Te has quedado sin saldo! Puedes obtener el saldo inicial.", "error");
+                     showMessage("¡Te has quedado sin saldo! Puedes obtener el saldo inicial.", "error");
                  }
             }
 
@@ -700,7 +704,7 @@
                     cardsOnTable = []; cardElementsOnTable = [];
                     gameOver = false; inRound5ChoicePhase = false; currentGameStreak = 0;
                     playerBalance -= currentBet;
-                    // DO NOT save balance here yet, achievements might add rewards
+                    // DO NOT save balance here yet, it's saved at the end of the game
                     updateMaxBalance(); // Update max balance stat *before* potential achievement rewards
                     if (nextGameIsGuided) { guidedGameInProgress = true; nextGameIsGuided = false; console.log("Modo guiado iniciado."); }
                     else { guidedGameInProgress = false; }
@@ -793,15 +797,16 @@
                         cardFront.classList.add('card-highlight-error');
                         setTimeout(() => cardFront.classList.remove('card-highlight-error'), HIGHLIGHT_DURATION);
                         endGameStatsUpdate(0, false);
-                        // <<< MODIFIED: Check achievements even on loss, as balance might still meet a target >>>
-                        const achievementResult = checkAndUnlockAchievements(); // Check achievements
+                        // Check achievements even on loss, as balance might still meet a target
+                        const achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
                         let lossMessage = `Incorrecto: Salió ${drawnCard.rank}${drawnCard.suit}. Perdiste ${currentBet.toLocaleString('es-ES')} €. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
                         if (achievementResult.newlyUnlocked.length > 0) {
                              lossMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
                         }
                         showMessage(lossMessage, "error");
                         potentialWinnings = 0; gameOver = true; guidedGameInProgress = false;
-                        // saveGameData(); // Achievement check already saves balance
+                        // FIX: Save game data (balance and stats) reliably on loss
+                        saveGameData();
                         updateUI();
                     }
 
@@ -823,18 +828,19 @@
                 const winningsR4 = currentBet * CUMULATIVE_ROUND_MULTIPLIERS[4];
                 playerBalance += winningsR4; // Add winnings first
                 potentialWinnings = winningsR4;
-                // <<< NEW: Check achievements AFTER adding winnings >>>
-                const achievementResult = checkAndUnlockAchievements();
+                // Check achievements AFTER adding winnings
+                const achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
                 updateMaxBalance(); // Update max balance stat *after* potential rewards
                 endGameStatsUpdate(winningsR4, true); // Log game win stat
 
                 let successMessage = `¡Felicidades! Cobraste ${winningsR4.toLocaleString('es-ES')} €. Saldo final: ${playerBalance.toLocaleString('es-ES')} €`;
                  if (achievementResult.newlyUnlocked.length > 0) {
-                     successMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                      successMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
                  }
                 showMessage(successMessage, "success");
                 gameOver = true; guidedGameInProgress = false;
-                // saveGameData(); // Achievement check already saves balance
+                // FIX: Save game data (balance and stats) reliably when collecting
+                saveGameData();
                 updateUI();
             } else if (choice === 'gamble') {
                 startRound5();
@@ -864,12 +870,13 @@
                     showMessage("Error: No quedan cartas. Cobrando R4.", "error");
                     potentialWinnings=wR4;
                     playerBalance+=potentialWinnings; // Add winnings
-                    // <<< NEW: Check achievements >>>
-                    checkAndUnlockAchievements();
+                    // Check achievements
+                    checkAndUnlockAchievements(); // Updates balance variable if needed
                     updateMaxBalance();
                     endGameStatsUpdate(potentialWinnings, true);
                     gameOver=true; guidedGameInProgress=false;
-                    // saveGameData(); // Achievement check saves
+                    // FIX: Save game data (balance and stats) reliably on error
+                    saveGameData();
                     updateUI();
                     return;
                 }
@@ -885,9 +892,9 @@
                 let slideDelay = 0;
                 [playerCardElementWrapper, dealerCardElementWrapper].forEach(el => {
                     setTimeout(() => {
-                         requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
                              el.classList.add('card-enter-active');
-                         });
+                        });
                     }, slideDelay);
                     slideDelay += 150;
                 });
@@ -896,7 +903,7 @@
                 let flipDelay = SLIDE_ANIMATION_DURATION + 50;
                 [playerFlipper, dealerFlipper].forEach(flipper => {
                      setTimeout(() => {
-                         flipper.classList.add('is-flipped');
+                          flipper.classList.add('is-flipped');
                      }, flipDelay);
                      flipDelay += 150;
                 });
@@ -912,8 +919,8 @@
                         const grandPrize = currentBet * ROUND_5_MULTIPLIER;
                         playerBalance += grandPrize; // Add winnings
                         potentialWinnings = grandPrize;
-                        // <<< NEW: Check achievements AFTER adding winnings >>>
-                        achievementResult = checkAndUnlockAchievements();
+                        // Check achievements AFTER adding winnings
+                        achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
                         updateMaxBalance(); // Update max balance stat *after* potential rewards
                         endGameStatsUpdate(grandPrize, true); // Log game win stat
 
@@ -923,8 +930,8 @@
                     } else {
                         endGameStatsUpdate(0, false);
                         potentialWinnings = 0;
-                        // <<< NEW: Check achievements even on loss >>>
-                        achievementResult = checkAndUnlockAchievements();
+                        // Check achievements even on loss
+                        achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
                         updateMaxBalance(); // Update max balance stat *after* potential rewards
 
                         const reason = playerValue === dealerValue ? `¡Empate!` : `${playerCard.rank}${playerCard.suit} no supera a ${dealerCard.rank}${dealerCard.suit}.`;
@@ -933,17 +940,18 @@
                         playerFront.classList.add('card-highlight-error'); if (playerValue < dealerValue) { dealerFront.classList.add('card-highlight-success'); }
                     }
 
-                     // <<< NEW: Append achievement message if any >>>
+                     // Append achievement message if any
                      if (achievementResult.newlyUnlocked.length > 0) {
-                         finalMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
-                         // Ensure message type reflects win if only achievement was gained
-                         if (messageType === 'error' && achievementResult.totalRewardAdded > 0) messageType = 'info';
-                         else if (messageType !== 'success') messageType = 'success';
+                          finalMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
+                          // Ensure message type reflects win if only achievement was gained
+                          if (messageType === 'error' && achievementResult.totalRewardAdded > 0) messageType = 'info';
+                          else if (messageType !== 'success') messageType = 'success';
                      }
 
                     setTimeout(() => { playerFront.classList.remove('card-highlight-success', 'card-highlight-error'); dealerFront.classList.remove('card-highlight-success', 'card-highlight-error'); }, HIGHLIGHT_DURATION);
                     gameOver = true; guidedGameInProgress = false; showMessage(finalMessage, messageType);
-                    // saveGameData(); // Achievement check already saves balance
+                    // FIX: Save game data (balance and stats) reliably at the end of Round 5
+                    saveGameData();
                     updateUI();
                 }, timeUntilEvaluation);
 
@@ -965,8 +973,8 @@
                 if (winningsToCollect >= currentBet) {
                     playerBalance += winningsToCollect; // Add winnings
                     potentialWinnings = winningsToCollect;
-                    // <<< NEW: Check achievements >>>
-                    achievementResult = checkAndUnlockAchievements();
+                    // Check achievements
+                    achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
                     updateMaxBalance(); // Update max balance stat *after* potential rewards
                     endGameStatsUpdate(winningsToCollect, false); // Not a full game win, but record winnings
 
@@ -975,20 +983,20 @@
                          retireMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
                     }
                     showMessage(retireMessage, "success");
-                    // saveGameData(); // Achievement check saves
                 } else {
                     endGameStatsUpdate(0, false);
-                    // <<< NEW: Check achievements even if retiring with 0 (shouldn't happen with current logic, but safe) >>>
-                    achievementResult = checkAndUnlockAchievements();
+                    // Check achievements even if retiring with 0
+                    achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
                     updateMaxBalance();
                     let errorMessage = `Error al retirar. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
                     if (achievementResult.newlyUnlocked.length > 0) {
                          errorMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
                     }
                     showMessage(errorMessage, "error");
-                    // saveGameData(); // Achievement check saves
                 }
                 gameOver = true; guidedGameInProgress = false;
+                // FIX: Save game data (balance and stats) reliably on retire
+                saveGameData();
                 cardElements.forEach(el => el.remove());
                 cardsOnTable = []; cardElementsOnTable = [];
                 roundControls.innerHTML = '';
@@ -1037,11 +1045,11 @@
                 loadGameData(); // Reloads balance, stats, and achievements
                 updateUI();
             }
-             if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
+              if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
                  console.log('Achievements changed externally. Reloading.');
                  loadUnlockedAchievements(); // Just reload achievements
                  // No need to updateUI unless balance changed, which would trigger the other listener
-             }
+              }
         });
         window.addEventListener('focus', () => {
             console.log('Window focused, reloading game data.');
@@ -1056,4 +1064,4 @@
     </script>
 
 </body>
-</html>
+</ht
