@@ -169,28 +169,25 @@
         const EVENT_PROBABILITY = 0.10;
         const MAX_ACTIVE_EVENTS = 2;
         let activeEvents = [];
-        // --- AJUSTES ADICIONALES EN EVENTOS ---
+        // --- Lista de Eventos (con ajustes previos aplicados) ---
         const marketEvents = [
-             { name: "Optimismo Global", message: "📈 ¡Optimismo en los mercados globales! Ligera tendencia alcista general.", target: 'ALL', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.00007 }, // OK (Vol < 1)
-             { name: "Temor a Recesión", message: "📉 ¡Aumentan los temores de recesión! Tendencia bajista y volatilidad alta.", target: 'ALL', duration: 3, volatility_modifier: 1.6, trend_modifier: -0.00008 }, // OK (Negativa)
-             // --- AJUSTADO ---
-             { name: "Avance Tecnológico", message: "🚀 ¡Anunciado un avance tecnológico clave! El sector TECH sube con fuerza.", target: 'TECH', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.0003 }, // Volatilidad reducida (antes 1.3), trend aumentado (antes 0.00025)
-             { name: "Regulación Tecnológica", message: "🏛️ ¡Nuevas regulaciones afectan a Tech Corp! Fuerte caída de confianza.", target: 'TECH', duration: 3, volatility_modifier: 1.7, trend_modifier: -0.00015 }, // OK (Negativa)
-             { name: "Resultados Bancarios Positivos", message: "🏦 ¡Resultados bancarios superan expectativas! El sector FIN celebra.", target: 'FIN', duration: 3, volatility_modifier: 0.85, trend_modifier: 0.00015 }, // OK (Vol < 1)
-             { name: "Caída del Petróleo", message: "🛢️ ¡Caída inesperada del precio del petróleo! Duro golpe para Eco Energy.", target: 'ECO', duration: 3, volatility_modifier: 1.9, trend_modifier: -0.00018 }, // OK (Negativa)
-             { name: "Éxito Viral de Juego", message: "🎉 ¡GameDev Co lanza un éxito viral! Las acciones se disparan.", target: 'GAME', duration: 3, volatility_modifier: 0.7, trend_modifier: 0.0004 }, // OK (Ajustado previamente)
-             { name: "Problemas Suministro Comida", message: "🚚 ¡Problemas en la cadena de suministro afectan a Foodies Inc!", target: 'FOOD', duration: 3, volatility_modifier: 1.4, trend_modifier: -0.00009 }, // OK (Negativa)
-             { name: "Datos de Inflación", message: "📊 ¡Datos de inflación generan alta incertidumbre y volatilidad!", target: 'ALL', duration: 3, volatility_modifier: 1.7, trend_modifier: -0.00003 }, // OK (Incertidumbre -> Vol alta)
-             // --- AJUSTADO ---
-             { name: "Inversión en Energía Verde", message: "💡 ¡Gobierno anuncia fuerte inversión en energía verde! ECO sube.", target: 'ECO', duration: 3, volatility_modifier: 0.9, trend_modifier: 0.0002 }, // Volatilidad reducida (antes 1.1), trend aumentado (antes 0.00018)
-             { name: "Fallo Seguridad Tech", message: "🔒 ¡Fallo de seguridad crítico descubierto en Tech Corp!", target: 'TECH', duration: 3, volatility_modifier: 1.8, trend_modifier: -0.00020 }, // OK (Negativa)
-             { name: "Alianza Estratégica Finanzas", message: "🤝 ¡Finance Hub anuncia alianza estratégica clave!", target: 'FIN', duration: 3, volatility_modifier: 0.9, trend_modifier: 0.00012 }, // OK (Vol < 1)
-             { name: "Retraso Juego Esperado", message: "⏳ ¡GameDev Co retrasa indefinidamente su juego más esperado!", target: 'GAME', duration: 3, volatility_modifier: 1.5, trend_modifier: -0.00015 }, // OK (Negativa)
-             { name: "Tendencia Saludable Comida", message: "🥗 ¡Tendencia de comida saludable impulsa las ventas de Foodies Inc!", target: 'FOOD', duration: 3, volatility_modifier: 0.95, trend_modifier: 0.00010 }, // OK (Vol < 1)
-             { name: "Desastre Natural", message: "🌪️ ¡Desastre natural impacta la economía global!", target: 'ALL', duration: 3, volatility_modifier: 1.9, trend_modifier: -0.00010 }, // OK (Negativa)
-             { name: "Subida Tipos Interés", message: "💸 ¡Banco central sube tipos de interés inesperadamente!", target: 'ALL', duration: 3, volatility_modifier: 1.4, trend_modifier: -0.00005 }, // OK (Negativa/Incertidumbre)
-             // --- AJUSTADO ---
-             { name: "Descubrimiento Energía Limpia", message: "⚡ ¡Eco Energy anuncia un descubrimiento prometedor en energía limpia!", target: 'ECO', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.00025 }, // Volatilidad reducida (antes 1.3), trend aumentado (antes 0.00022)
+             { name: "Optimismo Global", message: "📈 ¡Optimismo en los mercados globales! Ligera tendencia alcista general.", target: 'ALL', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.00007 },
+             { name: "Temor a Recesión", message: "📉 ¡Aumentan los temores de recesión! Tendencia bajista y volatilidad alta.", target: 'ALL', duration: 3, volatility_modifier: 1.6, trend_modifier: -0.00008 },
+             { name: "Avance Tecnológico", message: "🚀 ¡Anunciado un avance tecnológico clave! El sector TECH sube con fuerza.", target: 'TECH', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.0003 },
+             { name: "Regulación Tecnológica", message: "🏛️ ¡Nuevas regulaciones afectan a Tech Corp! Fuerte caída de confianza.", target: 'TECH', duration: 3, volatility_modifier: 1.7, trend_modifier: -0.00015 },
+             { name: "Resultados Bancarios Positivos", message: "🏦 ¡Resultados bancarios superan expectativas! El sector FIN celebra.", target: 'FIN', duration: 3, volatility_modifier: 0.85, trend_modifier: 0.00015 },
+             { name: "Caída del Petróleo", message: "🛢️ ¡Caída inesperada del precio del petróleo! Duro golpe para Eco Energy.", target: 'ECO', duration: 3, volatility_modifier: 1.9, trend_modifier: -0.00018 },
+             { name: "Éxito Viral de Juego", message: "🎉 ¡GameDev Co lanza un éxito viral! Las acciones se disparan.", target: 'GAME', duration: 3, volatility_modifier: 0.7, trend_modifier: 0.0004 },
+             { name: "Problemas Suministro Comida", message: "🚚 ¡Problemas en la cadena de suministro afectan a Foodies Inc!", target: 'FOOD', duration: 3, volatility_modifier: 1.4, trend_modifier: -0.00009 },
+             { name: "Datos de Inflación", message: "📊 ¡Datos de inflación generan alta incertidumbre y volatilidad!", target: 'ALL', duration: 3, volatility_modifier: 1.7, trend_modifier: -0.00003 },
+             { name: "Inversión en Energía Verde", message: "💡 ¡Gobierno anuncia fuerte inversión en energía verde! ECO sube.", target: 'ECO', duration: 3, volatility_modifier: 0.9, trend_modifier: 0.0002 },
+             { name: "Fallo Seguridad Tech", message: "🔒 ¡Fallo de seguridad crítico descubierto en Tech Corp!", target: 'TECH', duration: 3, volatility_modifier: 1.8, trend_modifier: -0.00020 },
+             { name: "Alianza Estratégica Finanzas", message: "🤝 ¡Finance Hub anuncia alianza estratégica clave!", target: 'FIN', duration: 3, volatility_modifier: 0.9, trend_modifier: 0.00012 },
+             { name: "Retraso Juego Esperado", message: "⏳ ¡GameDev Co retrasa indefinidamente su juego más esperado!", target: 'GAME', duration: 3, volatility_modifier: 1.5, trend_modifier: -0.00015 },
+             { name: "Tendencia Saludable Comida", message: "🥗 ¡Tendencia de comida saludable impulsa las ventas de Foodies Inc!", target: 'FOOD', duration: 3, volatility_modifier: 0.95, trend_modifier: 0.00010 },
+             { name: "Desastre Natural", message: "🌪️ ¡Desastre natural impacta la economía global!", target: 'ALL', duration: 3, volatility_modifier: 1.9, trend_modifier: -0.00010 },
+             { name: "Subida Tipos Interés", message: "💸 ¡Banco central sube tipos de interés inesperadamente!", target: 'ALL', duration: 3, volatility_modifier: 1.4, trend_modifier: -0.00005 },
+             { name: "Descubrimiento Energía Limpia", message: "⚡ ¡Eco Energy anuncia un descubrimiento prometedor en energía limpia!", target: 'ECO', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.00025 },
         ];
         let eventNotificationTimeout = null;
 
@@ -212,7 +209,7 @@
         let stockChart = null;
 
         // --- Funciones del Juego (sin cambios en la mayoría) ---
-        // ... (resto de funciones sin cambios: showMessage, showEventNotification, formatCurrency, etc.) ...
+        // ... (showMessage, showEventNotification, formatCurrency, etc. sin cambios) ...
 
         function showMessage(msg, type = 'info') {
             messageBoxEl.textContent = msg;
@@ -531,30 +528,65 @@
             });
         }
 
-
+        // --- MODIFICADA: simulatePriceChange ---
         function simulatePriceChange() {
             stocks.forEach(stock => {
                 stock.lastPrice = stock.price; // Store previous price
 
                 let effectiveVolatility = stock.volatility;
-                let effectiveTrend = stock.trend;
+                let effectiveTrend = stock.trend; // Start with base trend
+                let eventIsInfluencing = false; // Flag to see if any active event affects this stock's trend
 
                 // Apply active event modifiers
                 activeEvents.forEach(activeEvent => {
-                    // Apply modifier only if event is not new OR if it's the first tick the event is active
-                     if (!activeEvent.isNew || (activeEvent.isNew && activeEvent.remainingTicks === activeEvent.event.duration)) {
-                        if (activeEvent.event.target === 'ALL' || activeEvent.event.target === stock.symbol) {
+                    // Check if the event applies to this stock
+                    if (activeEvent.event.target === 'ALL' || activeEvent.event.target === stock.symbol) {
+                        // Apply modifier only if event is not new OR if it's the first tick the event is active
+                         if (!activeEvent.isNew || (activeEvent.isNew && activeEvent.remainingTicks === activeEvent.event.duration)) {
                             effectiveVolatility *= activeEvent.event.volatility_modifier;
                             effectiveTrend += activeEvent.event.trend_modifier;
+                            // Mark that an event is influencing the trend calculation if its modifier is non-zero
+                            if (activeEvent.event.trend_modifier !== 0) {
+                                eventIsInfluencing = true;
+                            }
                         }
                     }
                 });
+
                 // Cap effective trend
                 effectiveTrend = Math.max(MIN_TREND * 2, Math.min(effectiveTrend, MAX_TREND * 2));
 
-                // Calculate price change
+                // Calculate initial price change based on potentially modified trend and volatility
                 const randomFactor = (Math.random() - 0.5) * 2; // -1 to 1
-                const priceChangePercent = randomFactor * effectiveVolatility + effectiveTrend;
+                let priceChangePercent = randomFactor * effectiveVolatility + effectiveTrend;
+
+                // --- NUEVA LÓGICA DE GARANTÍA DE DIRECCIÓN ---
+                // Only apply guarantee if an event was actively modifying the trend this tick
+                if (eventIsInfluencing) {
+                    // Check if the net effect of events intended a positive trend (effective > base)
+                    if (effectiveTrend > stock.trend) {
+                        // If positive news resulted in a negative change, force it positive
+                        if (priceChangePercent < 0) {
+                            const addedTrend = Math.max(0.00001, effectiveTrend - stock.trend); // Ensure addedTrend is positive
+                            // Force a small positive change, influenced by the event's strength but still random
+                            priceChangePercent = (Math.random() * 0.5 + 0.1) * addedTrend; // Random factor between 0.1 and 0.6 times the added trend
+                            // console.log(`Forced positive change for ${stock.symbol}: ${priceChangePercent}`);
+                        }
+                    }
+                    // Check if the net effect of events intended a negative trend (effective < base)
+                    else if (effectiveTrend < stock.trend) {
+                        // If negative news resulted in a positive change, force it negative
+                        if (priceChangePercent > 0) {
+                            const addedTrend = Math.min(-0.00001, effectiveTrend - stock.trend); // Ensure addedTrend is negative
+                             // Force a small negative change, influenced by the event's strength but still random
+                            priceChangePercent = (Math.random() * 0.5 + 0.1) * addedTrend; // Random factor between 0.1 and 0.6 times the added (negative) trend
+                            // console.log(`Forced negative change for ${stock.symbol}: ${priceChangePercent}`);
+                        }
+                    }
+                }
+                // --- FIN LÓGICA DE GARANTÍA ---
+
+                // Calculate the new price using the (potentially adjusted) priceChangePercent
                 let newPrice = stock.price * (1 + priceChangePercent);
                 newPrice = Math.max(0.01, newPrice); // Prevent price from going below 0.01
 
@@ -694,7 +726,7 @@
 
             tickCounter++;
             manageEvents(); // Decide if new events start/end THIS tick
-            simulatePriceChange(); // Calculate new prices USING current active events
+            simulatePriceChange(); // Calculate new prices USING current active events (NOW WITH GUARANTEED DIRECTION)
             renderStockMarket(); // Update market list UI
             renderPortfolio(); // Update portfolio UI
             checkAutoOrders(); // Execute SL/TP orders based on new prices
@@ -914,8 +946,3 @@
     </script>
 </body>
 </html>
-```
-
-He ajustado los parámetros de `volatility_modifier` y `trend_modifier` para las noticias positivas que antes aumentaban la volatilidad, buscando que su efecto sea más acorde a la naturaleza de la noticia.
-
-Ahora, esas noticias también deberían reflejar subidas más consistentes. ¡Pruébalo y me dices qué t
