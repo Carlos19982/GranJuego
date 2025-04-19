@@ -146,7 +146,7 @@
             { symbol: 'ECO', name: 'Eco Energy 🌿', price: 70.00, volatility: 0.040, trend: 0.00003, color: '#6B7280', showOnChart: true }
         ];
         let stocks = [];
-        let transactionHistory = [];
+        let transactionHistory = []; // Se inicializará como vacío al cargar
         const stopLossThreshold = -4.0;
         const takeProfitThreshold = 5.0;
         let gameInterval = null;
@@ -466,9 +466,15 @@
 
 
         function addTransaction(type, symbol, quantity, price, avgPrice = null) {
-            const transaction = { type: type, symbol: symbol, quantity: quantity, price: price, timestamp: new Date(), avgPrice: avgPrice };
-            transactionHistory.push(transaction);
+            // Solo añade si la cantidad es mayor que 0
+            if (quantity > 0) {
+                const transaction = { type: type, symbol: symbol, quantity: quantity, price: price, timestamp: new Date(), avgPrice: avgPrice };
+                transactionHistory.push(transaction);
+            } else {
+                console.warn(`Intento de añadir transacción con cantidad 0 para ${symbol}`);
+            }
         }
+
 
         function toggleStopLoss(symbol) {
             if (isPaused) {
@@ -521,12 +527,13 @@
             // Execute collected orders after checking all stocks
             ordersToExecute.forEach(order => {
                 // Double-check if the item still exists in portfolio before selling
-                if (portfolio[order.symbol]) {
+                if (portfolio[order.symbol] && portfolio[order.symbol].quantity > 0) { // Added check for quantity > 0
                     const quantityToSell = portfolio[order.symbol].quantity; // Sell all remaining quantity
                     sellStock(order.symbol, quantityToSell, true, order.type);
                 }
             });
         }
+
 
         // --- MODIFICADA: simulatePriceChange ---
         function simulatePriceChange() {
@@ -560,17 +567,16 @@
                 const randomFactor = (Math.random() - 0.5) * 2; // -1 to 1
                 let priceChangePercent = randomFactor * effectiveVolatility + effectiveTrend;
 
-                // --- NUEVA LÓGICA DE GARANTÍA DE DIRECCIÓN ---
-                // Only apply guarantee if an event was actively modifying the trend this tick
+                // --- LÓGICA DE GARANTÍA DE DIRECCIÓN CON MAYOR IMPACTO ---
                 if (eventIsInfluencing) {
                     // Check if the net effect of events intended a positive trend (effective > base)
                     if (effectiveTrend > stock.trend) {
                         // If positive news resulted in a negative change, force it positive
                         if (priceChangePercent < 0) {
                             const addedTrend = Math.max(0.00001, effectiveTrend - stock.trend); // Ensure addedTrend is positive
-                            // Force a small positive change, influenced by the event's strength but still random
-                            priceChangePercent = (Math.random() * 0.5 + 0.1) * addedTrend; // Random factor between 0.1 and 0.6 times the added trend
-                            // console.log(`Forced positive change for ${stock.symbol}: ${priceChangePercent}`);
+                            // Force a positive change, scaled between 50% and 200% of the added trend
+                            priceChangePercent = (Math.random() * 1.5 + 0.5) * addedTrend; // <-- AJUSTE DE ESCALA
+                            // console.log(`Forced POSITIVE change for ${stock.symbol}: ${priceChangePercent}`);
                         }
                     }
                     // Check if the net effect of events intended a negative trend (effective < base)
@@ -578,9 +584,9 @@
                         // If negative news resulted in a positive change, force it negative
                         if (priceChangePercent > 0) {
                             const addedTrend = Math.min(-0.00001, effectiveTrend - stock.trend); // Ensure addedTrend is negative
-                             // Force a small negative change, influenced by the event's strength but still random
-                            priceChangePercent = (Math.random() * 0.5 + 0.1) * addedTrend; // Random factor between 0.1 and 0.6 times the added (negative) trend
-                            // console.log(`Forced negative change for ${stock.symbol}: ${priceChangePercent}`);
+                             // Force a negative change, scaled between 50% and 200% of the added trend
+                            priceChangePercent = (Math.random() * 1.5 + 0.5) * addedTrend; // <-- AJUSTE DE ESCALA
+                            // console.log(`Forced NEGATIVE change for ${stock.symbol}: ${priceChangePercent}`);
                         }
                     }
                 }
@@ -721,16 +727,20 @@
             }
         }
 
+        // --- MODIFICADA: updateMarket ---
         function updateMarket() {
             if (isPaused) return;
 
             tickCounter++;
             manageEvents(); // Decide if new events start/end THIS tick
-            simulatePriceChange(); // Calculate new prices USING current active events (NOW WITH GUARANTEED DIRECTION)
+            simulatePriceChange(); // Calculate new prices USING current active events (NOW WITH GUARANTEED DIRECTION & IMPACT)
             renderStockMarket(); // Update market list UI
             renderPortfolio(); // Update portfolio UI
             checkAutoOrders(); // Execute SL/TP orders based on new prices
             updateChart(); // Update the chart with new prices
+
+            // --- NUEVO: Autoguardado ---
+            saveGameState(); // Guarda el estado después de cada actualización completa
         }
 
         function setPauseState(shouldPause) {
@@ -760,8 +770,9 @@
 
         function showHistory() {
              historyListEl.innerHTML = '';
+             // Usa la variable global transactionHistory que ahora se reinicia al cargar
              if (transactionHistory.length === 0) {
-                 historyListEl.innerHTML = '<li class="text-gray-500">No hay transacciones todavía.</li>';
+                 historyListEl.innerHTML = '<li class="text-gray-500">No hay transacciones todavía en esta sesión.</li>';
              } else {
                  [...transactionHistory].sort((a, b) => b.timestamp - a.timestamp).forEach(tx => {
                      const li = document.createElement('li');
@@ -812,6 +823,7 @@
              } catch (error) { console.error("Error al guardar el saldo global en localStorage:", error); showMessage("Error al actualizar el saldo global.", "error"); }
          }
 
+        // --- MODIFICADA: saveGameState ---
         function saveGameState() {
             try {
                 const gameState = {
@@ -821,22 +833,25 @@
                         showOnChart: s.showOnChart, history: s.history
                     })),
                     portfolio: portfolio,
-                    transactionHistory: transactionHistory,
+                    // transactionHistory: transactionHistory, // <-- No guardar historial
                     tickCounter: tickCounter,
                     activeEvents: activeEvents,
                     showTrendIndicator: showTrendIndicator,
                 };
                 sessionStorage.setItem(STOCK_GAME_STATE_KEY, JSON.stringify(gameState));
-                console.log("Estado del juego guardado en sessionStorage.");
+                // console.log("Estado del juego guardado en sessionStorage (sin historial).");
             } catch (error) {
                 console.error("Error al guardar el estado del juego en sessionStorage:", error);
-                showMessage("Error al guardar el progreso del juego.", "error");
+                // No mostrar mensaje al usuario para no ser intrusivo con el autoguardado
+                // showMessage("Error al guardar el progreso del juego.", "error");
             }
         }
 
+        // --- MODIFICADA: loadGameState ---
         function loadGameState() {
             let loadedFromSave = false;
             try {
+                // 1. Leer Inversión Inicial
                 const initialInvestmentStr = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
                 let parsedInvestment = 10000;
                 if (initialInvestmentStr) {
@@ -848,6 +863,7 @@
                 initialInvestment = parsedInvestment;
                 cash = initialInvestment;
 
+                // 2. Intentar cargar el estado guardado del juego
                 const savedStateStr = sessionStorage.getItem(STOCK_GAME_STATE_KEY);
                 if (savedStateStr) {
                     console.log("Cargando estado del juego desde sessionStorage...");
@@ -858,15 +874,13 @@
                          history: Array.isArray(s.history) ? s.history : [{ tick: 0, price: s.price }]
                      }));
                     portfolio = savedState.portfolio || {};
-                    transactionHistory = (savedState.transactionHistory || []).map(tx => ({
-                        ...tx, timestamp: new Date(tx.timestamp)
-                    }));
+                    transactionHistory = []; // Siempre empezar con historial vacío
                     tickCounter = savedState.tickCounter || 0;
                     activeEvents = (savedState.activeEvents || []).map(ae => ({...ae, isNew: false}));
                     showTrendIndicator = savedState.showTrendIndicator || false;
                     isPaused = true;
                     loadedFromSave = true;
-                    showMessage(`Partida anterior cargada con $${formatCurrency(cash)} de inversión. Mercado pausado.`, "info");
+                    showMessage(`Partida anterior cargada con $${formatCurrency(cash)} de inversión. Mercado pausado. Historial reiniciado.`, "info");
                 } else {
                     console.log("No se encontró estado guardado. Iniciando nueva partida.");
                     stocks = initialStockData.map(initialStock => ({
@@ -875,7 +889,9 @@
                         showOnChart: initialStock.showOnChart !== undefined ? initialStock.showOnChart : true,
                         trend: initialStock.trend
                     }));
-                    portfolio = {}; transactionHistory = []; tickCounter = 0;
+                    portfolio = {};
+                    transactionHistory = []; // Empezar con historial vacío
+                    tickCounter = 0;
                     activeEvents = []; showTrendIndicator = false; isPaused = false;
                     showMessage(`Inversión inicial: $${formatCurrency(cash)}. ¡Bienvenido! El mercado se actualiza cada ${updateInterval / 1000} segundos.`, "info");
                 }
@@ -913,7 +929,7 @@
             event.preventDefault();
             console.log("Botón Menú presionado. Guardando estado y actualizando saldo global...");
             if (!isPaused) { setPauseState(true); } // Pause if running
-            saveGameState(); // Save current state
+            saveGameState(); // Save current state (sin historial)
             try {
                 const finalPortfolioValue = calculatePortfolioValue();
                 const finalTotalValue = cash + finalPortfolioValue;
