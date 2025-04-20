@@ -136,7 +136,7 @@
         const DEFAULT_BALANCE = 5000;
 
         // --- Configuración Inicial ---
-        let cash = 10000;
+        let cash = 10000; // Será sobrescrito al cargar
         let portfolio = {};
         const initialStockData = [
             { symbol: 'TECH', name: 'Tech Corp 💻', price: 150.00, volatility: 0.032, trend: 0.00002, color: '#3B82F6', showOnChart: true },
@@ -154,7 +154,7 @@
         const updateInterval = 10000;
         const maxHistoryLength = 60;
         let tickCounter = 0;
-        let initialInvestment = 0;
+        let initialInvestment = 0; // Se leerá de sessionStorage para cálculo de G/P al salir
 
         // Constantes para Tendencia Dinámica
         const TREND_UPDATE_TICKS = 5;
@@ -827,6 +827,7 @@
         function saveGameState() {
             try {
                 const gameState = {
+                    cash: cash, // <-- AÑADIDO: Guardar cash actual
                     stocks: stocks.map(s => ({
                         symbol: s.symbol, name: s.name, price: s.price, lastPrice: s.lastPrice,
                         volatility: s.volatility, trend: s.trend, color: s.color,
@@ -839,7 +840,7 @@
                     showTrendIndicator: showTrendIndicator,
                 };
                 sessionStorage.setItem(STOCK_GAME_STATE_KEY, JSON.stringify(gameState));
-                // console.log("Estado del juego guardado en sessionStorage (sin historial).");
+                // console.log("Estado del juego guardado en sessionStorage."); // Log opcional para autoguardado
             } catch (error) {
                 console.error("Error al guardar el estado del juego en sessionStorage:", error);
                 // No mostrar mensaje al usuario para no ser intrusivo con el autoguardado
@@ -851,23 +852,24 @@
         function loadGameState() {
             let loadedFromSave = false;
             try {
-                // 1. Leer Inversión Inicial
+                // 1. Leer Inversión Inicial (para cálculo G/P al salir)
                 const initialInvestmentStr = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
-                let parsedInvestment = 10000;
+                let parsedInvestment = 10000; // Default
                 if (initialInvestmentStr) {
                     const tempInvestment = parseInt(initialInvestmentStr);
                     if (!isNaN(tempInvestment) && tempInvestment > 0) {
                         parsedInvestment = tempInvestment;
                     } else { console.warn("Inversión inicial inválida en sessionStorage. Usando 10,000."); }
                 } else { console.warn("No se encontró inversión inicial en sessionStorage. Usando 10,000."); }
-                initialInvestment = parsedInvestment;
-                cash = initialInvestment;
+                initialInvestment = parsedInvestment; // Guardar para cálculo G/P al salir
 
                 // 2. Intentar cargar el estado guardado del juego
                 const savedStateStr = sessionStorage.getItem(STOCK_GAME_STATE_KEY);
                 if (savedStateStr) {
                     console.log("Cargando estado del juego desde sessionStorage...");
                     const savedState = JSON.parse(savedStateStr);
+                    // --- RESTAURAR ESTADO ---
+                    cash = savedState.cash !== undefined ? savedState.cash : initialInvestment; // <-- Restaurar cash guardado
                     stocks = savedState.stocks.map(s => ({
                          ...s,
                          lastPrice: s.lastPrice !== undefined ? s.lastPrice : s.price,
@@ -878,11 +880,13 @@
                     tickCounter = savedState.tickCounter || 0;
                     activeEvents = (savedState.activeEvents || []).map(ae => ({...ae, isNew: false}));
                     showTrendIndicator = savedState.showTrendIndicator || false;
-                    isPaused = true;
+                    isPaused = true; // Empezar pausado si se carga
                     loadedFromSave = true;
-                    showMessage(`Partida anterior cargada con $${formatCurrency(cash)} de inversión. Mercado pausado. Historial reiniciado.`, "info");
+                    showMessage(`Partida anterior cargada. Dinero: $${formatCurrency(cash)}. Mercado pausado. Historial reiniciado.`, "info");
                 } else {
+                     // --- INICIAR NUEVA PARTIDA ---
                     console.log("No se encontró estado guardado. Iniciando nueva partida.");
+                    cash = initialInvestment; // <-- Usar inversión inicial para cash
                     stocks = initialStockData.map(initialStock => ({
                         ...initialStock, lastPrice: initialStock.price,
                         history: [{ tick: 0, price: initialStock.price }],
@@ -892,12 +896,13 @@
                     portfolio = {};
                     transactionHistory = []; // Empezar con historial vacío
                     tickCounter = 0;
-                    activeEvents = []; showTrendIndicator = false; isPaused = false;
+                    activeEvents = []; showTrendIndicator = false; isPaused = false; // No empezar pausado si es nuevo
                     showMessage(`Inversión inicial: $${formatCurrency(cash)}. ¡Bienvenido! El mercado se actualiza cada ${updateInterval / 1000} segundos.`, "info");
                 }
             } catch (error) {
+                // --- FALLBACK EN CASO DE ERROR ---
                 console.error("Error al cargar el estado del juego:", error);
-                cash = initialInvestment > 0 ? initialInvestment : 10000;
+                cash = initialInvestment > 0 ? initialInvestment : 10000; // Usar inversión leída o default
                 stocks = initialStockData.map(initialStock => ({ ...initialStock, lastPrice: initialStock.price, history: [{ tick: 0, price: initialStock.price }] }));
                 portfolio = {}; transactionHistory = []; tickCounter = 0;
                 activeEvents = []; isPaused = false; showTrendIndicator = false;
@@ -929,10 +934,11 @@
             event.preventDefault();
             console.log("Botón Menú presionado. Guardando estado y actualizando saldo global...");
             if (!isPaused) { setPauseState(true); } // Pause if running
-            saveGameState(); // Save current state (sin historial)
+            saveGameState(); // Save current state (con cash, sin historial)
             try {
                 const finalPortfolioValue = calculatePortfolioValue();
                 const finalTotalValue = cash + finalPortfolioValue;
+                // Usar la variable 'initialInvestment' guardada al inicio de la sesión
                 const netGainLoss = finalTotalValue - initialInvestment;
                 console.log(`Inversión Inicial (esta sesión): ${formatCurrency(initialInvestment)}`);
                 console.log(`Valor Total Final: ${formatCurrency(finalTotalValue)} (Cash: ${formatCurrency(cash)}, Cartera: ${formatCurrency(finalPortfolioValue)})`);
@@ -961,4 +967,4 @@
 
     </script>
 </body>
-</html>
+</ht
