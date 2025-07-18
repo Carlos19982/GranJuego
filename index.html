@@ -357,6 +357,9 @@
 
                      if (currentBalance >= selectedAmount) {
                          try {
+                             // ***** LA CORRECCIÓN ESTÁ AQUÍ *****
+                             sessionStorage.removeItem('stockSimGameState_v2'); // Borra la partida guardada anterior
+
                              sessionStorage.setItem(GAME6_INVESTMENT_SESSION_KEY, selectedAmount);
                              console.log(`Inversión inicial para Juego 6 guardada: ${selectedAmount}€`);
                              closeGame6InvestmentModal();
