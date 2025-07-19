@@ -1,193 +1,526 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Landing Page Elegante - Menú Principal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        /* Estilos personalizados (sin cambios visuales importantes) */
-        body { font-family: 'Inter', sans-serif; }
-        .grid-button { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 0.5rem; background-color: #4B5563; color: #F9FAFB; font-weight: 600; font-size: 1.125rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out; text-decoration: none; text-align: center; padding: 0.5rem; cursor: pointer; }
-        .grid-button:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); background-color: #374151; }
-        #global-balance-container { background-color: #e5e7eb; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); display: inline-block; margin-top: 0.5rem; }
-        #rotate-prompt { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; text-align: center; padding: 20px; font-size: 1.2rem; cursor: pointer; }
-        #rotate-prompt svg { width: 60px; height: 60px; margin: 15px; fill: white; }
-        
-        /* --- Contenedor de Botones Superiores --- */
-        .top-buttons-container {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            display: flex;
-            gap: 10px;
-            z-index: 100;
-        }
-        .top-button {
-            padding: 8px 12px;
-            background-color: #4a5568;
-            color: #f7fafc;
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 0.8em;
-            font-weight: 600;
-            border: 1px solid #718096;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            transition: all 0.2s ease;
-            user-select: none;
-            cursor: pointer;
-        }
-        .top-button:hover {
-            background-color: #718096;
-            border-color: #a0aec0;
-        }
+      /* Estilos personalizados (sin cambios visuales importantes) */
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      .grid-button {
+        aspect-ratio: 1 / 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        background-color: #4b5563;
+        color: #f9fafb;
+        font-weight: 600;
+        font-size: 1.125rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.1);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out,
+          background-color 0.2s ease-in-out;
+        text-decoration: none;
+        text-align: center;
+        padding: 0.5rem;
+        cursor: pointer;
+      }
+      .grid-button:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+          0 4px 6px -4px rgb(0 0 0 / 0.1);
+        background-color: #374151;
+      }
+      #global-balance-container {
+        background-color: #e5e7eb;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid #d1d5db;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        display: inline-block;
+        margin-top: 0.5rem;
+      }
+      #rotate-prompt {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        text-align: center;
+        padding: 20px;
+        font-size: 1.2rem;
+        cursor: pointer;
+      }
+      #rotate-prompt svg {
+        width: 60px;
+        height: 60px;
+        margin: 15px;
+        fill: white;
+      }
 
-        /* --- NUEVO: Estilos para el Menú de Partida --- */
-        #game-menu-container {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 110;
-        }
-        #game-menu-dropdown {
-            position: absolute;
-            top: calc(100% + 5px); /* Aparece debajo del botón */
-            left: 0;
-            background-color: white;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            width: 160px; /* Ancho del menú */
-        }
-        .game-menu-item {
-            display: block;
-            width: 100%;
-            padding: 10px 15px;
-            text-align: left;
-            font-size: 0.9em;
-            color: #374151;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-        .game-menu-item:hover {
-            background-color: #f3f4f6;
-        }
-        .hidden {
-            display: none;
-        }
+      /* --- Contenedor de Botones Superiores --- */
+      .top-buttons-container {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        display: flex;
+        gap: 10px;
+        z-index: 100;
+      }
+      .top-button {
+        padding: 8px 12px;
+        background-color: #4a5568;
+        color: #f7fafc;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 0.8em;
+        font-weight: 600;
+        border: 1px solid #718096;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        user-select: none;
+        cursor: pointer;
+      }
+      .top-button:hover {
+        background-color: #718096;
+        border-color: #a0aec0;
+      }
 
-        /* --- Estilos Modal de Logros (sin cambios) --- */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); animation: fadeIn 0.3s ease-out; }
-        .modal-content { background-color: #1f1f38; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 10px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: slideIn 0.3s ease-out; }
-        .modal-close-button { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; }
-        .modal-close-button:hover, .modal-close-button:focus { color: #fff; text-decoration: none; }
-        .modal-content h2 { color: #f4a261; margin-bottom: 20px; text-align: center; }
-        #achievementsList { list-style: none; padding: 0; max-height: 60vh; overflow-y: auto; }
-        .achievement-item { background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 12px 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s ease; }
-        .achievement-item.unlocked { background-color: rgba(46, 204, 113, 0.2); border-color: #2ecc71; color: #e0e0e0; }
-        .achievement-info h3 { font-size: 1em; margin: 0 0 3px 0; color: #e0e0e0; }
-        .achievement-info p { font-size: 0.85em; margin: 0; color: #aaa; }
-        .achievement-item.unlocked .achievement-info h3 { color: #f4a261; }
-        .achievement-item.unlocked .achievement-info p { color: #bdc3c7; }
-        .achievement-status { font-size: 1.5em; }
-        .achievement-status .icon-locked { color: #e74c3c; }
-        .achievement-status .icon-unlocked { color: #2ecc71; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-30px); opacity: 0; } }
-        .modal.fade-out { animation: fadeOut 0.3s ease-out forwards; }
-        .modal.fade-out .modal-content { animation: slideOut 0.3s ease-out forwards; }
-         @media (max-width: 700px) { .modal-content { width: 90%; margin: 15% auto; } }
-         @media (max-width: 480px) { .modal-content { width: 95%; margin: 20% auto; padding: 20px; } .achievement-info h3 { font-size: 0.9em; } .achievement-info p { font-size: 0.8em; } }
+      /* --- NUEVO: Estilos para el Menú de Partida --- */
+      #game-menu-container {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        z-index: 110;
+      }
+      #game-menu-dropdown {
+        position: absolute;
+        top: calc(100% + 5px); /* Aparece debajo del botón */
+        left: 0;
+        background-color: white;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        width: 160px; /* Ancho del menú */
+      }
+      .game-menu-item {
+        display: block;
+        width: 100%;
+        padding: 10px 15px;
+        text-align: left;
+        font-size: 0.9em;
+        color: #374151;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+      .game-menu-item:hover {
+        background-color: #f3f4f6;
+      }
+      .hidden {
+        display: none;
+      }
 
-        /* --- Estilos Banner de Notificación (sin cambios) --- */
-        #achievement-notification-banner { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2ecc71; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); z-index: 1100; text-align: center; font-size: 0.9em; animation: slideUpFadeIn 0.5s ease-out forwards; }
-        #achievement-notification-banner.hide { animation: fadeOutDown 0.5s ease-in forwards; }
-        @keyframes slideUpFadeIn { from { bottom: -100px; opacity: 0; } to { bottom: 20px; opacity: 1; } }
-        @keyframes fadeOutDown { from { bottom: 20px; opacity: 1; } to { bottom: -100px; opacity: 0; } }
+      /* --- Estilos Modal de Logros (sin cambios) --- */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.6);
+        animation: fadeIn 0.3s ease-out;
+      }
+      .modal-content {
+        background-color: #1f1f38;
+        margin: 10% auto;
+        padding: 25px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 10px;
+        position: relative;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease-out;
+      }
+      .modal-close-button {
+        color: #aaa;
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .modal-close-button:hover,
+      .modal-close-button:focus {
+        color: #fff;
+        text-decoration: none;
+      }
+      .modal-content h2 {
+        color: #f4a261;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      #achievementsList {
+        list-style: none;
+        padding: 0;
+        max-height: 60vh;
+        overflow-y: auto;
+      }
+      .achievement-item {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.2s ease;
+      }
+      .achievement-item.unlocked {
+        background-color: rgba(46, 204, 113, 0.2);
+        border-color: #2ecc71;
+        color: #e0e0e0;
+      }
+      .achievement-info h3 {
+        font-size: 1em;
+        margin: 0 0 3px 0;
+        color: #e0e0e0;
+      }
+      .achievement-info p {
+        font-size: 0.85em;
+        margin: 0;
+        color: #aaa;
+      }
+      .achievement-item.unlocked .achievement-info h3 {
+        color: #f4a261;
+      }
+      .achievement-item.unlocked .achievement-info p {
+        color: #bdc3c7;
+      }
+      .achievement-status {
+        font-size: 1.5em;
+      }
+      .achievement-status .icon-locked {
+        color: #e74c3c;
+      }
+      .achievement-status .icon-unlocked {
+        color: #2ecc71;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateY(-30px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      @keyframes slideOut {
+        from {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateY(-30px);
+          opacity: 0;
+        }
+      }
+      .modal.fade-out {
+        animation: fadeOut 0.3s ease-out forwards;
+      }
+      .modal.fade-out .modal-content {
+        animation: slideOut 0.3s ease-out forwards;
+      }
+      @media (max-width: 700px) {
+        .modal-content {
+          width: 90%;
+          margin: 15% auto;
+        }
+      }
+      @media (max-width: 480px) {
+        .modal-content {
+          width: 95%;
+          margin: 20% auto;
+          padding: 20px;
+        }
+        .achievement-info h3 {
+          font-size: 0.9em;
+        }
+        .achievement-info p {
+          font-size: 0.8em;
+        }
+      }
 
-        /* --- Estilos para el Modal de Saldo (Juegos 1-5) --- */
-        #balance-info-modal { display: none; position: fixed; inset: 0; background-color: rgba(31, 41, 55, 0.75); align-items: center; justify-content: center; z-index: 1200; padding: 1rem; animation: fadeIn 0.2s ease-out; }
-        #balance-info-modal.hidden { animation: fadeOut 0.2s ease-out forwards; pointer-events: none; }
-        #balance-info-modal > div { background-color: white; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); padding: 1.5rem; width: 100%; max-width: 24rem; text-align: center; animation: slideIn 0.2s ease-out; }
-        #balance-info-modal.hidden > div { animation: slideOut 0.2s ease-out forwards; }
+      /* --- Estilos Banner de Notificación (sin cambios) --- */
+      #achievement-notification-banner {
+        display: none;
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #2ecc71;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1100;
+        text-align: center;
+        font-size: 0.9em;
+        animation: slideUpFadeIn 0.5s ease-out forwards;
+      }
+      #achievement-notification-banner.hide {
+        animation: fadeOutDown 0.5s ease-in forwards;
+      }
+      @keyframes slideUpFadeIn {
+        from {
+          bottom: -100px;
+          opacity: 0;
+        }
+        to {
+          bottom: 20px;
+          opacity: 1;
+        }
+      }
+      @keyframes fadeOutDown {
+        from {
+          bottom: 20px;
+          opacity: 1;
+        }
+        to {
+          bottom: -100px;
+          opacity: 0;
+        }
+      }
 
-        /* --- Estilos para el Modal de Inversión (Juego 6) --- */
-        #game6-investment-modal { display: none; position: fixed; inset: 0; background-color: rgba(31, 41, 55, 0.75); align-items: center; justify-content: center; z-index: 1250; padding: 1rem; animation: fadeIn 0.2s ease-out; }
-        #game6-investment-modal.hidden { animation: fadeOut 0.2s ease-out forwards; pointer-events: none; }
-        #game6-investment-modal > div { background-color: white; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); padding: 1.5rem; width: 100%; max-width: 28rem; text-align: center; animation: slideIn 0.2s ease-out; position: relative; }
-        #game6-investment-modal.hidden > div { animation: slideOut 0.2s ease-out forwards; }
-        .investment-amount-button { background-color: #e5e7eb; color: #374151; border: 2px solid transparent; padding: 0.75rem 1.5rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin: 0 0.5rem; }
-        .investment-amount-button:hover { background-color: #d1d5db; }
-        .investment-amount-button.selected { background-color: #4f46e5; color: white; border-color: #3730a3; }
-        #game6-error-message { color: #dc2626; font-size: 0.875rem; margin-top: 1rem; min-height: 1.25rem; }
-        #game6-modal-close-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.8rem; color: #9ca3af; cursor: pointer; line-height: 1; padding: 0; }
-        #game6-modal-close-btn:hover { color: #6b7280; }
+      /* --- Estilos para el Modal de Saldo (Juegos 1-5) --- */
+      #balance-info-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background-color: rgba(31, 41, 55, 0.75);
+        align-items: center;
+        justify-content: center;
+        z-index: 1200;
+        padding: 1rem;
+        animation: fadeIn 0.2s ease-out;
+      }
+      #balance-info-modal.hidden {
+        animation: fadeOut 0.2s ease-out forwards;
+        pointer-events: none;
+      }
+      #balance-info-modal > div {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        width: 100%;
+        max-width: 24rem;
+        text-align: center;
+        animation: slideIn 0.2s ease-out;
+      }
+      #balance-info-modal.hidden > div {
+        animation: slideOut 0.2s ease-out forwards;
+      }
+
+      /* --- Estilos para el Modal de Inversión (Juego 6) --- */
+      #game6-investment-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background-color: rgba(31, 41, 55, 0.75);
+        align-items: center;
+        justify-content: center;
+        z-index: 1250;
+        padding: 1rem;
+        animation: fadeIn 0.2s ease-out;
+      }
+      #game6-investment-modal.hidden {
+        animation: fadeOut 0.2s ease-out forwards;
+        pointer-events: none;
+      }
+      #game6-investment-modal > div {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        width: 100%;
+        max-width: 28rem;
+        text-align: center;
+        animation: slideIn 0.2s ease-out;
+        position: relative;
+      }
+      #game6-investment-modal.hidden > div {
+        animation: slideOut 0.2s ease-out forwards;
+      }
+      .investment-amount-button {
+        background-color: #e5e7eb;
+        color: #374151;
+        border: 2px solid transparent;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.375rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin: 0 0.5rem;
+      }
+      .investment-amount-button:hover {
+        background-color: #d1d5db;
+      }
+      .investment-amount-button.selected {
+        background-color: #4f46e5;
+        color: white;
+        border-color: #3730a3;
+      }
+      #game6-error-message {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 1rem;
+        min-height: 1.25rem;
+      }
+      #game6-modal-close-btn {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        color: #9ca3af;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+      }
+      #game6-modal-close-btn:hover {
+        color: #6b7280;
+      }
     </style>
-</head>
-<body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
-
+  </head>
+  <body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
     <!-- NUEVO: Menú de Partida -->
     <div id="game-menu-container">
-        <button id="game-menu-btn" class="top-button">Partida</button>
-        <div id="game-menu-dropdown" class="hidden">
-            <button id="export-data-btn" class="game-menu-item">Exportar Partida</button>
-            <button id="import-data-btn" class="game-menu-item">Importar Partida</button>
-            <!-- Input oculto para la importación de archivos -->
-            <input type="file" id="import-file-input" class="hidden" accept=".json">
-        </div>
+      <button id="game-menu-btn" class="top-button">Partida</button>
+      <div id="game-menu-dropdown" class="hidden">
+        <button id="export-data-btn" class="game-menu-item">
+          Exportar Partida
+        </button>
+        <button id="import-data-btn" class="game-menu-item">
+          Importar Partida
+        </button>
+        <!-- Input oculto para la importación de archivos -->
+        <input
+          type="file"
+          id="import-file-input"
+          class="hidden"
+          accept=".json"
+        />
+      </div>
     </div>
 
     <div class="top-buttons-container">
-        <button id="achievementsButton" class="top-button">🏆 Logros</button>
+      <button id="achievementsButton" class="top-button">🏆 Logros</button>
     </div>
 
     <header class="bg-white shadow-md py-5 mb-10 text-center">
-        <div class="container mx-auto px-6">
-            <h1 class="text-3xl font-bold text-gray-700">Trabajos</h1>
-            <div id="global-balance-container" class="mt-4">
-                 <span class="text-lg font-semibold text-gray-600">Saldo Global:</span>
-                 <span id="global-balance" class="text-xl font-bold text-indigo-700">Cargando...</span>
-                 <span class="text-lg font-semibold text-gray-600">€</span>
-            </div>
+      <div class="container mx-auto px-6">
+        <h1 class="text-3xl font-bold text-gray-700">Trabajos</h1>
+        <div id="global-balance-container" class="mt-4">
+          <span class="text-lg font-semibold text-gray-600">Saldo Global:</span>
+          <span id="global-balance" class="text-xl font-bold text-indigo-700"
+            >Cargando...</span
+          >
+          <span class="text-lg font-semibold text-gray-600">€</span>
         </div>
+      </div>
     </header>
 
     <main class="flex-grow container mx-auto px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-6 md:gap-8">
-            <a href="./Juego1/AdivinaCartas.html" class="grid-button">Adivinar (Cartas)</a>
-            <a href="./juego2/FlappyBird.html" class="grid-button">Flappy bird</a>
-            <a href="./Juego3/Ruleta.html" id="roulette-button" class="grid-button">Ruleta</a>
-            <a href="./Juego4/Coches.html" class="grid-button">Carrera de Coches</a>
-            <a href="./Juego5/Juego5.html" class="grid-button">Blackjack</a>
-            <a href="./Juego6/juego6.html" id="game6-button" class="grid-button">Simulador Bolsa</a>
-        </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-6 md:gap-8">
+        <a href="./Juego1/AdivinaCartas.html" class="grid-button"
+          >Adivinar (Cartas)</a
+        >
+        <a href="./juego2/FlappyBird.html" class="grid-button">Flappy bird</a>
+        <a href="./Juego3/Ruleta.html" id="roulette-button" class="grid-button"
+          >Ruleta</a
+        >
+        <a href="./Juego4/Coches.html" class="grid-button">Carrera de Coches</a>
+        <a href="./Juego5/Juego5.html" class="grid-button">Blackjack</a>
+        <a href="./Juego6/juego6.html" id="game6-button" class="grid-button"
+          >Simulador Bolsa</a
+        >
+      </div>
     </main>
 
     <footer class="bg-gray-800 text-gray-300 py-6 mt-12">
-        <div class="container mx-auto px-6 text-center">
-            <p>© 2025 Carlos Blanco Hidalgo. Todos los derechos reservados.</p>
-            </div>
+      <div class="container mx-auto px-6 text-center">
+        <p>© 2025 Carlos Blanco Hidalgo. Todos los derechos reservados.</p>
+      </div>
     </footer>
 
     <div id="rotate-prompt">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 4.5h-15A1.5 1.5 0 0 0 3 6v12a1.5 1.5 0 0 0 1.5 1.5h15a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5zm-15 13.5V6h15v12z"/><path d="M0 0h24v24H0z" fill="none"/></svg>
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/><path d="M0 0h24v24H0z" fill="none"/></svg>
-        <p>Para una mejor experiencia, gira el móvil a horizontal.</p>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M19.5 4.5h-15A1.5 1.5 0 0 0 3 6v12a1.5 1.5 0 0 0 1.5 1.5h15a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5zm-15 13.5V6h15v12z"
+        />
+        <path d="M0 0h24v24H0z" fill="none" />
+      </svg>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+        />
+        <path d="M0 0h24v24H0z" fill="none" />
+      </svg>
+      <p>Para una mejor experiencia, gira el móvil a horizontal.</p>
     </div>
 
     <div id="achievementsModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close-button">×</span>
-            <h2>Logros de Saldo</h2>
-            <ul id="achievementsList"></ul>
-        </div>
+      <div class="modal-content">
+        <span class="modal-close-button">×</span>
+        <h2>Logros de Saldo</h2>
+        <ul id="achievementsList"></ul>
+      </div>
     </div>
 
     <div id="achievement-notification-banner"></div>
@@ -196,187 +529,309 @@
 
     <div id="game6-investment-modal" class="hidden"></div>
 
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Constantes y Elementos ---
-            const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
-            const GAME6_INVESTMENT_SESSION_KEY = 'game6InitialInvestment';
-            const DEFAULT_BALANCE = 5000;
-            const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1';
-            const LAST_SEEN_ACHIEVEMENTS_KEY = 'rouletteLastSeenAchievements_v1';
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- Constantes y Elementos ---
+        const BALANCE_LOCAL_STORAGE_KEY = "cardGamePlayerBalance_v3";
+        const GAME6_INVESTMENT_SESSION_KEY = "game6InitialInvestment";
+        const DEFAULT_BALANCE = 5000;
+        const ACHIEVEMENTS_LOCAL_STORAGE_KEY = "rouletteAchievements_v1";
+        const LAST_SEEN_ACHIEVEMENTS_KEY = "rouletteLastSeenAchievements_v1";
 
-            const achievementsData = [ { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 } ];
-            let unlockedAchievements = [];
-            let notificationTimeout = null;
+        const achievementsData = [
+          { id: "bal1", name: "Primeros Pasos", target: 5500, reward: 100 },
+          { id: "bal2", name: "Racha Creciente", target: 7500, reward: 150 },
+          { id: "bal3", name: "Diez Mil", target: 10000, reward: 250 },
+          { id: "bal4", name: "Buen Ritmo", target: 15000, reward: 400 },
+          { id: "bal5", name: "Veinticinco Mil", target: 25000, reward: 600 },
+          { id: "bal6", name: "Cincuenta Mil", target: 50000, reward: 1250 },
+          {
+            id: "bal7",
+            name: "Setenta y Cinco Mil",
+            target: 75000,
+            reward: 2000,
+          },
+          { id: "bal8", name: "Cien Mil!", target: 100000, reward: 3000 },
+          {
+            id: "bal9",
+            name: "Cuarto de Millón",
+            target: 250000,
+            reward: 7500,
+          },
+          { id: "bal10", name: "Medio Millón", target: 500000, reward: 15000 },
+          { id: "bal11", name: "Millonario!", target: 1000000, reward: 30000 },
+          {
+            id: "bal12",
+            name: "Dos Millones y Medio",
+            target: 2500000,
+            reward: 75000,
+          },
+          {
+            id: "bal13",
+            name: "Cinco Millones",
+            target: 5000000,
+            reward: 150000,
+          },
+          {
+            id: "bal14",
+            name: "Decamillonario!",
+            target: 10000000,
+            reward: 300000,
+          },
+          {
+            id: "bal15",
+            name: "Veinticinco Millones",
+            target: 25000000,
+            reward: 750000,
+          },
+          {
+            id: "bal16",
+            name: "Cincuenta Millones",
+            target: 50000000,
+            reward: 1500000,
+          },
+          {
+            id: "bal17",
+            name: "Centimillonario!",
+            target: 100000000,
+            reward: 3000000,
+          },
+          {
+            id: "bal18",
+            name: "Doscientos Cincuenta Millones",
+            target: 250000000,
+            reward: 7500000,
+          },
+          {
+            id: "bal19",
+            name: "Quinientos Millones",
+            target: 500000000,
+            reward: 15000000,
+          },
+          {
+            id: "bal20",
+            name: "Billonario!!!",
+            target: 1000000000,
+            reward: 50000000,
+          },
+        ];
+        let unlockedAchievements = [];
+        let notificationTimeout = null;
 
-            const balanceElement = document.getElementById('global-balance');
-            const rotatePrompt = document.getElementById('rotate-prompt');
-            const achievementsButton = document.getElementById('achievementsButton');
-            const achievementsModal = document.getElementById('achievementsModal');
-            const achievementsList = document.getElementById('achievementsList');
-            const modalCloseButton = achievementsModal?.querySelector('.modal-close-button');
-            const notificationBanner = document.getElementById('achievement-notification-banner');
-            const gameButtonsContainer = document.querySelector('main .grid');
+        const balanceElement = document.getElementById("global-balance");
+        const rotatePrompt = document.getElementById("rotate-prompt");
+        const achievementsButton =
+          document.getElementById("achievementsButton");
+        const achievementsModal = document.getElementById("achievementsModal");
+        const achievementsList = document.getElementById("achievementsList");
+        const modalCloseButton = achievementsModal?.querySelector(
+          ".modal-close-button"
+        );
+        const notificationBanner = document.getElementById(
+          "achievement-notification-banner"
+        );
+        const gameButtonsContainer = document.querySelector("main .grid");
 
-            // --- NUEVO: Elementos del Menú de Partida ---
-            const gameMenuContainer = document.getElementById('game-menu-container');
-            const gameMenuBtn = document.getElementById('game-menu-btn');
-            const gameMenuDropdown = document.getElementById('game-menu-dropdown');
-            const exportDataBtn = document.getElementById('export-data-btn');
-            const importDataBtn = document.getElementById('import-data-btn');
-            const importFileInput = document.getElementById('import-file-input');
+        // --- NUEVO: Elementos del Menú de Partida ---
+        const gameMenuContainer = document.getElementById(
+          "game-menu-container"
+        );
+        const gameMenuBtn = document.getElementById("game-menu-btn");
+        const gameMenuDropdown = document.getElementById("game-menu-dropdown");
+        const exportDataBtn = document.getElementById("export-data-btn");
+        const importDataBtn = document.getElementById("import-data-btn");
+        const importFileInput = document.getElementById("import-file-input");
 
+        // --- Inicialización ---
+        updateBalanceDisplay();
+        setupAchievementsModalListeners();
+        setupGameMenuListeners(); // <-- NUEVO
+        createBalanceModalStructure();
+        createGame6InvestmentModalStructure();
+        setupGameButtonListeners();
+        loadAchievements();
+        checkForNewAchievementsNotification();
+        setupExternalUpdateListeners();
 
-            // --- Inicialización ---
-            updateBalanceDisplay();
-            setupAchievementsModalListeners();
-            setupGameMenuListeners(); // <-- NUEVO
-            createBalanceModalStructure();
-            createGame6InvestmentModalStructure();
-            setupGameButtonListeners();
-            loadAchievements(); 
-            checkForNewAchievementsNotification();
-            setupExternalUpdateListeners();
+        console.log("Landing page elegante cargada y scripts ejecutados.");
 
-            console.log("Landing page elegante cargada y scripts ejecutados.");
+        // --- Funciones (sin cambios en la mayoría) ---
 
-            // --- Funciones (sin cambios en la mayoría) ---
-
-            function getCurrentBalance() {
-                try {
-                    const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
-                    if (savedBalance !== null) {
-                        const parsedBalance = parseInt(savedBalance);
-                        if (!isNaN(parsedBalance)) { return parsedBalance; }
-                    }
-                } catch (error) { console.error("Error al leer el saldo desde localStorage:", error); }
-                return DEFAULT_BALANCE;
+        function getCurrentBalance() {
+          try {
+            const savedBalance = localStorage.getItem(
+              BALANCE_LOCAL_STORAGE_KEY
+            );
+            if (savedBalance !== null) {
+              const parsedBalance = parseInt(savedBalance);
+              if (!isNaN(parsedBalance)) {
+                return parsedBalance;
+              }
             }
+          } catch (error) {
+            console.error("Error al leer el saldo desde localStorage:", error);
+          }
+          return DEFAULT_BALANCE;
+        }
 
-            function updateBalanceDisplay() {
-                const balanceToShow = getCurrentBalance();
-                if (balanceElement) {
-                    balanceElement.textContent = balanceToShow.toLocaleString('es-ES');
+        function updateBalanceDisplay() {
+          const balanceToShow = getCurrentBalance();
+          if (balanceElement) {
+            balanceElement.textContent = balanceToShow.toLocaleString("es-ES");
+          }
+        }
+
+        function setupAchievementsModalListeners() {
+          if (
+            achievementsButton &&
+            achievementsModal &&
+            modalCloseButton &&
+            achievementsList
+          ) {
+            achievementsButton.addEventListener("click", openAchievementsModal);
+            modalCloseButton.addEventListener("click", closeAchievementsModal);
+            achievementsModal.addEventListener("click", (event) => {
+              if (event.target === achievementsModal) {
+                closeAchievementsModal();
+              }
+            });
+          } else {
+            console.error("Faltan elementos del DOM para el modal de logros.");
+          }
+        }
+
+        // --- NUEVO: Lógica del Menú de Partida (Importar/Exportar) ---
+        function setupGameMenuListeners() {
+          if (
+            !gameMenuBtn ||
+            !gameMenuDropdown ||
+            !exportDataBtn ||
+            !importDataBtn ||
+            !importFileInput
+          ) {
+            console.error("Faltan elementos del DOM para el menú de partida.");
+            return;
+          }
+
+          // Abrir/Cerrar el menú desplegable
+          gameMenuBtn.addEventListener("click", (event) => {
+            event.stopPropagation(); // Evita que el clic se propague al 'window'
+            gameMenuDropdown.classList.toggle("hidden");
+          });
+
+          // Cerrar el menú si se hace clic fuera
+          window.addEventListener("click", (event) => {
+            if (!gameMenuContainer.contains(event.target)) {
+              gameMenuDropdown.classList.add("hidden");
+            }
+          });
+
+          // Lógica de Exportación
+          exportDataBtn.addEventListener("click", () => {
+            try {
+              const balance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
+              const achievements = localStorage.getItem(
+                ACHIEVEMENTS_LOCAL_STORAGE_KEY
+              );
+
+              if (balance === null && achievements === null) {
+                alert("No hay datos de partida para exportar.");
+                return;
+              }
+
+              const dataToExport = {
+                balance: balance ? JSON.parse(balance) : DEFAULT_BALANCE,
+                achievements: achievements ? JSON.parse(achievements) : [],
+              };
+
+              const dataStr = JSON.stringify(dataToExport, null, 2); // El '2' lo hace más legible
+              const dataBlob = new Blob([dataStr], {
+                type: "application/json",
+              });
+              const url = URL.createObjectURL(dataBlob);
+
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "partida_juegos.json";
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+
+              alert(
+                "Datos de la partida exportados como 'partida_juegos.json'."
+              );
+            } catch (error) {
+              console.error("Error al exportar los datos:", error);
+              alert("Ocurrió un error al exportar los datos.");
+            }
+            gameMenuDropdown.classList.add("hidden");
+          });
+
+          // Lógica de Importación
+          importDataBtn.addEventListener("click", () => {
+            importFileInput.click(); // Abre el diálogo para seleccionar archivo
+            gameMenuDropdown.classList.add("hidden");
+          });
+
+          importFileInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const importedData = JSON.parse(e.target.result);
+
+                // Validación básica de los datos importados
+                if (
+                  typeof importedData.balance !== "number" ||
+                  !Array.isArray(importedData.achievements)
+                ) {
+                  throw new Error("El archivo no tiene el formato correcto.");
                 }
-            }
 
-            function setupAchievementsModalListeners() {
-                if (achievementsButton && achievementsModal && modalCloseButton && achievementsList) {
-                    achievementsButton.addEventListener('click', openAchievementsModal);
-                    modalCloseButton.addEventListener('click', closeAchievementsModal);
-                    achievementsModal.addEventListener('click', (event) => { if (event.target === achievementsModal) { closeAchievementsModal(); } });
-                } else { console.error("Faltan elementos del DOM para el modal de logros."); }
-            }
+                // Actualizar localStorage con los datos importados
+                localStorage.setItem(
+                  BALANCE_LOCAL_STORAGE_KEY,
+                  JSON.stringify(importedData.balance)
+                );
+                localStorage.setItem(
+                  ACHIEVEMENTS_LOCAL_STORAGE_KEY,
+                  JSON.stringify(importedData.achievements)
+                );
 
-            // --- NUEVO: Lógica del Menú de Partida (Importar/Exportar) ---
-            function setupGameMenuListeners() {
-                if (!gameMenuBtn || !gameMenuDropdown || !exportDataBtn || !importDataBtn || !importFileInput) {
-                    console.error("Faltan elementos del DOM para el menú de partida.");
-                    return;
-                }
+                // Actualizar la UI para reflejar los cambios
+                updateBalanceDisplay();
+                loadAchievements(); // Carga los nuevos logros en la variable global
+                checkForNewAchievementsNotification(); // Comprueba si hay notificaciones
 
-                // Abrir/Cerrar el menú desplegable
-                gameMenuBtn.addEventListener('click', (event) => {
-                    event.stopPropagation(); // Evita que el clic se propague al 'window'
-                    gameMenuDropdown.classList.toggle('hidden');
-                });
+                alert(
+                  "¡Datos de la partida importados con éxito! El saldo y los logros han sido actualizados."
+                );
+              } catch (error) {
+                console.error("Error al importar el archivo:", error);
+                alert(
+                  "Error al importar el archivo. Asegúrate de que es un archivo de partida válido (.json)."
+                );
+              } finally {
+                // Resetea el input para poder seleccionar el mismo archivo de nuevo
+                importFileInput.value = "";
+              }
+            };
+            reader.readAsText(file);
+          });
+        }
 
-                // Cerrar el menú si se hace clic fuera
-                window.addEventListener('click', (event) => {
-                    if (!gameMenuContainer.contains(event.target)) {
-                        gameMenuDropdown.classList.add('hidden');
-                    }
-                });
-
-                // Lógica de Exportación
-                exportDataBtn.addEventListener('click', () => {
-                    try {
-                        const balance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
-                        const achievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
-
-                        if (balance === null && achievements === null) {
-                            alert("No hay datos de partida para exportar.");
-                            return;
-                        }
-
-                        const dataToExport = {
-                            balance: balance ? JSON.parse(balance) : DEFAULT_BALANCE,
-                            achievements: achievements ? JSON.parse(achievements) : []
-                        };
-
-                        const dataStr = JSON.stringify(dataToExport, null, 2); // El '2' lo hace más legible
-                        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                        const url = URL.createObjectURL(dataBlob);
-                        
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'partida_juegos.json';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        
-                        alert("Datos de la partida exportados como 'partida_juegos.json'.");
-                    } catch (error) {
-                        console.error("Error al exportar los datos:", error);
-                        alert("Ocurrió un error al exportar los datos.");
-                    }
-                    gameMenuDropdown.classList.add('hidden');
-                });
-
-                // Lógica de Importación
-                importDataBtn.addEventListener('click', () => {
-                    importFileInput.click(); // Abre el diálogo para seleccionar archivo
-                    gameMenuDropdown.classList.add('hidden');
-                });
-
-                importFileInput.addEventListener('change', (event) => {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const importedData = JSON.parse(e.target.result);
-                            
-                            // Validación básica de los datos importados
-                            if (typeof importedData.balance !== 'number' || !Array.isArray(importedData.achievements)) {
-                                throw new Error("El archivo no tiene el formato correcto.");
-                            }
-
-                            // Actualizar localStorage con los datos importados
-                            localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, JSON.stringify(importedData.balance));
-                            localStorage.setItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY, JSON.stringify(importedData.achievements));
-
-                            // Actualizar la UI para reflejar los cambios
-                            updateBalanceDisplay();
-                            loadAchievements(); // Carga los nuevos logros en la variable global
-                            checkForNewAchievementsNotification(); // Comprueba si hay notificaciones
-                            
-                            alert("¡Datos de la partida importados con éxito! El saldo y los logros han sido actualizados.");
-
-                        } catch (error) {
-                            console.error("Error al importar el archivo:", error);
-                            alert("Error al importar el archivo. Asegúrate de que es un archivo de partida válido (.json).");
-                        } finally {
-                            // Resetea el input para poder seleccionar el mismo archivo de nuevo
-                            importFileInput.value = '';
-                        }
-                    };
-                    reader.readAsText(file);
-                });
-            }
-
-
-            // --- Lógica Modal de Saldo (Juegos 1-5 y Ruleta) ---
-            function createBalanceModalStructure() {
-                 const existingModal = document.getElementById('balance-info-modal');
-                 if (existingModal && existingModal.innerHTML.trim() !== '') return;
-                 const modal = existingModal || document.createElement('div');
-                 modal.id = 'balance-info-modal';
-                 modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[1200] hidden p-4';
-                 modal.innerHTML = `
+        // --- Lógica Modal de Saldo (Juegos 1-5 y Ruleta) ---
+        function createBalanceModalStructure() {
+          const existingModal = document.getElementById("balance-info-modal");
+          if (existingModal && existingModal.innerHTML.trim() !== "") return;
+          const modal = existingModal || document.createElement("div");
+          modal.id = "balance-info-modal";
+          modal.className =
+            "fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[1200] hidden p-4";
+          modal.innerHTML = `
                      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
                          <h3 class="text-xl font-semibold text-gray-800 mb-3" id="balance-modal-title">Entrando a Juego...</h3>
                          <p class="text-gray-600 mb-4">Tu saldo actual es:</p>
@@ -386,53 +841,75 @@
                          </button>
                      </div>
                  `;
-                 if (!existingModal) {
-                     document.body.appendChild(modal);
-                     modal.addEventListener('click', (event) => { if (event.target === modal) { /* closeBalanceModal(); */ } });
-                 }
-             }
-            function showBalanceModal(gameName, continueAction) {
-                const modal = document.getElementById('balance-info-modal');
-                const amountElement = document.getElementById('balance-modal-amount');
-                const titleElement = document.getElementById('balance-modal-title');
-                const continueButton = document.getElementById('balance-modal-continue-btn');
+          if (!existingModal) {
+            document.body.appendChild(modal);
+            modal.addEventListener("click", (event) => {
+              if (event.target === modal) {
+                /* closeBalanceModal(); */
+              }
+            });
+          }
+        }
+        function showBalanceModal(gameName, continueAction) {
+          const modal = document.getElementById("balance-info-modal");
+          const amountElement = document.getElementById("balance-modal-amount");
+          const titleElement = document.getElementById("balance-modal-title");
+          const continueButton = document.getElementById(
+            "balance-modal-continue-btn"
+          );
 
-                if (!modal || !amountElement || !titleElement || !continueButton) {
-                    console.error("Elementos del modal de saldo no encontrados. Redirigiendo directamente.");
-                    if (typeof continueAction === 'function') continueAction(true);
-                    return;
-                }
+          if (!modal || !amountElement || !titleElement || !continueButton) {
+            console.error(
+              "Elementos del modal de saldo no encontrados. Redirigiendo directamente."
+            );
+            if (typeof continueAction === "function") continueAction(true);
+            return;
+          }
 
-                const balanceToShow = getCurrentBalance();
-                amountElement.textContent = `${balanceToShow.toLocaleString('es-ES')} €`;
-                titleElement.textContent = `Entrando a ${gameName}`;
-                modal.style.display = 'flex';
-                modal.classList.remove('hidden');
+          const balanceToShow = getCurrentBalance();
+          amountElement.textContent = `${balanceToShow.toLocaleString(
+            "es-ES"
+          )} €`;
+          titleElement.textContent = `Entrando a ${gameName}`;
+          modal.style.display = "flex";
+          modal.classList.remove("hidden");
 
-                const newContinueButton = continueButton.cloneNode(true);
-                continueButton.parentNode.replaceChild(newContinueButton, continueButton);
-                newContinueButton.addEventListener('click', () => {
-                    closeBalanceModal();
-                    if (typeof continueAction === 'function') { continueAction(); }
-                });
+          const newContinueButton = continueButton.cloneNode(true);
+          continueButton.parentNode.replaceChild(
+            newContinueButton,
+            continueButton
+          );
+          newContinueButton.addEventListener("click", () => {
+            closeBalanceModal();
+            if (typeof continueAction === "function") {
+              continueAction();
             }
-            function closeBalanceModal() {
-                const modal = document.getElementById('balance-info-modal');
-                if (modal) {
-                    modal.classList.add('hidden');
-                    setTimeout(() => { if (modal.classList.contains('hidden')) { modal.style.display = 'none'; } }, 200);
-                }
-            }
+          });
+        }
+        function closeBalanceModal() {
+          const modal = document.getElementById("balance-info-modal");
+          if (modal) {
+            modal.classList.add("hidden");
+            setTimeout(() => {
+              if (modal.classList.contains("hidden")) {
+                modal.style.display = "none";
+              }
+            }, 200);
+          }
+        }
 
-             // --- Lógica Modal de Inversión (Juego 6) ---
-                          // --- Lógica Modal de Inversión (Juego 6) ---
-             function createGame6InvestmentModalStructure() {
-                 const existingModal = document.getElementById('game6-investment-modal');
-                 if (existingModal && existingModal.innerHTML.trim() !== '') return;
-                 const modal = existingModal || document.createElement('div');
-                 modal.id = 'game6-investment-modal';
-                 modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[1250] hidden p-4';
-                 modal.innerHTML = `
+        // --- Lógica Modal de Inversión (Juego 6) ---
+        // --- Lógica Modal de Inversión (Juego 6) ---
+        function createGame6InvestmentModalStructure() {
+          const existingModal = document.getElementById(
+            "game6-investment-modal"
+          );
+          if (existingModal && existingModal.innerHTML.trim() !== "") return;
+          const modal = existingModal || document.createElement("div");
+          modal.id = "game6-investment-modal";
+          modal.className =
+            "fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[1250] hidden p-4";
+          modal.innerHTML = `
                      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center relative">
                          <button id="game6-modal-close-btn" title="Cerrar">×</button>
                          <h3 class="text-xl font-semibold text-gray-800 mb-4">Simulador de Bolsa</h3>
@@ -450,188 +927,404 @@
                      </div>
                  `;
 
-                 if (!existingModal) {
-                     document.body.appendChild(modal);
-                     modal.addEventListener('click', (event) => {
-                         if (event.target === modal) { closeGame6InvestmentModal(); }
-                     });
-                 }
+          if (!existingModal) {
+            document.body.appendChild(modal);
+            modal.addEventListener("click", (event) => {
+              if (event.target === modal) {
+                closeGame6InvestmentModal();
+              }
+            });
+          }
 
-                 const closeBtn = modal.querySelector('#game6-modal-close-btn');
-                 if (closeBtn && !closeBtn.dataset.listenerAttached) {
-                     closeBtn.addEventListener('click', closeGame6InvestmentModal);
-                     closeBtn.dataset.listenerAttached = 'true';
-                 }
-             }
+          const closeBtn = modal.querySelector("#game6-modal-close-btn");
+          if (closeBtn && !closeBtn.dataset.listenerAttached) {
+            closeBtn.addEventListener("click", closeGame6InvestmentModal);
+            closeBtn.dataset.listenerAttached = "true";
+          }
+        }
 
-             function showGame6InvestmentModal(targetUrl) {
-                 const modal = document.getElementById('game6-investment-modal');
-                 if (!modal || !modal.querySelector('#game6-amount-options')) {
-                     console.error("El modal de inversión de Juego 6 no está listo. Creándolo...");
-                     createGame6InvestmentModalStructure();
-                     modal = document.getElementById('game6-investment-modal');
-                     if (!modal || !modal.querySelector('#game6-amount-options')) {
-                         console.error("Fallo crítico: No se pudo crear o encontrar el modal de inversión. Redirigiendo.");
-                         window.location.href = targetUrl;
-                         return;
-                     }
-                 }
-
-                 const amountOptionsContainer = modal.querySelector('#game6-amount-options');
-                 const confirmButton = modal.querySelector('#game6-confirm-btn');
-                 const errorMessageElement = modal.querySelector('#game6-error-message');
-
-                 if (!amountOptionsContainer || !confirmButton || !errorMessageElement) {
-                     console.error("Elementos internos del modal de inversión de Juego 6 no encontrados. Redirigiendo.");
-                     window.location.href = targetUrl;
-                     return;
-                 }
-
-                 const currentBalance = getCurrentBalance();
-                 let selectedAmount = null;
-
-                 errorMessageElement.textContent = '';
-                 confirmButton.disabled = true; 
-                 amountOptionsContainer.querySelectorAll('.investment-amount-button').forEach(btn => {
-                     btn.classList.remove('selected');
-                 });
-
-                 const amountOptionListener = (event) => {
-                     const clickedButton = event.target.closest('.investment-amount-button'); 
-                     if (clickedButton) {
-                         amountOptionsContainer.querySelectorAll('.investment-amount-button').forEach(btn => btn.classList.remove('selected'));
-                         clickedButton.classList.add('selected');
-                         selectedAmount = parseInt(clickedButton.dataset.amount);
-                         const currentModalNode = document.getElementById('game6-investment-modal');
-                         const currentConfirmButton = currentModalNode?.querySelector('#game6-confirm-btn');
-                         if (currentConfirmButton) {
-                             currentConfirmButton.disabled = false;
-                             console.log("Confirm button should be enabled now."); 
-                         } else {
-                              console.error("Could not find confirm button to enable!");
-                         }
-                         errorMessageElement.textContent = ''; 
-                     }
-                 };
-
-                 amountOptionsContainer.removeEventListener('click', amountOptionListener);
-                 amountOptionsContainer.addEventListener('click', amountOptionListener);
-
-
-                 const newConfirmButton = confirmButton.cloneNode(true);
-                 confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
-                 newConfirmButton.addEventListener('click', () => {
-                     const currentlySelectedButton = amountOptionsContainer.querySelector('.investment-amount-button.selected');
-                     if (!currentlySelectedButton) {
-                         errorMessageElement.textContent = 'Por favor, selecciona una cantidad.';
-                         return;
-                     }
-                     selectedAmount = parseInt(currentlySelectedButton.dataset.amount);
-
-                     if (currentBalance >= selectedAmount) {
-                         try {
-                             sessionStorage.removeItem('stockSimGameState_v2'); 
-                             sessionStorage.setItem(GAME6_INVESTMENT_SESSION_KEY, selectedAmount);
-                             console.log(`Inversión inicial para Juego 6 guardada: ${selectedAmount}€`);
-                             closeGame6InvestmentModal();
-                             window.location.href = targetUrl;
-                         } catch (error) {
-                             console.error("Error al guardar en sessionStorage:", error);
-                             errorMessageElement.textContent = 'Error al guardar la selección. Inténtalo de nuevo.';
-                         }
-                     } else {
-                         errorMessageElement.textContent = `Saldo insuficiente. Necesitas ${selectedAmount.toLocaleString('es-ES')}€ y tienes ${currentBalance.toLocaleString('es-ES')}€.`;
-                     }
-                 });
-
-                 modal.style.display = 'flex';
-                 modal.classList.remove('hidden');
-             }
-
-             function closeGame6InvestmentModal() {
-                 const modal = document.getElementById('game6-investment-modal');
-                 if (modal) {
-                     modal.classList.add('hidden');
-                     setTimeout(() => { if (modal.classList.contains('hidden')) { modal.style.display = 'none'; } }, 200);
-                 }
-             }
-
-            function setupGameButtonListeners() {
-                const gameButtons = gameButtonsContainer?.querySelectorAll('.grid-button');
-                if (!gameButtons) { console.error("No se encontraron botones de juego."); return; }
-
-                gameButtons.forEach(button => {
-                    button.addEventListener('click', (event) => {
-                        event.preventDefault();
-
-                        const targetUrl = button.href;
-                        const gameName = button.textContent || "este juego";
-                        const isGame6 = button.id === 'game6-button';
-
-                        if (isGame6) {
-                            showGame6InvestmentModal(targetUrl);
-                        } else {
-                            let actionAfterBalance;
-                            if (button.id === 'roulette-button' && rotatePrompt) {
-                                actionAfterBalance = () => {
-                                    rotatePrompt.style.display = 'flex';
-                                    const rotateTimeout = setTimeout(() => {
-                                        if (rotatePrompt.style.display === 'flex') {
-                                            rotatePrompt.style.display = 'none';
-                                            window.location.href = targetUrl;
-                                        }
-                                    }, 5000);
-                                    rotatePrompt.addEventListener('click', () => {
-                                        clearTimeout(rotateTimeout);
-                                        rotatePrompt.style.display = 'none';
-                                        window.location.href = targetUrl;
-                                    }, { once: true });
-                                };
-                            } else {
-                                actionAfterBalance = () => { window.location.href = targetUrl; };
-                            }
-                            showBalanceModal(gameName, actionAfterBalance);
-                        }
-                    });
-                });
+        function showGame6InvestmentModal(targetUrl) {
+          const modal = document.getElementById("game6-investment-modal");
+          if (!modal || !modal.querySelector("#game6-amount-options")) {
+            console.error(
+              "El modal de inversión de Juego 6 no está listo. Creándolo..."
+            );
+            createGame6InvestmentModalStructure();
+            modal = document.getElementById("game6-investment-modal");
+            if (!modal || !modal.querySelector("#game6-amount-options")) {
+              console.error(
+                "Fallo crítico: No se pudo crear o encontrar el modal de inversión. Redirigiendo."
+              );
+              window.location.href = targetUrl;
+              return;
             }
+          }
 
-            // --- Lógica de Logros (sin cambios) ---
-            function loadAchievements() {
-                try {
-                    const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
-                    if (savedAchievements) {
-                        const parsedAchievements = JSON.parse(savedAchievements);
-                        if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
-                            unlockedAchievements = parsedAchievements;
-                        } else {
-                            console.warn("Formato de logros guardado inválido. Reiniciando.");
-                            unlockedAchievements = [];
-                        }
-                    } else {
-                        unlockedAchievements = [];
-                    }
-                } catch (error) {
-                    console.error("Error al cargar logros:", error);
-                    unlockedAchievements = [];
+          const amountOptionsContainer = modal.querySelector(
+            "#game6-amount-options"
+          );
+          const confirmButton = modal.querySelector("#game6-confirm-btn");
+          const errorMessageElement = modal.querySelector(
+            "#game6-error-message"
+          );
+
+          if (
+            !amountOptionsContainer ||
+            !confirmButton ||
+            !errorMessageElement
+          ) {
+            console.error(
+              "Elementos internos del modal de inversión de Juego 6 no encontrados. Redirigiendo."
+            );
+            window.location.href = targetUrl;
+            return;
+          }
+
+          const currentBalance = getCurrentBalance();
+          let selectedAmount = null;
+
+          errorMessageElement.textContent = "";
+          confirmButton.disabled = true;
+          amountOptionsContainer
+            .querySelectorAll(".investment-amount-button")
+            .forEach((btn) => {
+              btn.classList.remove("selected");
+            });
+
+          const amountOptionListener = (event) => {
+            const clickedButton = event.target.closest(
+              ".investment-amount-button"
+            );
+            if (clickedButton) {
+              amountOptionsContainer
+                .querySelectorAll(".investment-amount-button")
+                .forEach((btn) => btn.classList.remove("selected"));
+              clickedButton.classList.add("selected");
+              selectedAmount = parseInt(clickedButton.dataset.amount);
+              const currentModalNode = document.getElementById(
+                "game6-investment-modal"
+              );
+              const currentConfirmButton =
+                currentModalNode?.querySelector("#game6-confirm-btn");
+              if (currentConfirmButton) {
+                currentConfirmButton.disabled = false;
+                console.log("Confirm button should be enabled now.");
+              } else {
+                console.error("Could not find confirm button to enable!");
+              }
+              errorMessageElement.textContent = "";
+            }
+          };
+
+          amountOptionsContainer.removeEventListener(
+            "click",
+            amountOptionListener
+          );
+          amountOptionsContainer.addEventListener(
+            "click",
+            amountOptionListener
+          );
+
+          const newConfirmButton = confirmButton.cloneNode(true);
+          confirmButton.parentNode.replaceChild(
+            newConfirmButton,
+            confirmButton
+          );
+          newConfirmButton.addEventListener("click", () => {
+            const currentlySelectedButton =
+              amountOptionsContainer.querySelector(
+                ".investment-amount-button.selected"
+              );
+            if (!currentlySelectedButton) {
+              errorMessageElement.textContent =
+                "Por favor, selecciona una cantidad.";
+              return;
+            }
+            selectedAmount = parseInt(currentlySelectedButton.dataset.amount);
+
+            if (currentBalance >= selectedAmount) {
+              try {
+                sessionStorage.removeItem("stockSimGameState_v2");
+                sessionStorage.setItem(
+                  GAME6_INVESTMENT_SESSION_KEY,
+                  selectedAmount
+                );
+                console.log(
+                  `Inversión inicial para Juego 6 guardada: ${selectedAmount}€`
+                );
+                closeGame6InvestmentModal();
+
+                // --- INICIO DE LA LÓGICA DE REDIRECCIÓN CONDICIONAL ---
+                let finalTargetUrl = targetUrl; // Por defecto, es juego6.html
+                if (selectedAmount === 100) {
+                  // Si la apuesta es 100, cambiamos el archivo de destino
+                  finalTargetUrl = targetUrl.replace(
+                    "juego6.html",
+                    "juego6b.html"
+                  );
+                  console.log(
+                    "Apuesta de 100 detectada. Redirigiendo a:",
+                    finalTargetUrl
+                  );
+                } else {
+                  console.log(
+                    "Redirigiendo a la versión estándar:",
+                    finalTargetUrl
+                  );
                 }
-            }
-            function displayAchievements() { if (!achievementsList) return; achievementsList.innerHTML = ''; achievementsData.forEach(ach => { const isUnlocked = unlockedAchievements.includes(ach.id); const li = document.createElement('li'); li.classList.add('achievement-item'); if (isUnlocked) { li.classList.add('unlocked'); } const formatNumber = (num) => num.toLocaleString('es-ES'); li.innerHTML = ` <div class="achievement-info"> <h3>${ach.name}</h3> <p>Objetivo: ${formatNumber(ach.target)}€</p> </div> <div class="achievement-status"> ${isUnlocked ? '<span class="icon-unlocked">✔️</span>' : '<span class="icon-locked">🔒</span>'} </div> `; li.title = isUnlocked ? `Desbloqueado!` : `Necesitas ${formatNumber(ach.target)}€ para desbloquear.`; achievementsList.appendChild(li); }); }
-            function openAchievementsModal() { loadAchievements(); displayAchievements(); achievementsModal.style.display = 'block'; void achievementsModal.offsetWidth; achievementsModal.classList.remove('fade-out'); }
-            function closeAchievementsModal() { achievementsModal.classList.add('fade-out'); setTimeout(() => { achievementsModal.style.display = 'none'; }, 290); }
-            function showNewAchievementNotification(newAchievements) { if (!notificationBanner || newAchievements.length === 0) return; if (notificationTimeout) { clearTimeout(notificationTimeout); notificationBanner.classList.remove('hide'); } let message = "🏆 ¡Nuevos logros desbloqueados!<br>"; newAchievements.forEach(ach => { message += `- ${ach.name}<br>`; }); notificationBanner.innerHTML = message; notificationBanner.style.display = 'block'; notificationBanner.classList.remove('hide'); notificationTimeout = setTimeout(() => { notificationBanner.classList.add('hide'); setTimeout(() => { if (notificationBanner.classList.contains('hide')) { notificationBanner.style.display = 'none'; } }, 500); }, 6000); }
-            function checkForNewAchievementsNotification() { loadAchievements(); const currentUnlockedIds = unlockedAchievements; let lastSeenIds = []; try { const savedLastSeen = localStorage.getItem(LAST_SEEN_ACHIEVEMENTS_KEY); if (savedLastSeen) { const parsedLastSeen = JSON.parse(savedLastSeen); if (Array.isArray(parsedLastSeen)) { lastSeenIds = parsedLastSeen; } } } catch (error) { console.error("Error al cargar últimos logros vistos:", error); lastSeenIds = []; } const newlyUnlockedIds = currentUnlockedIds.filter(id => !lastSeenIds.includes(id)); if (newlyUnlockedIds.length > 0) { const newAchievementsDetails = newlyUnlockedIds.map(id => achievementsData.find(ach => ach.id === id)).filter(ach => ach !== undefined); if (newAchievementsDetails.length > 0) { console.log("Nuevos logros detectados:", newAchievementsDetails.map(a => a.name)); showNewAchievementNotification(newAchievementsDetails); try { localStorage.setItem(LAST_SEEN_ACHIEVEMENTS_KEY, JSON.stringify(currentUnlockedIds)); } catch (error) { console.error("Error al guardar últimos logros vistos:", error); } } } else { try { if (JSON.stringify(lastSeenIds) !== JSON.stringify(currentUnlockedIds)) { localStorage.setItem(LAST_SEEN_ACHIEVEMENTS_KEY, JSON.stringify(currentUnlockedIds)); } } catch (error) { console.error("Error al actualizar últimos logros vistos (sin nuevos):", error); } } displayAchievements(); }
 
-            // --- Listeners para Actualizaciones Externas (sin cambios) ---
-            function setupExternalUpdateListeners() {
-                window.addEventListener('storage', (event) => {
-                    if (event.key === BALANCE_LOCAL_STORAGE_KEY) { console.log('Detectado cambio en el saldo desde otra pestaña.'); updateBalanceDisplay(); loadAchievements(); checkForNewAchievementsNotification(); }
-                    if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) { console.log('Detectado cambio en los logros desde otra pestaña.'); loadAchievements(); checkForNewAchievementsNotification(); }
-                });
-                window.addEventListener('focus', () => { console.log('Ventana enfocada, actualizando saldo y logros.'); updateBalanceDisplay(); loadAchievements(); checkForNewAchievementsNotification(); });
+                window.location.href = finalTargetUrl;
+                // --- FIN DE LA LÓGICA DE REDIRECCIÓN CONDICIONAL ---
+              } catch (error) {
+                console.error("Error al guardar en sessionStorage:", error);
+                errorMessageElement.textContent =
+                  "Error al guardar la selección. Inténtalo de nuevo.";
+              }
+            } else {
+              errorMessageElement.textContent = `Saldo insuficiente. Necesitas ${selectedAmount.toLocaleString(
+                "es-ES"
+              )}€ y tienes ${currentBalance.toLocaleString("es-ES")}€.`;
             }
-        });
+          });
+
+          modal.style.display = "flex";
+          modal.classList.remove("hidden");
+        }
+
+        function closeGame6InvestmentModal() {
+          const modal = document.getElementById("game6-investment-modal");
+          if (modal) {
+            modal.classList.add("hidden");
+            setTimeout(() => {
+              if (modal.classList.contains("hidden")) {
+                modal.style.display = "none";
+              }
+            }, 200);
+          }
+        }
+
+        function setupGameButtonListeners() {
+          const gameButtons =
+            gameButtonsContainer?.querySelectorAll(".grid-button");
+          if (!gameButtons) {
+            console.error("No se encontraron botones de juego.");
+            return;
+          }
+
+          gameButtons.forEach((button) => {
+            button.addEventListener("click", (event) => {
+              event.preventDefault();
+
+              const targetUrl = button.href;
+              const gameName = button.textContent || "este juego";
+              const isGame6 = button.id === "game6-button";
+
+              if (isGame6) {
+                showGame6InvestmentModal(targetUrl);
+              } else {
+                let actionAfterBalance;
+                if (button.id === "roulette-button" && rotatePrompt) {
+                  actionAfterBalance = () => {
+                    rotatePrompt.style.display = "flex";
+                    const rotateTimeout = setTimeout(() => {
+                      if (rotatePrompt.style.display === "flex") {
+                        rotatePrompt.style.display = "none";
+                        window.location.href = targetUrl;
+                      }
+                    }, 5000);
+                    rotatePrompt.addEventListener(
+                      "click",
+                      () => {
+                        clearTimeout(rotateTimeout);
+                        rotatePrompt.style.display = "none";
+                        window.location.href = targetUrl;
+                      },
+                      { once: true }
+                    );
+                  };
+                } else {
+                  actionAfterBalance = () => {
+                    window.location.href = targetUrl;
+                  };
+                }
+                showBalanceModal(gameName, actionAfterBalance);
+              }
+            });
+          });
+        }
+
+        // --- Lógica de Logros (sin cambios) ---
+        function loadAchievements() {
+          try {
+            const savedAchievements = localStorage.getItem(
+              ACHIEVEMENTS_LOCAL_STORAGE_KEY
+            );
+            if (savedAchievements) {
+              const parsedAchievements = JSON.parse(savedAchievements);
+              if (
+                Array.isArray(parsedAchievements) &&
+                parsedAchievements.every((id) => typeof id === "string")
+              ) {
+                unlockedAchievements = parsedAchievements;
+              } else {
+                console.warn(
+                  "Formato de logros guardado inválido. Reiniciando."
+                );
+                unlockedAchievements = [];
+              }
+            } else {
+              unlockedAchievements = [];
+            }
+          } catch (error) {
+            console.error("Error al cargar logros:", error);
+            unlockedAchievements = [];
+          }
+        }
+        function displayAchievements() {
+          if (!achievementsList) return;
+          achievementsList.innerHTML = "";
+          achievementsData.forEach((ach) => {
+            const isUnlocked = unlockedAchievements.includes(ach.id);
+            const li = document.createElement("li");
+            li.classList.add("achievement-item");
+            if (isUnlocked) {
+              li.classList.add("unlocked");
+            }
+            const formatNumber = (num) => num.toLocaleString("es-ES");
+            li.innerHTML = ` <div class="achievement-info"> <h3>${
+              ach.name
+            }</h3> <p>Objetivo: ${formatNumber(
+              ach.target
+            )}€</p> </div> <div class="achievement-status"> ${
+              isUnlocked
+                ? '<span class="icon-unlocked">✔️</span>'
+                : '<span class="icon-locked">🔒</span>'
+            } </div> `;
+            li.title = isUnlocked
+              ? `Desbloqueado!`
+              : `Necesitas ${formatNumber(ach.target)}€ para desbloquear.`;
+            achievementsList.appendChild(li);
+          });
+        }
+        function openAchievementsModal() {
+          loadAchievements();
+          displayAchievements();
+          achievementsModal.style.display = "block";
+          void achievementsModal.offsetWidth;
+          achievementsModal.classList.remove("fade-out");
+        }
+        function closeAchievementsModal() {
+          achievementsModal.classList.add("fade-out");
+          setTimeout(() => {
+            achievementsModal.style.display = "none";
+          }, 290);
+        }
+        function showNewAchievementNotification(newAchievements) {
+          if (!notificationBanner || newAchievements.length === 0) return;
+          if (notificationTimeout) {
+            clearTimeout(notificationTimeout);
+            notificationBanner.classList.remove("hide");
+          }
+          let message = "🏆 ¡Nuevos logros desbloqueados!<br>";
+          newAchievements.forEach((ach) => {
+            message += `- ${ach.name}<br>`;
+          });
+          notificationBanner.innerHTML = message;
+          notificationBanner.style.display = "block";
+          notificationBanner.classList.remove("hide");
+          notificationTimeout = setTimeout(() => {
+            notificationBanner.classList.add("hide");
+            setTimeout(() => {
+              if (notificationBanner.classList.contains("hide")) {
+                notificationBanner.style.display = "none";
+              }
+            }, 500);
+          }, 6000);
+        }
+        function checkForNewAchievementsNotification() {
+          loadAchievements();
+          const currentUnlockedIds = unlockedAchievements;
+          let lastSeenIds = [];
+          try {
+            const savedLastSeen = localStorage.getItem(
+              LAST_SEEN_ACHIEVEMENTS_KEY
+            );
+            if (savedLastSeen) {
+              const parsedLastSeen = JSON.parse(savedLastSeen);
+              if (Array.isArray(parsedLastSeen)) {
+                lastSeenIds = parsedLastSeen;
+              }
+            }
+          } catch (error) {
+            console.error("Error al cargar últimos logros vistos:", error);
+            lastSeenIds = [];
+          }
+          const newlyUnlockedIds = currentUnlockedIds.filter(
+            (id) => !lastSeenIds.includes(id)
+          );
+          if (newlyUnlockedIds.length > 0) {
+            const newAchievementsDetails = newlyUnlockedIds
+              .map((id) => achievementsData.find((ach) => ach.id === id))
+              .filter((ach) => ach !== undefined);
+            if (newAchievementsDetails.length > 0) {
+              console.log(
+                "Nuevos logros detectados:",
+                newAchievementsDetails.map((a) => a.name)
+              );
+              showNewAchievementNotification(newAchievementsDetails);
+              try {
+                localStorage.setItem(
+                  LAST_SEEN_ACHIEVEMENTS_KEY,
+                  JSON.stringify(currentUnlockedIds)
+                );
+              } catch (error) {
+                console.error("Error al guardar últimos logros vistos:", error);
+              }
+            }
+          } else {
+            try {
+              if (
+                JSON.stringify(lastSeenIds) !==
+                JSON.stringify(currentUnlockedIds)
+              ) {
+                localStorage.setItem(
+                  LAST_SEEN_ACHIEVEMENTS_KEY,
+                  JSON.stringify(currentUnlockedIds)
+                );
+              }
+            } catch (error) {
+              console.error(
+                "Error al actualizar últimos logros vistos (sin nuevos):",
+                error
+              );
+            }
+          }
+          displayAchievements();
+        }
+
+        // --- Listeners para Actualizaciones Externas (sin cambios) ---
+        function setupExternalUpdateListeners() {
+          window.addEventListener("storage", (event) => {
+            if (event.key === BALANCE_LOCAL_STORAGE_KEY) {
+              console.log("Detectado cambio en el saldo desde otra pestaña.");
+              updateBalanceDisplay();
+              loadAchievements();
+              checkForNewAchievementsNotification();
+            }
+            if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
+              console.log("Detectado cambio en los logros desde otra pestaña.");
+              loadAchievements();
+              checkForNewAchievementsNotification();
+            }
+          });
+          window.addEventListener("focus", () => {
+            console.log("Ventana enfocada, actualizando saldo y logros.");
+            updateBalanceDisplay();
+            loadAchievements();
+            checkForNewAchievementsNotification();
+          });
+        }
+      });
     </script>
-
-</body>
+  </body>
 </html>
