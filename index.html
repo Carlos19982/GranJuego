@@ -533,6 +533,7 @@
       document.addEventListener("DOMContentLoaded", () => {
         // --- Constantes y Elementos ---
         const BALANCE_LOCAL_STORAGE_KEY = "cardGamePlayerBalance_v3";
+        const FLAPPY_HIGH_SCORE_KEY = "flappyHighScore"; // <-- MODIFICADO: Clave para el récord
         const GAME6_INVESTMENT_SESSION_KEY = "game6InitialInvestment";
         const DEFAULT_BALANCE = 5000;
         const ACHIEVEMENTS_LOCAL_STORAGE_KEY = "rouletteAchievements_v1";
@@ -700,7 +701,7 @@
           }
         }
 
-        // --- NUEVO: Lógica del Menú de Partida (Importar/Exportar) ---
+        // --- MODIFICADO: Lógica del Menú de Partida (Importar/Exportar) ---
         function setupGameMenuListeners() {
           if (
             !gameMenuBtn ||
@@ -715,7 +716,7 @@
 
           // Abrir/Cerrar el menú desplegable
           gameMenuBtn.addEventListener("click", (event) => {
-            event.stopPropagation(); // Evita que el clic se propague al 'window'
+            event.stopPropagation();
             gameMenuDropdown.classList.toggle("hidden");
           });
 
@@ -733,8 +734,9 @@
               const achievements = localStorage.getItem(
                 ACHIEVEMENTS_LOCAL_STORAGE_KEY
               );
+              const flappyHighScore = localStorage.getItem(FLAPPY_HIGH_SCORE_KEY); // <-- MODIFICADO
 
-              if (balance === null && achievements === null) {
+              if (balance === null && achievements === null && flappyHighScore === null) { // <-- MODIFICADO
                 alert("No hay datos de partida para exportar.");
                 return;
               }
@@ -742,9 +744,10 @@
               const dataToExport = {
                 balance: balance ? JSON.parse(balance) : DEFAULT_BALANCE,
                 achievements: achievements ? JSON.parse(achievements) : [],
+                flappyHighScore: flappyHighScore ? parseInt(flappyHighScore, 10) : 0, // <-- MODIFICADO
               };
 
-              const dataStr = JSON.stringify(dataToExport, null, 2); // El '2' lo hace más legible
+              const dataStr = JSON.stringify(dataToExport, null, 2);
               const dataBlob = new Blob([dataStr], {
                 type: "application/json",
               });
@@ -770,7 +773,7 @@
 
           // Lógica de Importación
           importDataBtn.addEventListener("click", () => {
-            importFileInput.click(); // Abre el diálogo para seleccionar archivo
+            importFileInput.click();
             gameMenuDropdown.classList.add("hidden");
           });
 
@@ -783,7 +786,7 @@
               try {
                 const importedData = JSON.parse(e.target.result);
 
-                // Validación básica de los datos importados
+                // Validación de los datos importados
                 if (
                   typeof importedData.balance !== "number" ||
                   !Array.isArray(importedData.achievements)
@@ -800,14 +803,18 @@
                   ACHIEVEMENTS_LOCAL_STORAGE_KEY,
                   JSON.stringify(importedData.achievements)
                 );
+                
+                // <-- MODIFICADO: Importar el récord de Flappy Bird si existe
+                if (typeof importedData.flappyHighScore === 'number') {
+                    localStorage.setItem(FLAPPY_HIGH_SCORE_KEY, importedData.flappyHighScore.toString());
+                }
 
-                // Actualizar la UI para reflejar los cambios
                 updateBalanceDisplay();
-                loadAchievements(); // Carga los nuevos logros en la variable global
-                checkForNewAchievementsNotification(); // Comprueba si hay notificaciones
+                loadAchievements();
+                checkForNewAchievementsNotification();
 
                 alert(
-                  "¡Datos de la partida importados con éxito! El saldo y los logros han sido actualizados."
+                  "¡Datos de la partida importados con éxito! El saldo, los logros y los récords han sido actualizados."
                 );
               } catch (error) {
                 console.error("Error al importar el archivo:", error);
@@ -815,13 +822,13 @@
                   "Error al importar el archivo. Asegúrate de que es un archivo de partida válido (.json)."
                 );
               } finally {
-                // Resetea el input para poder seleccionar el mismo archivo de nuevo
                 importFileInput.value = "";
               }
             };
             reader.readAsText(file);
           });
         }
+
 
         // --- Lógica Modal de Saldo (Juegos 1-5 y Ruleta) ---
         function createBalanceModalStructure() {

@@ -570,24 +570,33 @@
                 // --- LÓGICA DE GARANTÍA DE DIRECCIÓN CON MAYOR IMPACTO ---
                 if (eventIsInfluencing) {
                     // Check if the net effect of events intended a positive trend (effective > base)
+                                        // Check if the net effect of events intended a positive trend (effective > base)
                     if (effectiveTrend > stock.trend) {
-                        // If positive news resulted in a negative change, force it positive
-                        if (priceChangePercent < 0) {
-                            const addedTrend = Math.max(0.00001, effectiveTrend - stock.trend); // Ensure addedTrend is positive
-                            // Force a positive change, scaled between 50% and 200% of the added trend
-                            priceChangePercent = (Math.random() * 1.5 + 0.5) * addedTrend; // <-- AJUSTE DE ESCALA
-                            // console.log(`Forced POSITIVE change for ${stock.symbol}: ${priceChangePercent}`);
-                        }
+                        // NUEVO: Rango de subida EXTREMADAMENTE ALTO para un impacto masivo
+                        const MIN_EXPLOSIVE_INCREASE = 0.10; // Mínimo 10% de subida
+                        const MAX_EXPLOSIVE_INCREASE = 0.20; // Máximo 20% de subida
+
+                        // Forzamos SIEMPRE una subida dentro de este rango masivo, ignorando el cálculo anterior.
+                        // Esto garantiza un disparo del precio sin importar qué.
+                        const increaseRange = MAX_EXPLOSIVE_INCREASE - MIN_EXPLOSIVE_INCREASE; // El tamaño del rango (0.10)
+                        priceChangePercent = MIN_EXPLOSIVE_INCREASE + (Math.random() * increaseRange);
+
+                        // console.log(`Forced EXPLOSIVE UP change for ${stock.symbol}: ${priceChangePercent * 100}%`);
                     }
                     // Check if the net effect of events intended a negative trend (effective < base)
-                    else if (effectiveTrend < stock.trend) {
-                        // If negative news resulted in a positive change, force it negative
-                        if (priceChangePercent > 0) {
-                            const addedTrend = Math.min(-0.00001, effectiveTrend - stock.trend); // Ensure addedTrend is negative
-                             // Force a negative change, scaled between 50% and 200% of the added trend
-                            priceChangePercent = (Math.random() * 1.5 + 0.5) * addedTrend; // <-- AJUSTE DE ESCALA
-                            // console.log(`Forced NEGATIVE change for ${stock.symbol}: ${priceChangePercent}`);
-                        }
+                     else if (effectiveTrend < stock.trend) {
+                        // NUEVO: Rango de caída EXTREMADAMENTE ALTO para un impacto devastador
+                        const MIN_DESTRUCTIVE_DECREASE = 0.10; // Mínimo 10% de caída
+                        const MAX_DESTRUCTIVE_DECREASE = 0.18; // Máximo 18% de caída
+
+                        // Forzamos SIEMPRE una caída dentro de este rango masivo, ignorando el cálculo anterior.
+                        const decreaseRange = MAX_DESTRUCTIVE_DECREASE - MIN_DESTRUCTIVE_DECREASE; // El tamaño del rango (0.08)
+                        const randomDecrease = MIN_DESTRUCTIVE_DECREASE + (Math.random() * decreaseRange);
+
+                        // Aplicamos la caída como un valor negativo
+                        priceChangePercent = -randomDecrease;
+
+                        // console.log(`Forced DESTRUCTIVE DOWN change for ${stock.symbol}: ${priceChangePercent * 100}%`);
                     }
                 }
                 // --- FIN LÓGICA DE GARANTÍA ---

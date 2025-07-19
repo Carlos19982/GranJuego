@@ -151,7 +151,7 @@
         #ingame-stats p { margin: 0 0.5rem; } #ingame-stats strong { color: #fff; }
         #ingame-stats span { font-weight: 600; color: #facc15; }
 
-        #player-balance-display{background-color:#e6fffa;color:#2c7a7b;border:1px solid #b2f5ea;padding:.75rem 1.25rem;border-radius:8px;font-size:1.1rem;font-weight:600;margin-bottom:0.5rem; display:inline-block;box-shadow:0 2px 4px rgba(0,0,0,.05); cursor: pointer; }
+        #player-balance-display{background-color:#e6fffa;color:#2c7a7b;border:1px solid #b2f5ea;padding:.75rem 1.25rem;border-radius:8px;font-size:1.1rem;font-weight:600;margin-bottom:0.5rem; display:inline-block;box-shadow:0 2px 4px rgba(0,0,0,.05); }
         #round-controls{padding:1rem 0; min-height: 80px;}
         .controls-container{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:.75rem;margin-top:1rem}
         #stats-section{background-color:#edf2f7;border:1px solid #e2e8f0;color:#4a5568;padding:1rem 1.5rem;border-radius:10px;margin-top:1.5rem;text-align:left}
@@ -273,7 +273,7 @@
 <body>
 
     <a href="../index.html" id="exit-button" class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out text-sm no-underline">
-        &larr; Menú
+        ← Menú
     </a>
 
     <div class="game-container text-center">
@@ -285,7 +285,7 @@
         <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-900">Juego de Cartas</h1>
 
         <div class="mb-6">
-            <div id="player-balance-display" title="Doble clic para activar modo secreto (solo próxima partida)">
+            <div id="player-balance-display">
                 Saldo: <span id="player-balance" class="font-bold">5000</span> €
             </div>
         </div>
@@ -300,9 +300,6 @@
             <div class="mt-4 flex flex-col sm:flex-row justify-center items-center gap-2">
                 <button id="start-game-btn" class="w-full sm:w-auto px-6 py-3 rounded-lg font-bold text-white shadow-md hover:shadow-lg transition duration-200 ease-in-out bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50">
                     Empezar Juego
-                </button>
-                <button id="get-funds-btn" class="w-full sm:w-auto hidden mt-2 sm:mt-0 px-5 py-2 rounded-lg font-semibold text-white shadow-md hover:shadow-lg transition duration-200 ease-in-out bg-teal-500 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-50 text-sm">
-                    Obtener Saldo (5000 €)
                 </button>
             </div>
         </div>
@@ -357,7 +354,6 @@
         const newGameBtn = document.getElementById('new-game-btn');
         const playerBalanceDisplaySpan = document.getElementById('player-balance');
         const playerBalanceDisplayContainer = document.getElementById('player-balance-display');
-        const getFundsBtn = document.getElementById('get-funds-btn');
         const toggleStatsBtn = document.getElementById('toggle-stats-btn');
         const statsSection = document.getElementById('stats-section');
         const statPlayed = document.getElementById('stat-played');
@@ -668,7 +664,7 @@
                  if (currentRound === 0 && !gameOver && !noBalance) {
                      showMessage("Coloca tu apuesta para iniciar una nueva partida.", "info");
                  } else if (noBalance && currentRound === 0){
-                     showMessage("¡Te has quedado sin saldo! Puedes obtener el saldo inicial.", "error");
+                     showMessage("¡Te has quedado sin saldo!.", "error");
                  }
             }
 
@@ -676,7 +672,6 @@
             bettingSection.classList.toggle('hidden', !showBetting);
             gameSection.classList.toggle('hidden', showBetting);
             newGameBtn.classList.toggle('hidden', !gameOver);
-            getFundsBtn.classList.toggle('hidden', !(noBalance && currentRound === 0));
 
             displayStats();
         }
@@ -1022,7 +1017,6 @@
         // --- Static Event Listeners ---
         startGameBtn.addEventListener('click', startGame);
         newGameBtn.addEventListener('click', resetGame);
-        getFundsBtn.addEventListener('click', () => { if (playerBalance < MIN_BET) { playerBalance = STARTING_BALANCE; nextGameIsGuided = true; updateMaxBalance(); saveGameData(); showMessage("¡Saldo restaurado! La próxima partida será guiada para ayudarte.", "success"); updateUI(); } });
         toggleStatsBtn.addEventListener('click', () => { statsSection.classList.toggle('hidden'); toggleStatsBtn.textContent = statsSection.classList.contains('hidden') ? '⚙️' : '❌'; });
         playerBalanceDisplayContainer.addEventListener('dblclick', () => { if (currentRound === 0 && !gameOver) { nextGameIsGuided = true; console.log("Modo guiado secreto activado."); playerBalanceDisplayContainer.style.transition = 'transform 0.1s ease-in-out'; playerBalanceDisplayContainer.style.transform = 'scale(1.05)'; setTimeout(() => { playerBalanceDisplayContainer.style.transform = 'scale(1)'; }, 100); } });
 
@@ -1064,4 +1058,4 @@
     </script>
 
 </body>
-</ht
+</html>

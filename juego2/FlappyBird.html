@@ -141,7 +141,7 @@
 <body>
     <div id="flappy-game">
         <a href="../index.html" id="exit-button-flappy">
-            &larr; Menú
+            ← Menú
         </a>
 
         <div id="flappy-game-area">
@@ -179,7 +179,11 @@
         const OBSTACLE_GENERATION_INTERVAL_BASE = 2200; // (ms) Intervalo base entre obstáculos
         const VERTICAL_GAP = 200; // (px) Espacio vertical entre tuberías
         const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3'; // Clave para el saldo global
-        const POINTS_PER_SCORE = 2; // Monedas a sumar por cada punto de score
+        
+        // --- Variables de Recompensa ---
+        let POINTS_PER_SCORE = 2; // Monedas por punto. Se cambia a let para poder modificarlo.
+        const REWARD_SCORE_THRESHOLD = 100; // Puntuación necesaria para la recompensa.
+
 
         // --- Inicialización del Juego (cuando el DOM está listo) ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -196,432 +200,272 @@
             // Comprobar si todos los elementos esenciales existen
             if (!flappyBird || !flappyGameArea || !flappyStartOverlay || !startMessage || !scoreMessage || !liveScoreElement || !flappyGame || !exitButton) {
                 console.error("Error: No se encontraron todos los elementos necesarios del DOM para Flappy Bird.");
-                // Opcional: Mostrar un mensaje de error al usuario
-                // document.body.innerHTML = "Error al cargar el juego. Faltan elementos.";
-                return; // Detener la inicialización si falta algo crucial
+                return;
             }
 
             // Ajustar parámetros de física y velocidad según tamaño de pantalla
-            // Valores más bajos para pantallas pequeñas (generalmente móviles)
             if (window.innerWidth < 600 || window.innerHeight < 600) {
                 gravity = 0.3;
-                jumpImpulse = -6; // Salto menos potente
-                obstacleSpeed = 2.5; // Obstáculos más lentos
+                jumpImpulse = -6; 
+                obstacleSpeed = 2.5;
             } else {
-                gravity = 0.25; // Gravedad ligeramente menor en pantallas grandes
-                jumpImpulse = -7; // Salto un poco más potente
-                obstacleSpeed = 3; // Obstáculos un poco más rápidos
+                gravity = 0.25; 
+                jumpImpulse = -7; 
+                obstacleSpeed = 3;
             }
 
             // Cargar la puntuación más alta guardada en localStorage
             highScore = parseInt(localStorage.getItem('flappyHighScore')) || 0;
+            
+            // --- MODIFICADO: Comprobar si el récord es suficiente para la recompensa ---
+            if (highScore >= REWARD_SCORE_THRESHOLD) {
+                POINTS_PER_SCORE = 3;
+                console.log(`Récord (${highScore}) es >= ${REWARD_SCORE_THRESHOLD}. Recompensa de 3 monedas por punto ACTIVA.`);
+            } else {
+                POINTS_PER_SCORE = 2; // Asegurarse de que el valor es el predeterminado si no se cumple la condición.
+                console.log(`Récord (${highScore}) es < ${REWARD_SCORE_THRESHOLD}. Recompensa de 2 monedas por punto.`);
+            }
 
             // --- Listeners de Eventos ---
-
-            // Listener para iniciar/reiniciar el juego (superposición)
-            // Usamos tanto 'click' (escritorio) como 'touchstart' (móvil)
             flappyStartOverlay.addEventListener("click", handleStartInput);
             flappyStartOverlay.addEventListener("touchstart", handleStartInput);
-
-            // Listener para hacer saltar al pájaro (área de juego principal)
-            // Usamos 'mousedown' (escritorio) y 'touchstart' (móvil)
             flappyGame.addEventListener("mousedown", handleFlapInput);
             flappyGame.addEventListener("touchstart", handleFlapInput);
-
-            // Evitar que el toque/clic en el botón de salir active el salto o reinicio
             exitButton.addEventListener('mousedown', (e) => e.stopPropagation());
             exitButton.addEventListener('touchstart', (e) => e.stopPropagation());
 
             // Configuración inicial
-            resetGameVariables(); // Establecer variables a valores iniciales
-            positionBird(); // Colocar el pájaro en su sitio
-            updateLiveScore(); // Mostrar puntuación inicial (0)
+            resetGameVariables();
+            positionBird();
+            updateLiveScore();
         });
 
         // --- Funciones Controladoras de Eventos ---
-
-        /** Maneja el input (click o touch) en la superposición para iniciar/reiniciar. */
         function handleStartInput(event) {
-            // Prevenir comportamiento por defecto SOLO para touchstart
-            if (event.type === 'touchstart') {
-                event.preventDefault();
-            }
-            // Evitar iniciar si el juego ya está corriendo (doble clic rápido)
+            if (event.type === 'touchstart') event.preventDefault();
             if (flappyGameRunning) return;
-
-            // Ocultar overlay y empezar
-            if (flappyStartOverlay) {
-                flappyStartOverlay.style.display = "none";
-            }
+            if (flappyStartOverlay) flappyStartOverlay.style.display = "none";
             startFlappyGame();
         }
 
-        /** Maneja el input (mousedown o touch) en el área de juego para saltar. */
         function handleFlapInput(event) {
-            // Prevenir comportamiento por defecto SOLO para touchstart
-             if (event.type === 'touchstart') {
-                event.preventDefault();
-            }
-            // Solo saltar si el juego está corriendo
+             if (event.type === 'touchstart') event.preventDefault();
             if (!flappyGameRunning) return;
-            flappyFlap(); // Ejecutar la lógica del salto
+            flappyFlap();
         }
 
-
         // --- Funciones Principales del Juego ---
-
-        /** Inicia una nueva partida. */
         function startFlappyGame() {
-            // Prevenir inicio múltiple
             if (flappyGameRunning) return;
             console.log("Iniciando Flappy Bird...");
 
-            resetGameVariables(); // Resetear puntuación, posición, velocidad, etc.
-            updateLiveScore(); // Actualizar marcador a 0
-            positionBird(); // Colocar pájaro en el centro
-            removeExistingObstacles(); // Limpiar obstáculos de partidas anteriores
+            resetGameVariables();
+            updateLiveScore();
+            positionBird();
+            removeExistingObstacles();
 
-            flappyGameRunning = true; // Marcar juego como activo
-            flappyEnded = false; // Resetear flag de finalización
-            lastTimestamp = null; // Resetear timestamp para cálculo delta
+            flappyGameRunning = true;
+            flappyEnded = false;
+            lastTimestamp = null;
 
-            // Iniciar el bucle principal del juego
             flappyGameRequest = requestAnimationFrame(flappyGameLoop);
         }
 
-        /** Resetea las variables del juego a sus valores iniciales. */
         function resetGameVariables() {
             flappyScore = 0;
-            flappyObstacles = []; // Vaciar array de obstáculos
-            flappyLastObstacleTime = Date.now(); // Resetear temporizador de obstáculos
+            flappyObstacles = [];
+            flappyLastObstacleTime = Date.now();
 
-            // Calcular posición Y inicial (centro vertical)
-            if (flappyGameArea) {
-                birdY = flappyGameArea.offsetHeight / 2;
-            } else {
-                birdY = window.innerHeight / 2; // Fallback si el área no está lista
-                console.warn("flappyGameArea no definido al resetear birdY. Usando fallback.");
-            }
-            birdVelocity = 0; // Sin velocidad inicial
-            flappyEnded = false; // No terminado
+            if (flappyGameArea) birdY = flappyGameArea.offsetHeight / 2;
+            else birdY = window.innerHeight / 2;
+            
+            birdVelocity = 0;
+            flappyEnded = false;
 
-            // Resetear rotación visual del pájaro
-            if (flappyBird) {
-               flappyBird.style.transform = 'translate(-50%, -50%) rotate(0deg)';
-            }
+            if (flappyBird) flappyBird.style.transform = 'translate(-50%, -50%) rotate(0deg)';
         }
 
-        /** Actualiza la posición visual del pájaro en el DOM. */
         function positionBird() {
-            if (flappyBird) {
-                flappyBird.style.top = birdY + "px";
-            }
+            if (flappyBird) flappyBird.style.top = birdY + "px";
         }
 
-        /** Elimina todos los elementos de obstáculos del DOM y vacía el array. */
         function removeExistingObstacles() {
             if (flappyGameArea) {
                 const existingObstacles = flappyGameArea.querySelectorAll(".obstacle-flappy");
                 existingObstacles.forEach(obs => obs.remove());
-            } else {
-                console.warn("flappyGameArea no definido al intentar eliminar obstáculos.");
             }
-            flappyObstacles = []; // Asegurarse de que el array esté vacío
+            flappyObstacles = [];
         }
 
-        /** Actualiza el elemento que muestra la puntuación en tiempo real. */
         function updateLiveScore() {
-            if (liveScoreElement) {
-                liveScoreElement.textContent = `Puntuación: ${flappyScore}`;
-            }
+            if (liveScoreElement) liveScoreElement.textContent = `Puntuación: ${flappyScore}`;
         }
 
-        /** Actualiza el saldo global en localStorage sumando las monedas ganadas. */
         function updateGlobalBalance() {
-             // Solo sumar si se ganó al menos 1 punto (evita sumar 0 al inicio)
             if (POINTS_PER_SCORE <= 0 || flappyScore === 0) return;
-
             try {
-                const currentBalanceStr = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
-                let currentBalance = 0;
-
-                // Leer y parsear el saldo actual de forma segura
-                if (currentBalanceStr !== null) {
-                    const parsed = parseInt(currentBalanceStr, 10); // Siempre especificar base 10
-                    if (!isNaN(parsed) && parsed >= 0) { // Asegurarse de que sea número válido y no negativo
-                        currentBalance = parsed;
-                    } else {
-                        console.warn(`Valor inválido ('${currentBalanceStr}') en localStorage para ${BALANCE_LOCAL_STORAGE_KEY}. Se usará 0 como base.`);
-                    }
-                } else {
-                    console.log(`No existe ${BALANCE_LOCAL_STORAGE_KEY} en localStorage. Se creará con las monedas ganadas.`);
-                }
-
-                // Calcular y guardar el nuevo saldo
-                // Sumamos solo las monedas correspondientes al ÚLTIMO punto ganado
+                let currentBalance = parseInt(localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY), 10) || 0;
                 const newBalance = currentBalance + POINTS_PER_SCORE;
                 localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, newBalance.toString());
-                // console.log(`Saldo actualizado: ${newBalance}`); // Para depuración
-
             } catch (error) {
                 console.error("Error al actualizar el saldo global en localStorage:", error);
             }
         }
 
-
-        /** Bucle principal del juego, se ejecuta en cada frame. */
         function flappyGameLoop(timestamp) {
-            // Salir si el juego no está corriendo o si faltan elementos clave
             if (!flappyGameRunning || !flappyBird || !flappyGameArea) {
-                 if (flappyGameRequest) cancelAnimationFrame(flappyGameRequest); // Detener bucle si algo falla
+                 if (flappyGameRequest) cancelAnimationFrame(flappyGameRequest);
                  return;
             }
 
-            // Calcular delta time (tiempo desde el último frame) para física consistente
             if (!lastTimestamp) lastTimestamp = timestamp;
             const delta = timestamp - lastTimestamp;
             lastTimestamp = timestamp;
-            // Factor de ajuste para normalizar la velocidad (basado en 60 FPS aprox.)
-            // Si el juego va muy rápido, aumenta el divisor; si va lento, redúcelo.
-            const factor = delta / 9.67; // (1000ms / 60fps = 16.67ms/frame)
+            const factor = delta / 9.67;
 
-            // --- Física del Pájaro ---
-            birdVelocity += gravity * factor; // Aplicar gravedad
-            birdY += birdVelocity * factor; // Actualizar posición Y
-            positionBird(); // Mover el elemento DOM
+            birdVelocity += gravity * factor;
+            birdY += birdVelocity * factor;
+            positionBird();
 
-            // Rotar el pájaro según la velocidad vertical para efecto visual
-            const rotation = Math.max(-30, Math.min(60, birdVelocity * 4)); // Limitar rotación entre -30 y 60 grados
+            const rotation = Math.max(-30, Math.min(60, birdVelocity * 4));
             flappyBird.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
 
-            // --- Comprobar Límites (Techo y Suelo) ---
-            // Comprobar si el pájaro toca el techo (Y < 0) o el suelo
             if (birdY < 0 || birdY + flappyBird.offsetHeight > flappyGameArea.offsetHeight) {
-                endFlappyGame(); // Terminar juego si toca límites
-                return; // Salir del bucle actual
-            }
-
-            // --- Generar Nuevos Obstáculos ---
-            // Genera un nuevo par si ha pasado suficiente tiempo desde el último
-            // El intervalo se acorta ligeramente a medida que aumenta la velocidad (si se implementara)
-            const currentInterval = OBSTACLE_GENERATION_INTERVAL_BASE / (obstacleSpeed / 2); // Ajuste simple
-            if (Date.now() - flappyLastObstacleTime > currentInterval) {
-                createFlappyObstacles();
-                flappyLastObstacleTime = Date.now(); // Resetear temporizador
-            }
-
-            // --- Actualizar y Comprobar Obstáculos Existentes ---
-            let shouldEndGame = false; // Flag para detectar colisión en este frame
-            let scoreUpdatedThisFrame = false; // Flag para actualizar marcador solo si es necesario
-
-            // Recorrer los obstáculos existentes (usando filter para eliminar los que salen)
-            flappyObstacles = flappyObstacles.filter((obs) => {
-                // Comprobación de seguridad por si falta el elemento
-                if (!obs.element) {
-                    console.warn("Obstáculo sin elemento DOM encontrado en el array.");
-                    return false; // Eliminar del array
-                }
-
-                // 1. Mover el obstáculo hacia la izquierda
-                obs.x -= obstacleSpeed * factor;
-                obs.element.style.left = obs.x + "px";
-
-                // 2. Comprobar colisión con el pájaro
-                if (checkFlappyCollision(obs)) {
-                    shouldEndGame = true; // Marcar para terminar el juego
-                }
-
-                // 3. Comprobar si el pájaro ha pasado un obstáculo (solo para tubería superior)
-                // Se considera pasado cuando el borde derecho del pájaro supera el borde izquierdo del obstáculo
-                if (obs.type === "top" && !obs.passed && obs.x + obs.element.offsetWidth < flappyBird.offsetLeft) {
-                    obs.passed = true; // Marcar como pasado para no puntuar de nuevo
-                    flappyScore++; // Incrementar puntuación
-                    updateGlobalBalance(); // Actualizar saldo global (suma POINTS_PER_SCORE)
-                    scoreUpdatedThisFrame = true; // Marcar que la puntuación cambió
-                }
-
-                // 4. Eliminar obstáculos que ya salieron completamente de la pantalla por la izquierda
-                if (obs.x + obs.element.offsetWidth < 0) {
-                    obs.element.remove(); // Quitar del DOM
-                    return false; // Filtrar fuera del array (no mantener)
-                }
-
-                // 5. Mantener el obstáculo en el array si sigue en pantalla
-                return true;
-            });
-
-            // Actualizar el marcador de puntuación en la UI si cambió en este frame
-            if (scoreUpdatedThisFrame) {
-                updateLiveScore();
-            }
-
-            // Terminar el juego si se detectó colisión en este frame
-            if (shouldEndGame) {
                 endFlappyGame();
-                return; // Salir del bucle actual
-            }
-
-            // Solicitar el próximo frame de animación para continuar el bucle
-            flappyGameRequest = requestAnimationFrame(flappyGameLoop);
-        }
-
-        /** Aplica un impulso hacia arriba a la velocidad del pájaro. */
-        function flappyFlap() {
-            // Solo aplicar si el juego está activo
-            if (!flappyGameRunning) return;
-            birdVelocity = jumpImpulse; // Asigna la fuerza de salto (negativa) a la velocidad
-        }
-
-        /** Crea un par de obstáculos (tuberías superior e inferior) y los añade al juego. */
-        function createFlappyObstacles() {
-            // Salir si el área de juego no está definida
-            if (!flappyGameArea) {
-                console.error("No se puede crear obstáculos: flappyGameArea no está definido.");
                 return;
             }
 
-            const gap = VERTICAL_GAP; // Espacio vertical entre tuberías
-            const gameHeight = flappyGameArea.offsetHeight;
-            const gameWidth = flappyGameArea.offsetWidth;
-            const obstacleWidth = 60; // Ancho fijo de las tuberías (coincide con CSS)
-            const minHeight = 50; // Altura mínima de una tubería para que sea visible
-
-            // Calcular la altura máxima posible para la tubería superior, dejando espacio para la inferior y el hueco
-            const maxTopHeight = gameHeight - gap - minHeight;
-
-            // Comprobar si la altura del juego es suficiente para crear obstáculos válidos
-            if (maxTopHeight < minHeight) {
-                console.warn(`Altura del juego (${gameHeight}px) demasiado pequeña para crear obstáculos con hueco (${gap}px) y altura mínima (${minHeight}px).`);
-                // Opcional: Detener la creación de obstáculos o ajustar parámetros
-                return; // No crear obstáculos si no hay espacio
+            const currentInterval = OBSTACLE_GENERATION_INTERVAL_BASE / (obstacleSpeed / 2);
+            if (Date.now() - flappyLastObstacleTime > currentInterval) {
+                createFlappyObstacles();
+                flappyLastObstacleTime = Date.now();
             }
 
-            // Calcular altura aleatoria para la tubería superior (entre minHeight y maxTopHeight)
+            let shouldEndGame = false;
+            let scoreUpdatedThisFrame = false;
+
+            flappyObstacles = flappyObstacles.filter((obs) => {
+                if (!obs.element) return false;
+
+                obs.x -= obstacleSpeed * factor;
+                obs.element.style.left = obs.x + "px";
+
+                if (checkFlappyCollision(obs)) shouldEndGame = true;
+
+                if (obs.type === "top" && !obs.passed && obs.x + obs.element.offsetWidth < flappyBird.offsetLeft) {
+                    obs.passed = true;
+                    flappyScore++;
+                    updateGlobalBalance();
+                    scoreUpdatedThisFrame = true;
+                }
+
+                if (obs.x + obs.element.offsetWidth < 0) {
+                    obs.element.remove();
+                    return false;
+                }
+                return true;
+            });
+
+            if (scoreUpdatedThisFrame) updateLiveScore();
+            if (shouldEndGame) {
+                endFlappyGame();
+                return;
+            }
+
+            flappyGameRequest = requestAnimationFrame(flappyGameLoop);
+        }
+
+        function flappyFlap() {
+            if (!flappyGameRunning) return;
+            birdVelocity = jumpImpulse;
+        }
+
+        function createFlappyObstacles() {
+            if (!flappyGameArea) return;
+
+            const gap = VERTICAL_GAP;
+            const gameHeight = flappyGameArea.offsetHeight;
+            const gameWidth = flappyGameArea.offsetWidth;
+            const obstacleWidth = 60;
+            const minHeight = 50;
+            const maxTopHeight = gameHeight - gap - minHeight;
+
+            if (maxTopHeight < minHeight) return;
+
             const topObstacleHeight = Math.floor(Math.random() * (maxTopHeight - minHeight + 1)) + minHeight;
-            // Calcular altura de la tubería inferior para completar la altura total menos el hueco
             const bottomObstacleHeight = gameHeight - gap - topObstacleHeight;
 
-            // Crear elemento DOM para la tubería superior
             const topObstacle = document.createElement("div");
             topObstacle.classList.add("obstacle-flappy");
             topObstacle.style.height = topObstacleHeight + "px";
-            topObstacle.style.left = gameWidth + "px"; // Empieza fuera de la pantalla a la derecha
-            topObstacle.style.top = "0px"; // Pegada al techo
-            flappyGameArea.appendChild(topObstacle); // Añadir al área de juego
+            topObstacle.style.left = gameWidth + "px";
+            topObstacle.style.top = "0px";
+            flappyGameArea.appendChild(topObstacle);
 
-            // Crear elemento DOM para la tubería inferior
             const bottomObstacle = document.createElement("div");
             bottomObstacle.classList.add("obstacle-flappy");
             bottomObstacle.style.height = bottomObstacleHeight + "px";
-            bottomObstacle.style.left = gameWidth + "px"; // Empieza fuera de la pantalla a la derecha
-            bottomObstacle.style.bottom = "0px"; // Pegada al suelo (más fácil que calcular top)
-            // bottomObstacle.style.top = (topObstacleHeight + gap) + "px"; // Alternativa calculando top
-            flappyGameArea.appendChild(bottomObstacle); // Añadir al área de juego
+            bottomObstacle.style.left = gameWidth + "px";
+            bottomObstacle.style.bottom = "0px";
+            flappyGameArea.appendChild(bottomObstacle);
 
-            // Guardar referencias y datos de los obstáculos creados en el array
             flappyObstacles.push({ element: topObstacle, x: gameWidth, width: obstacleWidth, type: "top", passed: false });
             flappyObstacles.push({ element: bottomObstacle, x: gameWidth, width: obstacleWidth, type: "bottom", passed: false });
         }
 
-        /**
-         * Comprueba si el rectángulo del pájaro colisiona con el rectángulo de un obstáculo.
-         * @param {object} obs - El objeto obstáculo del array `flappyObstacles`.
-         * @returns {boolean} - True si hay colisión, false si no.
-         */
         function checkFlappyCollision(obs) {
-            // Comprobaciones de seguridad
-            if (!flappyBird || !obs || !obs.element) {
-                 console.warn("Intento de comprobar colisión con elementos no válidos.");
-                 return false;
-            }
-
-            // Obtener los rectángulos de colisión (posición y tamaño) en coordenadas de la ventana
+            if (!flappyBird || !obs || !obs.element) return false;
             const birdRect = flappyBird.getBoundingClientRect();
             const obsRect = obs.element.getBoundingClientRect();
-
-            // Comprobar si los rectángulos se solapan (algoritmo AABB - Axis-Aligned Bounding Box)
+            const collisionPadding = 8;
             return (
-                birdRect.right > obsRect.left &&    // El lado derecho del pájaro está más allá del izquierdo del obstáculo Y
-                birdRect.left < obsRect.right &&    // El lado izquierdo del pájaro está antes del derecho del obstáculo Y
-                birdRect.bottom > obsRect.top &&    // La parte inferior del pájaro está por debajo de la superior del obstáculo Y
-                birdRect.top < obsRect.bottom       // La parte superior del pájaro está por encima de la inferior del obstáculo
+                birdRect.right - collisionPadding > obsRect.left &&
+                birdRect.left + collisionPadding < obsRect.right &&
+                birdRect.bottom - collisionPadding > obsRect.top &&
+                birdRect.top + collisionPadding < obsRect.bottom
             );
         }
 
-        /** Termina la partida actual, muestra la puntuación y prepara para reiniciar. */
         function endFlappyGame() {
-            // Evitar ejecuciones múltiples si ocurren varias colisiones en frames cercanos
             if (flappyEnded) return;
-            flappyEnded = true; // Marcar como terminado inmediatamente
+            flappyEnded = true;
             console.log("Fin del juego. Puntuación:", flappyScore);
 
-            flappyGameRunning = false; // Detener el estado de juego activo
+            flappyGameRunning = false;
+            if (flappyGameRequest) cancelAnimationFrame(flappyGameRequest);
 
-            // Detener el bucle de animación (importante para el rendimiento)
-            if (flappyGameRequest) {
-                cancelAnimationFrame(flappyGameRequest);
-                flappyGameRequest = null; // Limpiar la referencia
-            }
-
-            // Actualizar la puntuación más alta si se superó
             if (flappyScore > highScore) {
                 highScore = flappyScore;
-                try {
-                    localStorage.setItem('flappyHighScore', highScore.toString()); // Guardar en localStorage
-                    console.log("Nuevo récord guardado:", highScore);
-                } catch (error) {
-                    console.error("Error al guardar el récord en localStorage:", error);
-                }
+                localStorage.setItem('flappyHighScore', highScore.toString());
             }
 
-            // Calcular monedas ganadas en esta partida (puntuación * puntos por score)
+            // MODIFICADO: La lógica de desbloquear una recompensa permanente se ha eliminado.
+            // La variable POINTS_PER_SCORE ya se establece a 2 o 3 al cargar la página.
             const coinsEarned = flappyScore * POINTS_PER_SCORE;
-
-            // Leer el saldo final actualizado desde localStorage para mostrarlo
-            let finalBalanceStr = 'N/A'; // Valor por defecto si hay problemas
+            let finalBalanceStr = 'N/A';
             try {
-                const balanceFromStorage = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
-                if (balanceFromStorage !== null) {
-                    const parsedBalance = parseInt(balanceFromStorage, 10);
-                    if (!isNaN(parsedBalance)) {
-                        finalBalanceStr = parsedBalance.toLocaleString('es-ES'); // Formatear para mostrar
-                    } else {
-                        console.warn(`Valor final inválido en localStorage para ${BALANCE_LOCAL_STORAGE_KEY}.`);
-                        finalBalanceStr = 'Inválido';
-                    }
-                } else {
-                    // Si la clave de saldo nunca existió, mostrar las monedas ganadas como total
-                    console.warn(`No se encontró ${BALANCE_LOCAL_STORAGE_KEY} en localStorage. Mostrando monedas ganadas.`);
-                    finalBalanceStr = coinsEarned.toLocaleString('es-ES'); // Mostrar al menos lo que se ganó
-                }
+                finalBalanceStr = (parseInt(localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY), 10) || coinsEarned).toLocaleString('es-ES');
             } catch (error) {
                 console.error("Error al leer el saldo final desde localStorage:", error);
                 finalBalanceStr = 'Error';
             }
 
-            // Asegurarse de que los elementos de la superposición existen antes de actualizarlos
             if (startMessage && scoreMessage && flappyStartOverlay) {
-                // Mostrar mensaje de "Game Over" con puntuación, monedas y saldo
                 startMessage.textContent = "¡Has perdido!";
+                // MODIFICADO: Se elimina el mensaje especial de recompensa.
                 scoreMessage.innerHTML = `Puntuación: ${flappyScore}<br>
                                           Monedas Ganadas: ${coinsEarned.toLocaleString('es-ES')}<br>
                                           Saldo Total: ${finalBalanceStr} €<br>
                                           Mejor Puntuación: ${highScore}<br><br>
-                                          Toca para volver a jugar`; // Cambiado 'Haz clic' por 'Toca'
-                flappyStartOverlay.style.display = "flex"; // Mostrar la superposición
+                                          Toca para volver a jugar`;
+                flappyStartOverlay.style.display = "flex";
 
-                // Re-añadir listener para reiniciar el juego (asegurándose de que solo haya uno activo)
-                // Quitamos primero cualquier listener previo para evitar duplicados
                 flappyStartOverlay.removeEventListener("click", handleStartInput);
                 flappyStartOverlay.removeEventListener("touchstart", handleStartInput);
-                // Añadimos los nuevos listeners
                 flappyStartOverlay.addEventListener("click", handleStartInput);
                 flappyStartOverlay.addEventListener("touchstart", handleStartInput);
-            } else {
-                console.error("No se pueden mostrar los resultados finales: faltan elementos de la superposición.");
             }
         }
-
     </script>
 </body>
 </html>

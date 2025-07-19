@@ -97,7 +97,7 @@
     </div>
 
     <a href="../index.html" id="exit-button-cars" class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 border border-gray-300 rounded-lg shadow-sm transition duration-150 ease-in-out text-sm no-underline">
-        &larr; Menú
+        ← Menú
     </a>
 
     <script type="importmap">
@@ -159,12 +159,17 @@
         const moveSpeed = 0.5; // Camera movement speed with WASD
         const moveState = { forward: 0, backward: 0, left: 0, right: 0 }; // State of pressed keys
 
-        // --- Car Speed Variables ---
-        const BASE_SPEED = 25; // Average car speed
-        const ACCELERATION_FACTOR = 8; // Randomness factor in acceleration/deceleration
-        const MIN_SPEED_FACTOR = 0.85; // Minimum speed as percentage of base
-        const MAX_SPEED_FACTOR = 1.15; // Maximum speed as percentage of base
-
+        // --- MODIFIED: Car Speed Variables ---
+        // --- DRAMATICALLY MODIFIED: Car Speed Variables ---
+// --- EVEN MORE DRAMATIC: Car Speed Variables ---
+// --- VALORES EXTREMOS PARA MÁXIMO DRAMA ---
+// --- VALORES DE "CAOS TOTAL" ---
+const BASE_SPEED = 25;
+const PACK_ACCELERATION_FACTOR = 40;       // Aumentado de 30. El grupo entero tendrá bandazos de velocidad extremos.
+const INDIVIDUAL_ACCELERATION_FACTOR = 35.0; // AUMENTO BRUTAL de 20. Los coches tendrán "teletransportes" y "parones en seco".
+const MIN_SPEED_FACTOR = 0.50;             // Reducido de 0.65. Un coche puede llegar a ir a la mitad de su velocidad base.
+const MAX_SPEED_FACTOR = 1.60;             // Aumentado de 1.40. Los picos de velocidad serán como un nitro-boost.
+const CATCH_UP_FACTOR = 0.08;              // Reducido de 0.10. El "catch-up" es ahora prácticamente inexistente. Pura supervivencia.
         // --- Camera Lerp Factor ---
         const CAMERA_LERP_FACTOR = 0.02; // Linear interpolation factor (lower = smoother/slower)
 
@@ -176,7 +181,7 @@
         const sceneContainer = document.getElementById('scene-container');
         const resetButton = document.getElementById('reset-button');
         const balanceAmountElement = document.getElementById('balance-amount');
-        const carSelectionContainer = document.getElementById('car-selection-buttons'); // Container for car buttons
+        const carSelectionContainer = document.getElementById('car-selection-buttons');
 
         // --- Balance Management Functions ---
         function loadBalance() {
@@ -203,10 +208,10 @@
             updateBalanceDisplay();
         }
 
-        function saveBalance() { // Saves the current global 'balance' variable to localStorage
+        function saveBalance() {
             try {
                 localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString());
-                 console.log("Balance saved:", balance); // Debug log
+                 console.log("Balance saved:", balance);
             } catch (error) {
                 console.error("Error al guardar saldo en localStorage:", error);
             }
@@ -222,7 +227,7 @@
             checkBetButtonState();
         }
 
-        // --- <<< NEW: Achievement Functions (copied) >>> ---
+        // --- Achievement Functions ---
         function loadUnlockedAchievements() {
             try {
                 const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
@@ -254,20 +259,11 @@
             }
         }
 
-        /**
-         * Checks achievements, adds rewards to the global balance variable,
-         * and saves the updated achievements list to localStorage.
-         * IMPORTANT: This function NO LONGER saves the balance itself.
-         * Returns details about newly unlocked achievements.
-         */
         function checkAndUnlockAchievements() {
             const newlyUnlocked = [];
             let totalRewardAdded = 0;
-            let balanceChanged = false;
-            let achievementsChanged = false;
-
-            loadUnlockedAchievements(); // Ensure latest list is loaded
-            const currentBalance = balance; // Use current global balance
+            loadUnlockedAchievements();
+            const currentBalance = balance;
 
             achievementsData.forEach(ach => {
                 if (currentBalance >= ach.target && !unlockedAchievements.includes(ach.id)) {
@@ -275,40 +271,24 @@
                     unlockedAchievements.push(ach.id);
                     totalRewardAdded += ach.reward;
                     newlyUnlocked.push(ach);
-                    achievementsChanged = true;
-                    balanceChanged = true;
                 }
             });
 
             if (newlyUnlocked.length > 0) {
-                balance += totalRewardAdded; // Update global balance variable
+                balance += totalRewardAdded;
                 console.log(`Total reward added: ${totalRewardAdded}. New balance VARIABLE: ${balance}`);
-
-                // Save ONLY the new achievements list
                 saveUnlockedAchievements();
-
-                // FIX: REMOVED balance saving from here. It will be handled by saveBalance() in endRace.
-                // try {
-                //     localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balance.toString());
-                //     console.log("Balance saved after achievement rewards:", balance);
-                // } catch (error) {
-                //     console.error("Error saving balance after achievement rewards:", error);
-                // }
             }
 
             return {
                 newlyUnlocked,
-                balanceChanged,
-                achievementsChanged,
                 totalRewardAdded
             };
         }
-        // --- <<< END NEW: Achievement Functions >>> ---
 
 
         // --- 3D Object Creation Functions ---
         function createCarShape(color) {
-            // ... (car creation code - unchanged) ...
             const carGroup = new THREE.Group();
             const carBodyMaterial = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
             originalCarMaterials.set(carGroup, carBodyMaterial);
@@ -363,7 +343,7 @@
             carGroup.userData.isCarGroup = true;
             return carGroup;
         }
-        function createTree(position) { /* ... (unchanged) ... */
+        function createTree(position) {
             const treeGroup = new THREE.Group();
             const trunkHeight = 3 + Math.random() * 2; const trunkRadius = 0.2 + Math.random() * 0.1;
             const trunkGeometry = new THREE.CylinderGeometry(trunkRadius * 0.7, trunkRadius, trunkHeight, 8);
@@ -374,7 +354,7 @@
             treeGroup.position.copy(position); treeGroup.userData.isDecoration = true;
             return treeGroup;
         }
-        function createStand(position, length, width = 3, height = 1.5, crowdDensity = 0.8) { /* ... (unchanged) ... */
+        function createStand(position, length, width = 3, height = 1.5, crowdDensity = 0.8) {
             const standGroup = new THREE.Group();
             const standGeometry = new THREE.BoxGeometry(width, height, length);
             const standBase = new THREE.Mesh(standGeometry, standMaterial);
@@ -393,7 +373,7 @@
             standGroup.position.copy(position); standGroup.userData.isDecoration = true;
             return standGroup;
         }
-        function createBush(position) { /* ... (unchanged) ... */
+        function createBush(position) {
             const bushGroup = new THREE.Group();
             const numSpheres = 3 + Math.floor(Math.random() * 3); const baseRadius = 0.5 + Math.random() * 0.3;
             for (let i = 0; i < numSpheres; i++) {
@@ -406,7 +386,7 @@
             bushGroup.position.copy(position); bushGroup.userData.isDecoration = true;
             return bushGroup;
         }
-        function createRock(position) { /* ... (unchanged) ... */
+        function createRock(position) {
             const rockGeometry = new THREE.IcosahedronGeometry(0.5 + Math.random() * 0.5, 0);
             const rock = new THREE.Mesh(rockGeometry, rockMaterial);
             rock.scale.set( 1 + (Math.random() - 0.5) * 0.8, 1 + (Math.random() - 0.5) * 0.8, 1 + (Math.random() - 0.5) * 0.8 );
@@ -419,11 +399,9 @@
 
         /** Main initialization function. */
         function init() {
-            loadBalance(); // Load balance first
-            loadUnlockedAchievements(); // <<< NEW: Load achievements
+            loadBalance();
+            loadUnlockedAchievements();
 
-            // --- Scene, Camera, Renderer, Controls, Lights ---
-            // ... (scene setup code - unchanged) ...
             scene = new THREE.Scene(); scene.background = new THREE.Color(0x87ceeb);
             const trackLength = 800; scene.fog = new THREE.Fog(0x87ceeb, 150, trackLength * 0.8);
             const aspect = window.innerWidth / window.innerHeight; camera = new THREE.PerspectiveCamera(60, aspect, 0.1, trackLength + 200); camera.position.set(0, 25, 35); camera.lookAt(0, 0, -100);
@@ -431,8 +409,6 @@
             controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.dampingFactor = 0.05; controls.screenSpacePanning = false; controls.minDistance = 5; controls.maxDistance = 150; controls.maxPolarAngle = Math.PI / 2 - 0.1; controls.target.set(0, 0, -50);
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); scene.add(ambientLight); const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); directionalLight.position.set(30, 50, 40); directionalLight.castShadow = true; directionalLight.shadow.camera.left = -50; directionalLight.shadow.camera.right = 50; directionalLight.shadow.camera.top = 50; directionalLight.shadow.camera.bottom = -50; directionalLight.shadow.camera.near = 0.5; directionalLight.shadow.camera.far = 150; directionalLight.shadow.mapSize.width = 1024; directionalLight.shadow.mapSize.height = 1024; scene.add(directionalLight);
 
-            // --- Track, Lines, Borders, Ground ---
-            // ... (track setup code - unchanged) ...
             const trackWidth = 25;
             const trackGeometry = new THREE.PlaneGeometry(trackWidth, trackLength); const trackMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.8 }); const track = new THREE.Mesh(trackGeometry, trackMaterial); track.rotation.x = -Math.PI / 2; track.position.z = -(trackLength / 2) + 10; track.receiveShadow = true; scene.add(track);
             const lineYOffset = 0.01; const startLineGeo = new THREE.PlaneGeometry(trackWidth, 1); const startLine = new THREE.Mesh(startLineGeo, lineMarkingMaterial); startLine.rotation.x = -Math.PI / 2; startLine.position.set(0, lineYOffset, 6); scene.add(startLine);
@@ -443,19 +419,16 @@
             const borderHeight = 0.5; const borderWidth = 0.5; const borderMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.7 }); const borderGeometry = new THREE.BoxGeometry(borderWidth, borderHeight, trackLength); const borderLeft = new THREE.Mesh(borderGeometry, borderMaterial); borderLeft.position.set(-trackWidth / 2 - borderWidth / 2, borderHeight / 2, track.position.z); borderLeft.castShadow = true; borderLeft.receiveShadow = true; scene.add(borderLeft); const borderRight = new THREE.Mesh(borderGeometry, borderMaterial); borderRight.position.set(trackWidth / 2 + borderWidth / 2, borderHeight / 2, track.position.z); borderRight.castShadow = true; borderRight.receiveShadow = true; scene.add(borderRight);
             const groundGeometry = new THREE.PlaneGeometry(200, trackLength + 100); const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22, side: THREE.DoubleSide, roughness: 0.9 }); const ground = new THREE.Mesh(groundGeometry, groundMaterial); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; ground.position.z = track.position.z; ground.receiveShadow = true; scene.add(ground);
 
-            // --- Add Decoration ---
-            // ... (decoration code - unchanged) ...
             const standLength = trackLength * 0.6; const standOffset = 5; const standZ = track.position.z; const standLeft = createStand(new THREE.Vector3(-trackWidth / 2 - borderWidth - standOffset, 0, standZ), standLength, 4, 1.5, 1.5); scene.add(standLeft); const standRight = createStand(new THREE.Vector3(trackWidth / 2 + borderWidth + standOffset, 0, standZ), standLength, 4, 1.5, 1.5); scene.add(standRight);
             const treeCount = 40; const bushCount = 60; const rockCount = 30; const minX = trackWidth / 2 + 8; const maxX = 90; const minZ = track.position.z - trackLength / 2 + 30; const maxZ = track.position.z + trackLength / 2 - 30;
             for (let i = 0; i < treeCount; i++) { const side = Math.random() < 0.5 ? -1 : 1; const xPos = side * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const tree = createTree(new THREE.Vector3(xPos, 0, zPos)); scene.add(tree); }
             for (let i = 0; i < bushCount; i++) { const side = Math.random() < 0.5 ? -1 : 1; const xPos = side * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const bush = createBush(new THREE.Vector3(xPos, 0, zPos)); scene.add(bush); }
             for (let i = 0; i < rockCount; i++) { const side = Math.random() < 0.5 ? -1 : 1; const xPos = side * (minX + Math.random() * (maxX - minX)); const zPos = minZ + Math.random() * (maxZ - minZ); const rock = createRock(new THREE.Vector3(xPos, 0, zPos)); scene.add(rock); }
 
-            // --- Create Cars ---
-            const carColors = [0xff0000, 0x00ff00, 0x0000ff, 0xff00ff, 0x00ffff]; // Red, Green, Blue, Magenta, Cyan
+            const carColors = [0xff0000, 0x00ff00, 0x0000ff, 0xff00ff, 0x00ffff];
             const startX = -trackWidth / 2 + 3;
             const spacing = (trackWidth - 6) / (carColors.length - 1);
-            carSelectionContainer.innerHTML = ''; // Clear previous buttons if any
+            carSelectionContainer.innerHTML = '';
             for (let i = 0; i < carColors.length; i++) {
                 const carGroup = createCarShape(carColors[i]);
                 carGroup.position.set(startX + i * spacing, 0, startZ);
@@ -465,82 +438,69 @@
                 scene.add(carGroup);
                 cars.push(carGroup);
 
-                // --- Create Selection Button for this car ---
                 const button = document.createElement('button');
-                button.className = 'car-button'; // Apply base CSS class
+                button.className = 'car-button';
                 button.textContent = `Coche ${i + 1}`;
-                // Get original color for the button
                 const originalMaterial = originalCarMaterials.get(carGroup);
                 if (originalMaterial) {
                     button.style.backgroundColor = `#${originalMaterial.color.getHexString()}`;
                 }
-                // Add listener to select this car on click
                 button.addEventListener('click', () => {
-                    if (raceState === 'idle') { // Only allow selection if not racing
+                    if (raceState === 'idle') {
                         selectCar(carGroup);
                     }
                 });
-                carSelectionContainer.appendChild(button); // Add button to container
+                carSelectionContainer.appendChild(button);
             }
 
-            // --- Event Listeners ---
             window.addEventListener('resize', onWindowResize);
             betButton.addEventListener('click', placeBetAndStartRace);
             resetButton.addEventListener('click', resetRace);
             betAmountInput.addEventListener('input', checkBetButtonState);
             window.addEventListener('keydown', handleKeyDown);
             window.addEventListener('keyup', handleKeyUp);
-            // <<< MODIFIED: Storage and Focus Listeners >>>
             window.addEventListener('storage', (event) => {
                 if (event.key === BALANCE_LOCAL_STORAGE_KEY && event.newValue !== null) {
                     console.log('Saldo cambiado externamente...');
                     loadBalance();
-                    loadUnlockedAchievements(); // Reload achievements too
+                    loadUnlockedAchievements();
                 }
                  if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
                      console.log('Logros cambiados externamente...');
-                     loadUnlockedAchievements(); // Reload achievements
-                     // Optionally update UI if achievements affect it directly
+                     loadUnlockedAchievements();
                  }
             });
             window.addEventListener('focus', () => {
                 console.log('Ventana enfocada...');
                 loadBalance();
-                loadUnlockedAchievements(); // Reload achievements too
+                loadUnlockedAchievements();
             });
 
-            animate(); // Start animation loop
+            animate();
         }
 
-        // --- Keyboard Control Functions (WASD) ---
         function handleKeyDown(event) { if (raceState === 'racing') return; switch (event.code) { case 'KeyW': case 'ArrowUp': moveState.forward = 1; break; case 'KeyS': case 'ArrowDown': moveState.backward = 1; break; case 'KeyA': case 'ArrowLeft': moveState.left = 1; break; case 'KeyD': case 'ArrowRight': moveState.right = 1; break; } }
         function handleKeyUp(event) { switch (event.code) { case 'KeyW': case 'ArrowUp': moveState.forward = 0; break; case 'KeyS': case 'ArrowDown': moveState.backward = 0; break; case 'KeyA': case 'ArrowLeft': moveState.left = 0; break; case 'KeyD': case 'ArrowRight': moveState.right = 0; break; } }
 
-        // --- Interaction and UI Functions ---
         function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
 
-        /** Selects a car, highlights it in 3D and the corresponding button. */
         function selectCar(carGroup) {
-            // ... (selectCar code - unchanged) ...
-            if (raceState !== 'idle') return; // Only select if not racing
+            if (raceState !== 'idle') return;
 
-            // Visually deselect the previous car and button
             if (selectedCarGroup && selectedCarGroup !== carGroup) {
                 deselectCar();
             } else if (selectedCarGroup === carGroup) {
-                return; // Do nothing if the same car is clicked again
+                return;
             }
 
-            selectedCarGroup = carGroup; // Store reference to the selected car
+            selectedCarGroup = carGroup;
 
-            // Highlight the 3D model
             selectedCarGroup.traverse((child) => {
                 if (child.isMesh && child.userData.isBodyOrCabin) {
                     child.material = highlightMaterial;
                 }
             });
 
-            // Highlight the corresponding button
             document.querySelectorAll('.car-button').forEach((btn, index) => {
                 if (index === selectedCarGroup.userData.id) {
                     btn.classList.add('selected');
@@ -552,14 +512,11 @@
 
             console.log(`Coche seleccionado: ID ${selectedCarGroup.userData.id}`);
             messageArea.textContent = `Coche ${selectedCarGroup.userData.id + 1} seleccionado. Introduce tu apuesta.`;
-            checkBetButtonState(); // Enable/disable bet button
+            checkBetButtonState();
         }
 
-        /** Deselects the current car, restoring its material and removing button highlight. */
         function deselectCar() {
-            // ... (deselectCar code - unchanged) ...
             if (selectedCarGroup) {
-                // Restore 3D material
                 const originalMaterial = originalCarMaterials.get(selectedCarGroup);
                 if (originalMaterial) {
                     selectedCarGroup.traverse((child) => {
@@ -568,18 +525,15 @@
                         }
                     });
                 }
-                // Remove highlight from all buttons
                 document.querySelectorAll('.car-button.selected').forEach(btn => btn.classList.remove('selected'));
 
-                selectedCarGroup = null; // Clear reference
-                messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.'; // Default message
-                checkBetButtonState(); // Update button state
+                selectedCarGroup = null;
+                messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.';
+                checkBetButtonState();
             }
         }
 
-        /** Checks if betting is possible and enables/disables the button. */
         function checkBetButtonState() {
-            // ... (checkBetButtonState code - unchanged) ...
              const amount = parseInt(betAmountInput.value, 10) || 0;
              const isValidAmount = amount >= MIN_BET;
              const hasEnoughBalance = amount <= balance;
@@ -587,7 +541,6 @@
              const canBet = raceState === 'idle' && selectedCarGroup !== null && isValidAmount && hasEnoughBalance;
              betButton.disabled = !canBet;
 
-             // Help/error messages in the UI
               if (raceState === 'idle' && selectedCarGroup) {
                  if (!isValidAmount && betAmountInput.value !== '') {
                       messageArea.textContent = `La apuesta mínima es ${MIN_BET}€.`;
@@ -603,9 +556,7 @@
              }
         }
 
-        // --- Race Logic ---
         function placeBetAndStartRace() {
-            // ... (validation - unchanged) ...
             if (betButton.disabled || raceState !== 'idle' || !selectedCarGroup) return;
             const betAmount = parseInt(betAmountInput.value, 10);
             if (betAmount < MIN_BET) { messageArea.textContent = `Error: La apuesta mínima es ${MIN_BET}€.`; return; }
@@ -613,19 +564,19 @@
 
             try {
                 console.log(`Apuesta realizada: Coche ID ${selectedCarGroup.userData.id}, Cantidad: ${betAmount}`);
-                balance -= betAmount; // Deduct bet locally
-                // Balance will be saved at the end of the race via endRace -> saveBalance()
+                balance -= betAmount;
                 updateBalanceDisplay();
 
                 raceState = 'racing';
-                uiContainer.style.display = 'none'; // Hide the entire UI
+                uiContainer.style.display = 'none';
                 winnerCarGroup = null;
                 controls.enabled = false; controls.autoRotate = false;
 
                 cars.forEach(car => {
                     car.userData.baseSpeed = BASE_SPEED;
-                    car.userData.currentSpeed = BASE_SPEED * (MIN_SPEED_FACTOR + Math.random() * (MAX_SPEED_FACTOR - MIN_SPEED_FACTOR));
+                    car.userData.currentSpeed = BASE_SPEED;
                 });
+
                 console.log("¡Carrera iniciada!");
 
             } catch (error) {
@@ -635,7 +586,6 @@
             }
         }
 
-        // <<< MODIFIED: endRace function >>>
         function endRace() {
             if (raceState !== 'racing' || !winnerCarGroup) { console.warn("endRace llamada incorrectamente."); return; }
             try {
@@ -650,13 +600,11 @@
 
                 if (playerWon) {
                     payout = betAmount * cars.length;
-                    balance += payout; // Add winnings to balance variable
+                    balance += payout;
                 }
 
-                // Check achievements AFTER calculating winnings but BEFORE saving balance
-                const achievementResult = checkAndUnlockAchievements(); // Updates balance variable if rewards are given
+                const achievementResult = checkAndUnlockAchievements();
 
-                // Construct the result message
                 let resultMessage = `🏁 ¡Carrera terminada! Ganador: Coche ${winnerId + 1}. `;
                 if (playerCarId !== -1) {
                     if (playerWon) {
@@ -668,22 +616,18 @@
                     resultMessage += "No se realizó apuesta.";
                 }
 
-                // Append achievement message if any
                 if (achievementResult.newlyUnlocked.length > 0) {
                     resultMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
                 }
-
-                // FIX: Save the final balance (including winnings and potential rewards) reliably
+                
                 saveBalance();
 
-                // Update UI
-                updateBalanceDisplay(); // Show final balance
+                updateBalanceDisplay();
                 messageArea.textContent = resultMessage;
                 uiContainer.style.display = 'flex';
                 betButton.classList.add('hidden');
                 resetButton.classList.remove('hidden');
                 betAmountInput.disabled = true;
-                // Disable car buttons at the end
                 document.querySelectorAll('.car-button').forEach(btn => btn.disabled = true);
 
             } catch (error) {
@@ -695,12 +639,10 @@
 
 
         function resetRace() {
-            // ... (resetRace code - unchanged) ...
              try {
                  console.log("Reseteando para nueva carrera...");
                  raceState = 'idle'; winnerCarGroup = null;
 
-                 // Reset cars and visual deselection
                  cars.forEach(car => {
                      car.position.z = startZ; car.userData.baseSpeed = 0; car.userData.currentSpeed = 0;
                      if (originalCarMaterials.has(car)) {
@@ -708,17 +650,14 @@
                           car.traverse((child) => { if (child.isMesh && child.userData.isBodyOrCabin) { child.material = originalMaterial; } });
                      }
                  });
-                 deselectCar(); // Clears selectedCarGroup and removes button highlights
+                 deselectCar();
 
-                 // Restore UI
                  uiContainer.style.display = 'flex'; resetButton.classList.add('hidden'); betButton.classList.remove('hidden');
                  betAmountInput.disabled = false; betAmountInput.value = '';
-                  // Enable car buttons
                  document.querySelectorAll('.car-button').forEach(btn => btn.disabled = false);
                  messageArea.textContent = 'Selecciona un coche y la cantidad a apostar.';
                  updateBalanceDisplay(); checkBetButtonState();
 
-                 // Reset camera
                  camera.position.set(0, 25, 35); controls.target.set(0, 0, -50); controls.update();
 
              } catch (error) {
@@ -729,31 +668,69 @@
          }
 
 
-        // --- Main Animation/Render Loop ---
+        // --- MODIFIED: Main Animation/Render Loop with Catch-up Logic ---
         function animate() {
-            // ... (animate code - unchanged) ...
             requestAnimationFrame(animate);
             const deltaTime = clock.getDelta();
+
             try {
                 if (raceState === 'racing') {
-                    let leadZ = Infinity;
+                    // --- NEW CATCH-UP LOGIC ---
+
+                    // 1. First, find the position of the lead car in this frame.
+                    //    (The one with the lowest Z value, as they move towards negative).
+                    let leaderZ = Infinity;
                     cars.forEach(car => {
-                        const randomAccel = (Math.random() - 0.5) * ACCELERATION_FACTOR * deltaTime;
-                        car.userData.currentSpeed += randomAccel;
+                        if (car.position.z < leaderZ) {
+                            leaderZ = car.position.z;
+                        }
+                    });
+
+                    // 2. Calculate a general acceleration for the entire pack.
+                    const packAcceleration = (Math.random() - 0.5) * PACK_ACCELERATION_FACTOR * deltaTime;
+
+                    // 3. Now update each car, applying the "catch-up" bonus.
+                    cars.forEach(car => {
+                        // Individual random variation (as before).
+                        const individualAccel = (Math.random() - 0.5) * INDIVIDUAL_ACCELERATION_FACTOR * deltaTime;
+
+                        // THE CATCH-UP MAGIC!
+                        // Calculate the current car's distance from the leader.
+                        // If a car is behind, this distance will be a positive number.
+                        const distanceFromLeader = car.position.z - leaderZ;
+                        
+                        // Create a speed boost proportional to that distance.
+                        // The further away a car is, the more help it gets.
+                        // The leader (distanceFromLeader = 0) gets no bonus.
+                        const catchUpBoost = distanceFromLeader * CATCH_UP_FACTOR * deltaTime;
+
+                        // Add everything up: the pack's acceleration + individual + the catch-up bonus.
+                        car.userData.currentSpeed += packAcceleration + individualAccel + catchUpBoost;
+
+                        // Speed limits are maintained to keep them under control.
                         const minSpeed = car.userData.baseSpeed * MIN_SPEED_FACTOR;
                         const maxSpeed = car.userData.baseSpeed * MAX_SPEED_FACTOR;
                         car.userData.currentSpeed = Math.max(minSpeed, Math.min(car.userData.currentSpeed, maxSpeed));
+
+                        // Update car position.
                         car.position.z -= car.userData.currentSpeed * deltaTime;
-                        leadZ = Math.min(leadZ, car.position.z);
-                        if (car.position.z <= finishLineZ && !winnerCarGroup) { winnerCarGroup = car; endRace(); }
+
+                        // Check for a winner.
+                        if (car.position.z <= finishLineZ && !winnerCarGroup) {
+                            winnerCarGroup = car;
+                            endRace();
+                        }
                     });
 
+                    // The camera follows the leader (using the leaderZ variable we already calculated).
                     if (raceState === 'racing') {
-                        const targetCameraZ = leadZ + 15; const targetCameraY = 8; const targetLookZ = leadZ - 30;
+                        const targetCameraZ = leaderZ + 15;
+                        const targetCameraY = 8;
+                        const targetLookZ = leaderZ - 30;
                         camera.position.lerp(new THREE.Vector3(camera.position.x, targetCameraY, targetCameraZ), CAMERA_LERP_FACTOR);
                         controls.target.lerp(new THREE.Vector3(controls.target.x, 0, targetLookZ), CAMERA_LERP_FACTOR);
                     }
-                } else {
+                } else { // Free camera movement (unchanged)
                     const cameraDirection = new THREE.Vector3(); camera.getWorldDirection(cameraDirection);
                     const cameraRight = new THREE.Vector3(); cameraRight.crossVectors(camera.up, cameraDirection).normalize();
                     const moveVector = new THREE.Vector3();
