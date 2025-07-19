@@ -16,9 +16,70 @@
         #global-balance-container { background-color: #e5e7eb; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: 1px solid #d1d5db; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); display: inline-block; margin-top: 0.5rem; }
         #rotate-prompt { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: white; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; text-align: center; padding: 20px; font-size: 1.2rem; cursor: pointer; }
         #rotate-prompt svg { width: 60px; height: 60px; margin: 15px; fill: white; }
-        .top-buttons { position: absolute; top: 15px; right: 15px; display: flex; gap: 10px; z-index: 100; }
-        .top-button { padding: 8px 12px; background-color: #4a5568; color: #f7fafc; text-decoration: none; border-radius: 6px; font-size: 0.8em; font-weight: 600; border: 1px solid #718096; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.2s ease; user-select: none; cursor: pointer; }
-        .top-button:hover { background-color: #718096; border-color: #a0aec0; }
+        
+        /* --- Contenedor de Botones Superiores --- */
+        .top-buttons-container {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        .top-button {
+            padding: 8px 12px;
+            background-color: #4a5568;
+            color: #f7fafc;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            border: 1px solid #718096;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            user-select: none;
+            cursor: pointer;
+        }
+        .top-button:hover {
+            background-color: #718096;
+            border-color: #a0aec0;
+        }
+
+        /* --- NUEVO: Estilos para el Menú de Partida --- */
+        #game-menu-container {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 110;
+        }
+        #game-menu-dropdown {
+            position: absolute;
+            top: calc(100% + 5px); /* Aparece debajo del botón */
+            left: 0;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            width: 160px; /* Ancho del menú */
+        }
+        .game-menu-item {
+            display: block;
+            width: 100%;
+            padding: 10px 15px;
+            text-align: left;
+            font-size: 0.9em;
+            color: #374151;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .game-menu-item:hover {
+            background-color: #f3f4f6;
+        }
+        .hidden {
+            display: none;
+        }
 
         /* --- Estilos Modal de Logros (sin cambios) --- */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); animation: fadeIn 0.3s ease-out; }
@@ -72,7 +133,18 @@
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen text-gray-800">
 
-    <div class="top-buttons">
+    <!-- NUEVO: Menú de Partida -->
+    <div id="game-menu-container">
+        <button id="game-menu-btn" class="top-button">Partida</button>
+        <div id="game-menu-dropdown" class="hidden">
+            <button id="export-data-btn" class="game-menu-item">Exportar Partida</button>
+            <button id="import-data-btn" class="game-menu-item">Importar Partida</button>
+            <!-- Input oculto para la importación de archivos -->
+            <input type="file" id="import-file-input" class="hidden" accept=".json">
+        </div>
+    </div>
+
+    <div class="top-buttons-container">
         <button id="achievementsButton" class="top-button">🏆 Logros</button>
     </div>
 
@@ -100,7 +172,7 @@
 
     <footer class="bg-gray-800 text-gray-300 py-6 mt-12">
         <div class="container mx-auto px-6 text-center">
-            <p>&copy; 2025 Carlos Blanco Hidalgo. Todos los derechos reservados.</p>
+            <p>© 2025 Carlos Blanco Hidalgo. Todos los derechos reservados.</p>
             </div>
     </footer>
 
@@ -112,7 +184,7 @@
 
     <div id="achievementsModal" class="modal">
         <div class="modal-content">
-            <span class="modal-close-button">&times;</span>
+            <span class="modal-close-button">×</span>
             <h2>Logros de Saldo</h2>
             <ul id="achievementsList"></ul>
         </div>
@@ -134,7 +206,6 @@
             const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1';
             const LAST_SEEN_ACHIEVEMENTS_KEY = 'rouletteLastSeenAchievements_v1';
 
-            // FIX: Declarar variables de logros ANTES de las funciones que las usan
             const achievementsData = [ { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 } ];
             let unlockedAchievements = [];
             let notificationTimeout = null;
@@ -148,19 +219,29 @@
             const notificationBanner = document.getElementById('achievement-notification-banner');
             const gameButtonsContainer = document.querySelector('main .grid');
 
+            // --- NUEVO: Elementos del Menú de Partida ---
+            const gameMenuContainer = document.getElementById('game-menu-container');
+            const gameMenuBtn = document.getElementById('game-menu-btn');
+            const gameMenuDropdown = document.getElementById('game-menu-dropdown');
+            const exportDataBtn = document.getElementById('export-data-btn');
+            const importDataBtn = document.getElementById('import-data-btn');
+            const importFileInput = document.getElementById('import-file-input');
+
+
             // --- Inicialización ---
             updateBalanceDisplay();
             setupAchievementsModalListeners();
+            setupGameMenuListeners(); // <-- NUEVO
             createBalanceModalStructure();
             createGame6InvestmentModalStructure();
             setupGameButtonListeners();
-            loadAchievements(); // Ahora puede acceder a 'unlockedAchievements' porque está declarada antes
+            loadAchievements(); 
             checkForNewAchievementsNotification();
             setupExternalUpdateListeners();
 
             console.log("Landing page elegante cargada y scripts ejecutados.");
 
-            // --- Funciones ---
+            // --- Funciones (sin cambios en la mayoría) ---
 
             function getCurrentBalance() {
                 try {
@@ -187,6 +268,106 @@
                     achievementsModal.addEventListener('click', (event) => { if (event.target === achievementsModal) { closeAchievementsModal(); } });
                 } else { console.error("Faltan elementos del DOM para el modal de logros."); }
             }
+
+            // --- NUEVO: Lógica del Menú de Partida (Importar/Exportar) ---
+            function setupGameMenuListeners() {
+                if (!gameMenuBtn || !gameMenuDropdown || !exportDataBtn || !importDataBtn || !importFileInput) {
+                    console.error("Faltan elementos del DOM para el menú de partida.");
+                    return;
+                }
+
+                // Abrir/Cerrar el menú desplegable
+                gameMenuBtn.addEventListener('click', (event) => {
+                    event.stopPropagation(); // Evita que el clic se propague al 'window'
+                    gameMenuDropdown.classList.toggle('hidden');
+                });
+
+                // Cerrar el menú si se hace clic fuera
+                window.addEventListener('click', (event) => {
+                    if (!gameMenuContainer.contains(event.target)) {
+                        gameMenuDropdown.classList.add('hidden');
+                    }
+                });
+
+                // Lógica de Exportación
+                exportDataBtn.addEventListener('click', () => {
+                    try {
+                        const balance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
+                        const achievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
+
+                        if (balance === null && achievements === null) {
+                            alert("No hay datos de partida para exportar.");
+                            return;
+                        }
+
+                        const dataToExport = {
+                            balance: balance ? JSON.parse(balance) : DEFAULT_BALANCE,
+                            achievements: achievements ? JSON.parse(achievements) : []
+                        };
+
+                        const dataStr = JSON.stringify(dataToExport, null, 2); // El '2' lo hace más legible
+                        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(dataBlob);
+                        
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'partida_juegos.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        alert("Datos de la partida exportados como 'partida_juegos.json'.");
+                    } catch (error) {
+                        console.error("Error al exportar los datos:", error);
+                        alert("Ocurrió un error al exportar los datos.");
+                    }
+                    gameMenuDropdown.classList.add('hidden');
+                });
+
+                // Lógica de Importación
+                importDataBtn.addEventListener('click', () => {
+                    importFileInput.click(); // Abre el diálogo para seleccionar archivo
+                    gameMenuDropdown.classList.add('hidden');
+                });
+
+                importFileInput.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+                            
+                            // Validación básica de los datos importados
+                            if (typeof importedData.balance !== 'number' || !Array.isArray(importedData.achievements)) {
+                                throw new Error("El archivo no tiene el formato correcto.");
+                            }
+
+                            // Actualizar localStorage con los datos importados
+                            localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, JSON.stringify(importedData.balance));
+                            localStorage.setItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY, JSON.stringify(importedData.achievements));
+
+                            // Actualizar la UI para reflejar los cambios
+                            updateBalanceDisplay();
+                            loadAchievements(); // Carga los nuevos logros en la variable global
+                            checkForNewAchievementsNotification(); // Comprueba si hay notificaciones
+                            
+                            alert("¡Datos de la partida importados con éxito! El saldo y los logros han sido actualizados.");
+
+                        } catch (error) {
+                            console.error("Error al importar el archivo:", error);
+                            alert("Error al importar el archivo. Asegúrate de que es un archivo de partida válido (.json).");
+                        } finally {
+                            // Resetea el input para poder seleccionar el mismo archivo de nuevo
+                            importFileInput.value = '';
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
+
 
             // --- Lógica Modal de Saldo (Juegos 1-5 y Ruleta) ---
             function createBalanceModalStructure() {
@@ -252,7 +433,7 @@
                  modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[1250] hidden p-4';
                  modal.innerHTML = `
                      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center relative">
-                         <button id="game6-modal-close-btn" title="Cerrar">&times;</button>
+                         <button id="game6-modal-close-btn" title="Cerrar">×</button>
                          <h3 class="text-xl font-semibold text-gray-800 mb-4">Simulador de Bolsa</h3>
                          <p class="text-gray-600 mb-5">Elige tu inversión inicial:</p>
                          <div class="flex justify-center items-center space-x-3 mb-5" id="game6-amount-options">
@@ -307,46 +488,37 @@
                  const currentBalance = getCurrentBalance();
                  let selectedAmount = null;
 
-                 // Resetear estado visual y errores
                  errorMessageElement.textContent = '';
-                 confirmButton.disabled = true; // Asegurar que empieza deshabilitado
+                 confirmButton.disabled = true; 
                  amountOptionsContainer.querySelectorAll('.investment-amount-button').forEach(btn => {
                      btn.classList.remove('selected');
                  });
 
-                 // Listener para botones de cantidad (usando delegación)
                  const amountOptionListener = (event) => {
-                     const clickedButton = event.target.closest('.investment-amount-button'); // Mejor forma de detectar el botón
+                     const clickedButton = event.target.closest('.investment-amount-button'); 
                      if (clickedButton) {
                          amountOptionsContainer.querySelectorAll('.investment-amount-button').forEach(btn => btn.classList.remove('selected'));
                          clickedButton.classList.add('selected');
                          selectedAmount = parseInt(clickedButton.dataset.amount);
-
-                         // --- CORRECCIÓN v3 ---
-                         // Buscar el botón confirmar DENTRO DEL MODAL ACTUAL y habilitarlo
                          const currentModalNode = document.getElementById('game6-investment-modal');
                          const currentConfirmButton = currentModalNode?.querySelector('#game6-confirm-btn');
                          if (currentConfirmButton) {
                              currentConfirmButton.disabled = false;
-                             console.log("Confirm button should be enabled now."); // Log para depuración
+                             console.log("Confirm button should be enabled now."); 
                          } else {
                               console.error("Could not find confirm button to enable!");
                          }
-                         // --- FIN CORRECCIÓN v3 ---
-
-                         errorMessageElement.textContent = ''; // Limpiar error
+                         errorMessageElement.textContent = ''; 
                      }
                  };
 
-                 amountOptionsContainer.removeEventListener('click', amountOptionListener); // Limpiar anterior
-                 amountOptionsContainer.addEventListener('click', amountOptionListener); // Añadir nuevo
+                 amountOptionsContainer.removeEventListener('click', amountOptionListener);
+                 amountOptionsContainer.addEventListener('click', amountOptionListener);
 
 
-                 // Listener para botón Confirmar (clonar para evitar duplicados en ESTE listener)
                  const newConfirmButton = confirmButton.cloneNode(true);
                  confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
                  newConfirmButton.addEventListener('click', () => {
-                     // Re-obtener selectedAmount por si acaso, aunque debería estar en scope
                      const currentlySelectedButton = amountOptionsContainer.querySelector('.investment-amount-button.selected');
                      if (!currentlySelectedButton) {
                          errorMessageElement.textContent = 'Por favor, selecciona una cantidad.';
@@ -354,12 +526,9 @@
                      }
                      selectedAmount = parseInt(currentlySelectedButton.dataset.amount);
 
-
                      if (currentBalance >= selectedAmount) {
                          try {
-                             // ***** LA CORRECCIÓN ESTÁ AQUÍ *****
-                             sessionStorage.removeItem('stockSimGameState_v2'); // Borra la partida guardada anterior
-
+                             sessionStorage.removeItem('stockSimGameState_v2'); 
                              sessionStorage.setItem(GAME6_INVESTMENT_SESSION_KEY, selectedAmount);
                              console.log(`Inversión inicial para Juego 6 guardada: ${selectedAmount}€`);
                              closeGame6InvestmentModal();
@@ -373,7 +542,6 @@
                      }
                  });
 
-                 // Mostrar modal
                  modal.style.display = 'flex';
                  modal.classList.remove('hidden');
              }
@@ -386,7 +554,6 @@
                  }
              }
 
-            // Configurar Listeners Botones de Juego (sin cambios en esta función)
             function setupGameButtonListeners() {
                 const gameButtons = gameButtonsContainer?.querySelectorAll('.grid-button');
                 if (!gameButtons) { console.error("No se encontraron botones de juego."); return; }
@@ -427,16 +594,14 @@
                 });
             }
 
-            // --- Lógica de Logros ---
-            // FIX: Moved achievementsData and unlockedAchievements declaration to the top
-
+            // --- Lógica de Logros (sin cambios) ---
             function loadAchievements() {
                 try {
                     const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
                     if (savedAchievements) {
                         const parsedAchievements = JSON.parse(savedAchievements);
                         if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
-                            unlockedAchievements = parsedAchievements; // Assign to the already declared variable
+                            unlockedAchievements = parsedAchievements;
                         } else {
                             console.warn("Formato de logros guardado inválido. Reiniciando.");
                             unlockedAchievements = [];
