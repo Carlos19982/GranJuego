@@ -130,31 +130,31 @@
 
     <script>
         // --- Constantes de Storage ---
-        const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
-        const GAME6_INVESTMENT_SESSION_KEY = 'game6InitialInvestment';
-        const STOCK_GAME_STATE_KEY = 'stockSimGameState_v2';
-        const DEFAULT_BALANCE = 5000;
+         const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
+    const GAME6_INVESTMENT_SESSION_KEY = 'game6InitialInvestment';
+    const STOCK_GAME_STATE_KEY = 'stockSimGameState_v2';
+    const DEFAULT_BALANCE = 5000;
 
-        // --- Configuración Inicial ---
-        let cash = 10000; // Será sobrescrito al cargar
-        let portfolio = {};
-        const initialStockData = [
-            { symbol: 'TECH', name: 'Tech Corp 💻', price: 150.00, volatility: 0.032, trend: 0.00002, color: '#3B82F6', showOnChart: true },
-            { symbol: 'FOOD', name: 'Foodies Inc 🍔', price: 50.00, volatility: 0.016, trend: 0.00001, color: '#F59E0B', showOnChart: true },
-            { symbol: 'GAME', name: 'GameDev Co 🎮', price: 80.00, volatility: 0.048, trend: -0.00001, color: '#8B5CF6', showOnChart: true },
-            { symbol: 'FIN', name: 'Finance Hub 💰', price: 200.00, volatility: 0.024, trend: 0.000015, color: '#10B981', showOnChart: true },
-            { symbol: 'ECO', name: 'Eco Energy 🌿', price: 70.00, volatility: 0.040, trend: 0.00003, color: '#6B7280', showOnChart: true }
-        ];
-        let stocks = [];
-        let transactionHistory = []; // Se inicializará como vacío al cargar
-        const stopLossThreshold = -4.0;
-        const takeProfitThreshold = 5.0;
-        let gameInterval = null;
-        let isPaused = false;
-        const updateInterval = 10000;
-        const maxHistoryLength = 60;
-        let tickCounter = 0;
-        let initialInvestment = 0; // Se leerá de sessionStorage para cálculo de G/P al salir
+    // --- Configuración Inicial ---
+    let cash = 10000; // Será sobrescrito al cargar
+    let portfolio = {};
+         const baseStockData = [
+        { symbol: 'TECH', name: 'Tech Corp 💻', price: 15.00, volatility: 0.032, trend: 0.00002, color: '#3B82F6', showOnChart: true },
+        { symbol: 'FOOD', name: 'Foodies Inc 🍔', price: 5.00, volatility: 0.016, trend: 0.00001, color: '#F59E0B', showOnChart: true },
+        { symbol: 'GAME', name: 'GameDev Co 🎮', price: 8.00, volatility: 0.048, trend: -0.00001, color: '#8B5CF6', showOnChart: true },
+        { symbol: 'FIN', name: 'Finance Hub 💰', price: 20.00, volatility: 0.024, trend: 0.000015, color: '#10B981', showOnChart: true },
+        { symbol: 'ECO', name: 'Eco Energy 🌿', price: 7.00, volatility: 0.040, trend: 0.00003, color: '#6B7280', showOnChart: true }
+    ];
+       let stocks = [];
+    let transactionHistory = []; // Se inicializará como vacío al cargar
+    const stopLossThreshold = -4.0;
+    const takeProfitThreshold = 5.0;
+    let gameInterval = null;
+    let isPaused = false;
+    const updateInterval = 10000;
+    const maxHistoryLength = 60;
+    let tickCounter = 0;
+    let initialInvestment = 0; // Se leerá de sessionStorage para cálculo de G/P al salir
 
         // Constantes para Tendencia Dinámica
         const TREND_UPDATE_TICKS = 5;
