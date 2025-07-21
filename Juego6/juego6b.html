@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Bolsa - Estado Persistente</title>
+    <title>Simulador de Bolsa - Estrategia Avanzada</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
     <style>
-        /* Estilos generales (sin cambios) */
+        /* Estilos sin cambios */
         body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
         .price-up { color: #10b981; }
         .price-down { color: #ef4444; }
@@ -26,7 +27,6 @@
         .toggle-checkbox { @apply absolute block w-4 h-4 mt-1 ml-1 rounded-full bg-white border-2 appearance-none cursor-pointer; transition: right 0.2s ease-in-out; }
         .toggle-label { @apply block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer; width: 40px; transition: background-color 0.2s ease-in-out; }
         .sl-tp-label { @apply text-xs font-medium text-gray-600; }
-        /* Estilos Modal Historial (sin cambios) */
         .modal { @apply fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center; }
         .modal-content { @apply relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white; }
         .modal-close { @apply absolute top-0 right-0 cursor-pointer p-4 text-xl font-bold text-gray-700 hover:text-red-500; }
@@ -37,25 +37,11 @@
         .history-type-SELL { @apply font-semibold text-red-600; }
         .history-type-SL { @apply font-semibold text-red-800; }
         .history-type-TP { @apply font-semibold text-green-800; }
-        /* Estilo para inputs pequeños (sin cambios) */
         .portfolio-qty-input { @apply px-2 py-1 border border-gray-300 rounded text-sm text-center focus:ring-1 focus:ring-blue-500 focus:border-blue-500; }
-         /* Estilo para el botón de menú (sin cambios) */
         .menu-link-button { @apply inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out text-sm no-underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500; }
-        /* Style for cash element to indicate interactivity (sin cambios) */
         #cash { cursor: pointer; user-select: none; -webkit-user-select: none; }
-        /* Styles for the new event notification banner (sin cambios) */
-        #event-notification-banner {
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-            opacity: 0;
-            transform: translateY(-100%);
-            pointer-events: none;
-        }
-        #event-notification-banner.visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto; /* Allow interaction when visible */
-        }
-
+        #event-notification-banner { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; opacity: 0; transform: translateY(-100%); pointer-events: none; }
+        #event-notification-banner.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
     </style>
      <link rel="preconnect" href="https://rsms.me/">
      <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
@@ -64,7 +50,7 @@
 <body class="min-h-screen">
 
     <div id="event-notification-banner" class="fixed top-4 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-lg shadow-lg text-white text-sm font-semibold bg-indigo-600 hidden">
-        </div>
+    </div>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="mb-8 p-4 bg-white rounded-lg shadow-md">
@@ -79,8 +65,12 @@
         <main class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-8">
             <section id="market-chart-section" class="bg-white p-4 md:p-6 rounded-lg shadow-md">
                 <h2 class="text-xl md:text-2xl font-semibold text-gray-800 mb-4">Mercado de Acciones</h2>
-                <div class="chart-container mb-6">
+                <div class="chart-container mb-2">
                     <canvas id="stockChart"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-700 mt-4 mb-2">Índice de Fuerza Relativa (RSI)</h3>
+                <div class="chart-container" style="height: 150px;">
+                    <canvas id="rsiChart"></canvas>
                 </div>
             </section>
 
@@ -109,14 +99,14 @@
              </div>
              <div class="mt-4">
                  <a href="../index.html" id="exit-button" class="menu-link-button">
-                     &larr; Menú
+                     ← Menú
                  </a>
              </div>
         </footer>
 
          <div id="history-modal" class="modal hidden">
              <div class="modal-content">
-                 <span class="modal-close" onclick="closeHistory()">&times;</span>
+                 <span class="modal-close" onclick="closeHistory()">×</span>
                  <h3 class="text-xl font-semibold mb-4 text-gray-800">Historial de Transacciones</h3>
                  <div class="max-h-96 overflow-y-auto">
                      <ul id="history-list">
@@ -136,63 +126,45 @@
         const DEFAULT_BALANCE = 5000;
 
         // --- Configuración Inicial ---
-        let cash = 10000; // Será sobrescrito al cargar
+        let cash = 10000;
         let portfolio = {};
+        // --- MODIFICADO: Precios iniciales actualizados ---
         const initialStockData = [
-            { symbol: 'TECH', name: 'Tech Corp 💻', price: 15.00, volatility: 0.032, trend: 0.00002, color: '#3B82F6', showOnChart: true },
-            { symbol: 'FOOD', name: 'Foodies Inc 🍔', price: 5.00, volatility: 0.016, trend: 0.00001, color: '#F59E0B', showOnChart: true },
-            { symbol: 'GAME', name: 'GameDev Co 🎮', price: 8.00, volatility: 0.048, trend: -0.00001, color: '#8B5CF6', showOnChart: true },
-            { symbol: 'FIN', name: 'Finance Hub 💰', price: 20.00, volatility: 0.024, trend: 0.000015, color: '#10B981', showOnChart: true },
-            { symbol: 'ECO', name: 'Eco Energy 🌿', price: 7.00, volatility: 0.040, trend: 0.00003, color: '#6B7280', showOnChart: true }
+            { symbol: 'TECH', name: 'Tech Corp 💻', price: 15.00, volatility: 0.055, trend: 0.00002, color: '#3B82F6', showOnChart: true, stma: 15.00, ltma: 15.00, trendState: 'neutral', trendTicksRemaining: 0, stmaHistory: [], ltmaHistory: [], rsi: 50, avgGain: 0, avgLoss: 0, rsi_history: [], rsiReversalTicks: 0, wasOverbought: false, wasOversold: false },
+            { symbol: 'FOOD', name: 'Foodies Inc 🍔', price: 5.00, volatility: 0.030, trend: 0.00001, color: '#F59E0B', showOnChart: true, stma: 5.00, ltma: 5.00, trendState: 'neutral', trendTicksRemaining: 0, stmaHistory: [], ltmaHistory: [], rsi: 50, avgGain: 0, avgLoss: 0, rsi_history: [], rsiReversalTicks: 0, wasOverbought: false, wasOversold: false },
+            { symbol: 'GAME', name: 'GameDev Co 🎮', price: 8.00, volatility: 0.070, trend: -0.00001, color: '#8B5CF6', showOnChart: true, stma: 8.00, ltma: 8.00, trendState: 'neutral', trendTicksRemaining: 0, stmaHistory: [], ltmaHistory: [], rsi: 50, avgGain: 0, avgLoss: 0, rsi_history: [], rsiReversalTicks: 0, wasOverbought: false, wasOversold: false },
+            { symbol: 'FIN', name: 'Finance Hub 💰', price: 20.00, volatility: 0.045, trend: 0.000015, color: '#10B981', showOnChart: true, stma: 20.00, ltma: 20.00, trendState: 'neutral', trendTicksRemaining: 0, stmaHistory: [], ltmaHistory: [], rsi: 50, avgGain: 0, avgLoss: 0, rsi_history: [], rsiReversalTicks: 0, wasOverbought: false, wasOversold: false },
+            { symbol: 'ECO', name: 'Eco Energy 🌿', price: 7.00, volatility: 0.065, trend: 0.00003, color: '#6B7280', showOnChart: true, stma: 7.00, ltma: 7.00, trendState: 'neutral', trendTicksRemaining: 0, stmaHistory: [], ltmaHistory: [], rsi: 50, avgGain: 0, avgLoss: 0, rsi_history: [], rsiReversalTicks: 0, wasOverbought: false, wasOversold: false }
         ];
         let stocks = [];
-        let transactionHistory = []; // Se inicializará como vacío al cargar
+        let transactionHistory = []; 
         const stopLossThreshold = -4.0;
         const takeProfitThreshold = 5.0;
         let gameInterval = null;
         let isPaused = false;
-        const updateInterval = 10000;
+        const updateInterval = 10000; 
         const maxHistoryLength = 60;
         let tickCounter = 0;
-        let initialInvestment = 0; // Se leerá de sessionStorage para cálculo de G/P al salir
+        let initialInvestment = 0;
 
-        // Constantes para Tendencia Dinámica
-        const TREND_UPDATE_TICKS = 5;
-        const TREND_CHANGE_AMOUNT = 0.000025;
-        const MAX_TREND = 0.00015;
-        const MIN_TREND = -0.00015;
-
-        // Variable para el atajo secreto
-        let showTrendIndicator = false;
-
-        // Event System Variables & Config
-        const EVENT_PROBABILITY = 0.10;
+        const EVENT_PROBABILITY = 0.25;
         const MAX_ACTIVE_EVENTS = 2;
         let activeEvents = [];
-        // --- Lista de Eventos (con ajustes previos aplicados) ---
+        
         const marketEvents = [
-             { name: "Optimismo Global", message: "📈 ¡Optimismo en los mercados globales! Ligera tendencia alcista general.", target: 'ALL', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.00007 },
-             { name: "Temor a Recesión", message: "📉 ¡Aumentan los temores de recesión! Tendencia bajista y volatilidad alta.", target: 'ALL', duration: 3, volatility_modifier: 1.6, trend_modifier: -0.00008 },
-             { name: "Avance Tecnológico", message: "🚀 ¡Anunciado un avance tecnológico clave! El sector TECH sube con fuerza.", target: 'TECH', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.0003 },
-             { name: "Regulación Tecnológica", message: "🏛️ ¡Nuevas regulaciones afectan a Tech Corp! Fuerte caída de confianza.", target: 'TECH', duration: 3, volatility_modifier: 1.7, trend_modifier: -0.00015 },
-             { name: "Resultados Bancarios Positivos", message: "🏦 ¡Resultados bancarios superan expectativas! El sector FIN celebra.", target: 'FIN', duration: 3, volatility_modifier: 0.85, trend_modifier: 0.00015 },
-             { name: "Caída del Petróleo", message: "🛢️ ¡Caída inesperada del precio del petróleo! Duro golpe para Eco Energy.", target: 'ECO', duration: 3, volatility_modifier: 1.9, trend_modifier: -0.00018 },
-             { name: "Éxito Viral de Juego", message: "🎉 ¡GameDev Co lanza un éxito viral! Las acciones se disparan.", target: 'GAME', duration: 3, volatility_modifier: 0.7, trend_modifier: 0.0004 },
-             { name: "Problemas Suministro Comida", message: "🚚 ¡Problemas en la cadena de suministro afectan a Foodies Inc!", target: 'FOOD', duration: 3, volatility_modifier: 1.4, trend_modifier: -0.00009 },
-             { name: "Datos de Inflación", message: "📊 ¡Datos de inflación generan alta incertidumbre y volatilidad!", target: 'ALL', duration: 3, volatility_modifier: 1.7, trend_modifier: -0.00003 },
-             { name: "Inversión en Energía Verde", message: "💡 ¡Gobierno anuncia fuerte inversión en energía verde! ECO sube.", target: 'ECO', duration: 3, volatility_modifier: 0.9, trend_modifier: 0.0002 },
-             { name: "Fallo Seguridad Tech", message: "🔒 ¡Fallo de seguridad crítico descubierto en Tech Corp!", target: 'TECH', duration: 3, volatility_modifier: 1.8, trend_modifier: -0.00020 },
-             { name: "Alianza Estratégica Finanzas", message: "🤝 ¡Finance Hub anuncia alianza estratégica clave!", target: 'FIN', duration: 3, volatility_modifier: 0.9, trend_modifier: 0.00012 },
-             { name: "Retraso Juego Esperado", message: "⏳ ¡GameDev Co retrasa indefinidamente su juego más esperado!", target: 'GAME', duration: 3, volatility_modifier: 1.5, trend_modifier: -0.00015 },
-             { name: "Tendencia Saludable Comida", message: "🥗 ¡Tendencia de comida saludable impulsa las ventas de Foodies Inc!", target: 'FOOD', duration: 3, volatility_modifier: 0.95, trend_modifier: 0.00010 },
-             { name: "Desastre Natural", message: "🌪️ ¡Desastre natural impacta la economía global!", target: 'ALL', duration: 3, volatility_modifier: 1.9, trend_modifier: -0.00010 },
-             { name: "Subida Tipos Interés", message: "💸 ¡Banco central sube tipos de interés inesperadamente!", target: 'ALL', duration: 3, volatility_modifier: 1.4, trend_modifier: -0.00005 },
-             { name: "Descubrimiento Energía Limpia", message: "⚡ ¡Eco Energy anuncia un descubrimiento prometedor en energía limpia!", target: 'ECO', duration: 3, volatility_modifier: 0.8, trend_modifier: 0.00025 },
+             { name: "Optimismo Global Cauteloso", message: "📰 El mercado muestra optimismo, pero los analistas piden cautela. ¿Oportunidad o trampa?", target: 'ALL', duration: 3, volatility_modifier: 2.5, trend_modifier: -0.00005 },
+             { name: "Temor a Recesión", message: "📰 Aumentan los temores de recesión, pero algunos ven oportunidades de compra.", target: 'ALL', duration: 3, volatility_modifier: 2.8, trend_modifier: 0.00006 },
+             { name: "Anuncio Tecnológico", message: "📰 Tech Corp hará un 'anuncio importante' esta semana. El mercado especula.", target: 'TECH', duration: 3, volatility_modifier: 3.0, trend_modifier: 0.0003 },
+             { name: "Regulación Tecnológica", message: "📰 Se anuncian nuevas regulaciones para el sector Tech. ¿Protegerán al consumidor o ahogarán la innovación?", target: 'TECH', duration: 3, volatility_modifier: 2.9, trend_modifier: -0.00015 },
+             { name: "Movimientos en la Banca", message: "📰 Finance Hub reporta 'movimientos inesperados' en sus cuentas. ¿Bueno o malo?", target: 'FIN', duration: 3, volatility_modifier: 2.5, trend_modifier: 0.00015 },
+             { name: "Caída del Petróleo", message: "📰 El petróleo se desploma. Malo para las petroleras, ¿pero bueno para los costes de Eco Energy?", target: 'ECO', duration: 3, volatility_modifier: 3.1, trend_modifier: 0.00018 },
+             { name: "Nuevo Proyecto de GameDev", message: "📰 GameDev Co. anuncia un proyecto secreto llamado 'Prometeo'. La comunidad está dividida.", target: 'GAME', duration: 3, volatility_modifier: 3.5, trend_modifier: 0.0004 },
+             { name: "Cadena de Suministro", message: "📰 Foodies Inc reestructura su cadena de suministro. ¿Reducción de costes o señal de problemas?", target: 'FOOD', duration: 3, volatility_modifier: 2.8, trend_modifier: -0.00009 },
+             { name: "Datos de Inflación", message: "📊 ¡Datos de inflación generan alta incertidumbre y volatilidad!", target: 'ALL', duration: 3, volatility_modifier: 2.7, trend_modifier: -0.00003 },
+             { name: "Desastre Natural", message: "🌪️ ¡Desastre natural impacta la economía global!", target: 'ALL', duration: 3, volatility_modifier: 2.9, trend_modifier: -0.00010 },
         ];
         let eventNotificationTimeout = null;
 
-
-        // --- Elementos del DOM (sin cambios) ---
         const cashEl = document.getElementById('cash');
         const portfolioValueEl = document.getElementById('portfolio-value');
         const totalValueEl = document.getElementById('total-value');
@@ -207,13 +179,11 @@
         const exitButton = document.getElementById('exit-button');
         const eventNotificationBanner = document.getElementById('event-notification-banner');
         let stockChart = null;
-
-        // --- Funciones del Juego (sin cambios en la mayoría) ---
-        // ... (showMessage, showEventNotification, formatCurrency, etc. sin cambios) ...
+        let rsiChart = null;
 
         function showMessage(msg, type = 'info') {
             messageBoxEl.textContent = msg;
-            messageBoxEl.className = 'p-3 border rounded-md min-h-[40px] text-sm md:text-base'; // Reset classes
+            messageBoxEl.className = 'p-3 border rounded-md min-h-[40px] text-sm md:text-base';
             switch (type) {
                 case 'error': messageBoxEl.classList.add('bg-red-100', 'border-red-400', 'text-red-700'); break;
                 case 'success': messageBoxEl.classList.add('bg-green-100', 'border-green-400', 'text-green-700'); break;
@@ -225,15 +195,14 @@
              if (!eventNotificationBanner) return;
              eventNotificationBanner.textContent = msg;
              eventNotificationBanner.classList.remove('hidden');
-             void eventNotificationBanner.offsetWidth; // Reflow
+             void eventNotificationBanner.offsetWidth;
              eventNotificationBanner.classList.add('visible');
              if (eventNotificationTimeout) { clearTimeout(eventNotificationTimeout); }
              eventNotificationTimeout = setTimeout(() => {
                  eventNotificationBanner.classList.remove('visible');
-                 // Delay hiding to allow fade out animation
                  setTimeout(() => { if (!eventNotificationBanner.classList.contains('visible')) { eventNotificationBanner.classList.add('hidden'); } }, 500);
                  eventNotificationTimeout = null;
-             }, 15000); // Show for 15 seconds
+             }, 15000);
          }
 
         function formatCurrency(amount) {
@@ -242,13 +211,13 @@
         }
 
         function formatTimestamp(date) {
-            if (!(date instanceof Date) || isNaN(date.getTime())) return 'Fecha inválida'; // Check for valid Date object
+            if (!(date instanceof Date) || isNaN(date.getTime())) return 'Fecha inválida';
             return date.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
 
         function updateGameInfo() {
             cashEl.textContent = formatCurrency(cash);
-            const currentPortfolioValue = calculatePortfolioValue(); // Recalculate here
+            const currentPortfolioValue = calculatePortfolioValue();
             portfolioValueEl.textContent = formatCurrency(currentPortfolioValue);
             totalValueEl.textContent = formatCurrency(cash + currentPortfolioValue);
         }
@@ -276,10 +245,11 @@
                     </div>
                     <div class="actions flex items-center space-x-2 mt-2 md:mt-0 w-full md:w-auto justify-end">
                         <input type="number" id="buy-qty-${stock.symbol}" min="1" value="1" class="portfolio-qty-input w-16">
-                        <button onclick="buyStock('${stock.symbol}')" class="buy-button">Comprar</button>
+                        <button onclick="buyFromInput('${stock.symbol}')" class="buy-button">Comprar</button>
+                        <button onclick="buyMaxStock('${stock.symbol}')" class="buy-button bg-blue-600 hover:bg-blue-700 focus:ring-blue-500">Max</button>
                     </div>`;
                 stockMarketEl.appendChild(stockDiv);
-                updateStockItemDisplay(stock); // Update initial display correctly
+                updateStockItemDisplay(stock);
             });
         }
 
@@ -287,18 +257,13 @@
              const priceValueEl = document.getElementById(`price-value-${stock.symbol}`);
              const changeIndicatorEl = document.getElementById(`change-indicator-${stock.symbol}`);
              if (!priceValueEl || !changeIndicatorEl) return;
-
-             // Ensure lastPrice exists before calculating change
              const priceChange = (stock.lastPrice !== undefined && stock.lastPrice !== null) ? stock.price - stock.lastPrice : 0;
-
              const changeIndicatorSymbol = priceChange > 0 ? '▲' : (priceChange < 0 ? '▼' : '');
              const changeClass = priceChange > 0 ? 'price-up' : (priceChange < 0 ? 'price-down' : 'text-gray-500');
-
              priceValueEl.textContent = `$${formatCurrency(stock.price)}`;
              changeIndicatorEl.textContent = `${changeIndicatorSymbol} ${formatCurrency(Math.abs(priceChange))}`;
              changeIndicatorEl.className = `price-change-indicator font-bold ml-2 ${changeClass}`;
          }
-
 
         function renderStockMarket() {
             stocks.forEach(stock => { if (document.getElementById(`stock-item-${stock.symbol}`)) { updateStockItemDisplay(stock); } });
@@ -317,7 +282,7 @@
         function renderPortfolio() {
             portfolioEl.innerHTML = '';
             const portfolioSymbols = Object.keys(portfolio);
-            let currentPortfolioValue = 0; // Recalculate for header update
+            let currentPortfolioValue = 0;
 
             if (portfolioSymbols.length === 0 || portfolioSymbols.every(sym => !portfolio[sym] || portfolio[sym].quantity <= 0)) {
                 portfolioEl.appendChild(emptyPortfolioMsgEl);
@@ -328,9 +293,8 @@
                     const stock = stocks.find(s => s.symbol === symbol);
                     const portfolioItem = portfolio[symbol];
 
-                    // Skip if item is invalid or quantity is zero
                     if (!stock || !portfolioItem || portfolioItem.quantity <= 0) {
-                        if (portfolio[symbol]) delete portfolio[symbol]; // Clean up empty entries
+                        if (portfolio[symbol]) delete portfolio[symbol];
                         return;
                     };
 
@@ -339,19 +303,13 @@
                     const gainLoss = marketValue - costBasis;
                     const gainLossPercent = portfolioItem.avgPrice !== 0 ? (gainLoss / costBasis) * 100 : 0;
                     const gainLossClass = gainLoss >= 0 ? 'price-up' : 'price-down';
-                    currentPortfolioValue += marketValue; // Add to total portfolio value
-
-                    let trendSymbol = '';
-                    if (showTrendIndicator && stock) {
-                        if (stock.trend > 0) { trendSymbol = '<span class="price-up ml-1 text-xs">▲</span>'; }
-                        else if (stock.trend < 0) { trendSymbol = '<span class="price-down ml-1 text-xs">▼</span>'; }
-                    }
+                    currentPortfolioValue += marketValue;
 
                     const portfolioDiv = document.createElement('div');
                     portfolioDiv.className = 'portfolio-item border border-gray-200 rounded-lg p-3 shadow-sm';
                     portfolioDiv.innerHTML = `
                         <div class="portfolio-info mb-3">
-                            <div class="portfolio-name font-semibold text-gray-700">${stock.name} (${symbol})${trendSymbol}</div>
+                            <div class="portfolio-name font-semibold text-gray-700">${stock.name} (${symbol})</div>
                             <div class="portfolio-details text-sm text-gray-600 space-y-1 mt-1">
                                 <div>Cantidad: ${portfolioItem.quantity}</div>
                                 <div>Precio Prom.: $${formatCurrency(portfolioItem.avgPrice)}</div>
@@ -382,22 +340,25 @@
                              <label for="sell-portfolio-qty-${symbol}" class="text-sm font-medium text-gray-700">Vender:</label>
                              <input type="number" id="sell-portfolio-qty-${symbol}" min="1" value="1" class="portfolio-qty-input w-full md:w-14">
                              <button onclick="sellFromPortfolio('${symbol}')" class="sell-button w-full md:w-auto">Vender</button>
+                             <button onclick="sellAllFromPortfolio('${symbol}')" class="sell-button w-full md:w-auto">Vender Todo</button>
                          </div>`;
                     portfolioEl.appendChild(portfolioDiv);
                 });
             }
-            // Update header values after iterating through portfolio
             portfolioValueEl.textContent = formatCurrency(currentPortfolioValue);
             totalValueEl.textContent = formatCurrency(cash + currentPortfolioValue);
         }
 
-
-        function buyStock(symbol) {
-            if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
+        function buyFromInput(symbol) {
             const quantityInput = document.getElementById(`buy-qty-${symbol}`);
             const quantity = parseInt(quantityInput.value);
+            buyStock(symbol, quantity);
+        }
+
+        function buyStock(symbol, quantity) {
+            if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
             const stock = stocks.find(s => s.symbol === symbol);
-            if (!stock || isNaN(quantity) || quantity <= 0) { showMessage('Cantidad inválida.', 'error'); quantityInput.focus(); return; }
+            if (!stock || isNaN(quantity) || quantity <= 0) { showMessage('Cantidad inválida.', 'error'); return; }
             const cost = stock.price * quantity;
             if (cost > cash) { showMessage('No tienes suficiente dinero.', 'error'); return; }
             const buyPrice = stock.price;
@@ -410,9 +371,24 @@
             } else { portfolio[symbol] = { quantity: quantity, avgPrice: buyPrice, slActive: false, tpActive: false }; }
             addTransaction('BUY', symbol, quantity, buyPrice);
             showMessage(`Compraste ${quantity} acciones de ${symbol} por $${formatCurrency(cost)}`, 'success');
-            quantityInput.value = '1';
+            const quantityInput = document.getElementById(`buy-qty-${symbol}`);
+            if(quantityInput) quantityInput.value = '1';
             updateGameInfo();
             renderPortfolio();
+        }
+        
+        function buyMaxStock(symbol) {
+            if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
+            const stock = stocks.find(s => s.symbol === symbol);
+            if (!stock || stock.price <= 0) { return; }
+
+            const maxQuantity = Math.floor(cash / stock.price);
+
+            if (maxQuantity <= 0) {
+                showMessage('No tienes suficiente dinero para comprar ni una acción.', 'error');
+                return;
+            }
+            buyStock(symbol, maxQuantity);
         }
 
         function sellFromPortfolio(symbol) {
@@ -421,14 +397,24 @@
              const quantityInput = document.getElementById(inputId);
              if (!quantityInput) { console.error(`Input not found: ${inputId}`); return; }
              const quantity = parseInt(quantityInput.value);
-             const success = sellStock(symbol, quantity, false, ''); // Pass false for isAutoSell
-             if (success || (!success && quantity > 0)) { quantityInput.value = '1'; } // Reset input only if sell happened or attempted
+             const success = sellStock(symbol, quantity, false, '');
+             if (success || (!success && quantity > 0)) { quantityInput.value = '1'; }
          }
+
+        function sellAllFromPortfolio(symbol) {
+            if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
+            if (!portfolio[symbol] || portfolio[symbol].quantity <= 0) {
+                showMessage('No tienes acciones de este tipo para vender.', 'error');
+                return;
+            }
+            const quantityToSell = portfolio[symbol].quantity;
+            sellStock(symbol, quantityToSell, false, '');
+        }
 
         function sellStock(symbol, quantityToSell = 0, isAutoSell = false, triggerType = '') {
             if (!isAutoSell && isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return false; }
             const stock = stocks.find(s => s.symbol === symbol);
-            const quantity = quantityToSell; // Use the passed quantity
+            const quantity = quantityToSell;
             if (!stock || isNaN(quantity) || quantity <= 0) { if (!isAutoSell) showMessage('Cantidad inválida.', 'error'); return false; }
             if (!portfolio[symbol] || portfolio[symbol].quantity < quantity) { if (!isAutoSell) showMessage(`No tienes suficientes acciones de ${symbol} para vender.`, 'error'); return false; }
 
@@ -436,37 +422,34 @@
             const avgPrice = portfolio[symbol].avgPrice;
             const revenue = sellPrice * quantity;
             cash += revenue;
-            const soldQuantity = quantity; // Store the actual quantity sold
+            const soldQuantity = quantity;
             portfolio[symbol].quantity -= quantity;
 
             let transactionType = 'SELL';
             let messageType = 'success';
             if (isAutoSell) {
-                transactionType = triggerType; // SL or TP
-                messageType = triggerType === 'SL' ? 'error' : 'success'; // SL is often seen negatively
+                transactionType = triggerType;
+                messageType = triggerType === 'SL' ? 'error' : 'success';
             }
 
-            addTransaction(transactionType, symbol, soldQuantity, sellPrice, avgPrice); // Log the transaction
+            addTransaction(transactionType, symbol, soldQuantity, sellPrice, avgPrice);
 
-            if (portfolio[symbol].quantity === 0) { delete portfolio[symbol]; } // Remove if empty
+            if (portfolio[symbol].quantity === 0) { delete portfolio[symbol]; }
 
-            // Display appropriate message
             if (isAutoSell) {
                 if (triggerType === 'SL') showMessage(`¡STOP-LOSS (${stopLossThreshold}%) ACTIVADO! Vendidas ${soldQuantity} acciones de ${symbol} a $${formatCurrency(sellPrice)}.`, messageType);
                 else if (triggerType === 'TP') showMessage(`¡TAKE-PROFIT (+${takeProfitThreshold}%) ACTIVADO! Vendidas ${soldQuantity} acciones de ${symbol} a $${formatCurrency(sellPrice)}.`, messageType);
-                else showMessage(`¡Venta Automática! Vendidas ${soldQuantity} acciones de ${symbol} a $${formatCurrency(sellPrice)}.`, 'info'); // Fallback
+                else showMessage(`¡Venta Automática! Vendidas ${soldQuantity} acciones de ${symbol} a $${formatCurrency(sellPrice)}.`, 'info');
             } else {
                 showMessage(`Vendiste ${soldQuantity} acciones de ${symbol} por $${formatCurrency(revenue)}`, messageType);
             }
 
             updateGameInfo();
             renderPortfolio();
-            return true; // Indicate success
+            return true;
         }
 
-
         function addTransaction(type, symbol, quantity, price, avgPrice = null) {
-            // Solo añade si la cantidad es mayor que 0
             if (quantity > 0) {
                 const transaction = { type: type, symbol: symbol, quantity: quantity, price: price, timestamp: new Date(), avgPrice: avgPrice };
                 transactionHistory.push(transaction);
@@ -475,12 +458,11 @@
             }
         }
 
-
         function toggleStopLoss(symbol) {
             if (isPaused) {
                 showMessage('El mercado está pausado. Reanuda para operar.', 'error');
                 const cb = document.getElementById(`sl-toggle-${symbol}`);
-                if(cb) cb.checked = !cb.checked; // Revert checkbox state
+                if(cb) cb.checked = !cb.checked;
                 return;
             }
             if (portfolio[symbol]) {
@@ -493,7 +475,7 @@
              if (isPaused) {
                  showMessage('El mercado está pausado. Reanuda para operar.', 'error');
                  const cb = document.getElementById(`tp-toggle-${symbol}`);
-                 if(cb) cb.checked = !cb.checked; // Revert checkbox state
+                 if(cb) cb.checked = !cb.checked;
                  return;
              }
              if (portfolio[symbol]) {
@@ -507,107 +489,120 @@
             for (const symbol in portfolio) {
                 const portfolioItem = portfolio[symbol];
                 const stock = stocks.find(s => s.symbol === symbol);
-                // Ensure stock exists, quantity > 0, and avgPrice is valid before checking
                 if (!stock || !portfolioItem || portfolioItem.quantity <= 0 || portfolioItem.avgPrice <= 0) continue;
 
                 const currentPrice = stock.price;
                 const avgPrice = portfolioItem.avgPrice;
                 const gainLossPercent = ((currentPrice - avgPrice) / avgPrice) * 100;
 
-                // Check Stop Loss: Use <= for threshold
                 if (portfolioItem.slActive && gainLossPercent <= stopLossThreshold) {
                     ordersToExecute.push({ symbol: symbol, type: 'SL' });
-                    continue; // Execute SL and skip TP check for this stock in this tick
+                    continue;
                 }
-                // Check Take Profit: Use >= for threshold
                 if (portfolioItem.tpActive && gainLossPercent >= takeProfitThreshold) {
                     ordersToExecute.push({ symbol: symbol, type: 'TP' });
                 }
             }
-            // Execute collected orders after checking all stocks
             ordersToExecute.forEach(order => {
-                // Double-check if the item still exists in portfolio before selling
-                if (portfolio[order.symbol] && portfolio[order.symbol].quantity > 0) { // Added check for quantity > 0
-                    const quantityToSell = portfolio[order.symbol].quantity; // Sell all remaining quantity
+                if (portfolio[order.symbol] && portfolio[order.symbol].quantity > 0) {
+                    const quantityToSell = portfolio[order.symbol].quantity;
                     sellStock(order.symbol, quantityToSell, true, order.type);
                 }
             });
         }
+        
+        const RSI_PERIOD = 14;
 
+        function updateRSI(stock) {
+            if (stock.history.length < RSI_PERIOD + 1) {
+                stock.rsi = 50;
+                return;
+            }
 
-        // --- MODIFICADA: simulatePriceChange ---
+            const last_two_prices = stock.history.slice(-2);
+            const change = last_two_prices[1].price - last_two_prices[0].price;
+            const gain = change > 0 ? change : 0;
+            const loss = change < 0 ? -change : 0;
+
+            stock.avgGain = ((stock.avgGain * (RSI_PERIOD - 1)) + gain) / RSI_PERIOD;
+            stock.avgLoss = ((stock.avgLoss * (RSI_PERIOD - 1)) + loss) / RSI_PERIOD;
+
+            if (stock.avgLoss === 0) {
+                stock.rsi = 100;
+            } else {
+                const rs = stock.avgGain / stock.avgLoss;
+                stock.rsi = 100 - (100 / (1 + rs));
+            }
+
+            stock.rsi_history.push({ tick: tickCounter, value: stock.rsi });
+            if (stock.rsi_history.length > maxHistoryLength) {
+                stock.rsi_history.shift();
+            }
+        }
+        
+        function manageRsiState(stock) {
+            const RSI_OVERBOUGHT = 70;
+            const RSI_OVERSOLD = 30;
+            const REVERSAL_DURATION = 3; // El impulso del Rebote dura 3 ticks
+
+            // Detectar Rebote Bajista (al salir de sobrecompra)
+            if (stock.wasOverbought && stock.rsi < RSI_OVERBOUGHT) {
+                stock.rsiReversalTicks = -REVERSAL_DURATION; // Negativo para bajista
+                showMessage(`¡Rebote bajista del RSI para ${stock.symbol}! Posible caída.`, 'error');
+            }
+
+            // Detectar Rebote Alcista (al salir de sobreventa)
+            if (stock.wasOversold && stock.rsi > RSI_OVERSOLD) {
+                stock.rsiReversalTicks = REVERSAL_DURATION; // Positivo para alcista
+                showMessage(`¡Rebote alcista del RSI para ${stock.symbol}! Posible subida.`, 'success');
+            }
+
+            // Actualizar el estado para el próximo tick
+            stock.wasOverbought = stock.rsi >= RSI_OVERBOUGHT;
+            stock.wasOversold = stock.rsi <= RSI_OVERSOLD;
+        }
+
         function simulatePriceChange() {
             stocks.forEach(stock => {
-                stock.lastPrice = stock.price; // Store previous price
+                stock.lastPrice = stock.price;
+                updateMovingAveragesAndTrends(stock);
+                updateRSI(stock);
+                manageRsiState(stock);
 
-                let effectiveVolatility = stock.volatility;
-                let effectiveTrend = stock.trend; // Start with base trend
-                let eventIsInfluencing = false; // Flag to see if any active event affects this stock's trend
-
-                // Apply active event modifiers
+                let totalEffectiveTrend = stock.trend; // Tendencia base
+                
+                // 1. Añadir fuerza de Eventos de Noticias
                 activeEvents.forEach(activeEvent => {
-                    // Check if the event applies to this stock
                     if (activeEvent.event.target === 'ALL' || activeEvent.event.target === stock.symbol) {
-                        // Apply modifier only if event is not new OR if it's the first tick the event is active
-                         if (!activeEvent.isNew || (activeEvent.isNew && activeEvent.remainingTicks === activeEvent.event.duration)) {
-                            effectiveVolatility *= activeEvent.event.volatility_modifier;
-                            effectiveTrend += activeEvent.event.trend_modifier;
-                            // Mark that an event is influencing the trend calculation if its modifier is non-zero
-                            if (activeEvent.event.trend_modifier !== 0) {
-                                eventIsInfluencing = true;
-                            }
-                        }
+                        totalEffectiveTrend += activeEvent.event.trend_modifier;
                     }
                 });
 
-                // Cap effective trend
-                effectiveTrend = Math.max(MIN_TREND * 2, Math.min(effectiveTrend, MAX_TREND * 2));
-
-                // Calculate initial price change based on potentially modified trend and volatility
-                const randomFactor = (Math.random() - 0.5) * 2; // -1 to 1
-                let priceChangePercent = randomFactor * effectiveVolatility + effectiveTrend;
-
-                // --- LÓGICA DE GARANTÍA DE DIRECCIÓN CON MAYOR IMPACTO ---
-                if (eventIsInfluencing) {
-                    // Check if the net effect of events intended a positive trend (effective > base)
-                                        // Check if the net effect of events intended a positive trend (effective > base)
-                    if (effectiveTrend > stock.trend) {
-                        // NUEVO: Rango de subida EXTREMADAMENTE ALTO para un impacto masivo
-                        const MIN_EXPLOSIVE_INCREASE = 0.10; // Mínimo 10% de subida
-                        const MAX_EXPLOSIVE_INCREASE = 0.20; // Máximo 20% de subida
-
-                        // Forzamos SIEMPRE una subida dentro de este rango masivo, ignorando el cálculo anterior.
-                        // Esto garantiza un disparo del precio sin importar qué.
-                        const increaseRange = MAX_EXPLOSIVE_INCREASE - MIN_EXPLOSIVE_INCREASE; // El tamaño del rango (0.10)
-                        priceChangePercent = MIN_EXPLOSIVE_INCREASE + (Math.random() * increaseRange);
-
-                        // console.log(`Forced EXPLOSIVE UP change for ${stock.symbol}: ${priceChangePercent * 100}%`);
-                    }
-                    // Check if the net effect of events intended a negative trend (effective < base)
-                     else if (effectiveTrend < stock.trend) {
-                        // NUEVO: Rango de caída EXTREMADAMENTE ALTO para un impacto devastador
-                        const MIN_DESTRUCTIVE_DECREASE = 0.10; // Mínimo 10% de caída
-                        const MAX_DESTRUCTIVE_DECREASE = 0.18; // Máximo 18% de caída
-
-                        // Forzamos SIEMPRE una caída dentro de este rango masivo, ignorando el cálculo anterior.
-                        const decreaseRange = MAX_DESTRUCTIVE_DECREASE - MIN_DESTRUCTIVE_DECREASE; // El tamaño del rango (0.08)
-                        const randomDecrease = MIN_DESTRUCTIVE_DECREASE + (Math.random() * decreaseRange);
-
-                        // Aplicamos la caída como un valor negativo
-                        priceChangePercent = -randomDecrease;
-
-                        // console.log(`Forced DESTRUCTIVE DOWN change for ${stock.symbol}: ${priceChangePercent * 100}%`);
-                    }
+                // 2. Añadir fuerza del Cruce Dorado / de la Muerte (EFECTIVIDAD AUMENTADA)
+                if (stock.trendState === 'bullish') {
+                    totalEffectiveTrend += 0.0060; // Valor anterior: 0.0030
+                } else if (stock.trendState === 'bearish') {
+                    totalEffectiveTrend -= 0.0060; // Valor anterior: -0.0030
                 }
-                // --- FIN LÓGICA DE GARANTÍA ---
 
-                // Calculate the new price using the (potentially adjusted) priceChangePercent
-                let newPrice = stock.price * (1 + priceChangePercent);
-                newPrice = Math.max(0.01, newPrice); // Prevent price from going below 0.01
+                // 3. Añadir fuerza del RSI (Rebote o Agotamiento) (EFECTIVIDAD AUMENTADA)
+                if (stock.rsiReversalTicks > 0) { // Rebote Alcista activo
+                    totalEffectiveTrend += 0.0044; // Impulso más fuerte (Valor anterior: 0.0022)
+                    stock.rsiReversalTicks--;
+                } else if (stock.rsiReversalTicks < 0) { // Rebote Bajista activo
+                    totalEffectiveTrend -= 0.0044; // Impulso más fuerte (Valor anterior: -0.0022)
+                    stock.rsiReversalTicks++;
+                } else { // Si no hay rebote, comprobar agotamiento con más fuerza
+                    if (stock.rsi > 70) totalEffectiveTrend -= 0.0020; // Presión bajista más fuerte (Valor anterior: -0.0005)
+                    if (stock.rsi < 30) totalEffectiveTrend += 0.0020; // Presión alcista más fuerte (Valor anterior: 0.0005)
+                }
 
-                stock.price = newPrice;
+                const randomFactor = (Math.random() - 0.5) * 2;
+                let priceChangePercent = randomFactor * stock.volatility + totalEffectiveTrend;
+                
+                const newPrice = stock.price * (1 + priceChangePercent);
+                stock.price = Math.max(0.01, newPrice);
 
-                // Update history for chart
                 stock.history.push({ tick: tickCounter, price: stock.price });
                 if (stock.history.length > maxHistoryLength) {
                     stock.history.shift();
@@ -615,43 +610,62 @@
             });
         }
 
-
-        function updateStockTrends() {
-             stocks.forEach(stock => {
-                 const changeDirection = Math.random() < 0.5 ? -1 : 1;
-                 let newTrend = stock.trend + changeDirection * TREND_CHANGE_AMOUNT;
-                 newTrend = Math.max(MIN_TREND, Math.min(newTrend, MAX_TREND));
-                 stock.trend = newTrend;
-             });
-         }
-
         function manageEvents() {
-             // Decrease remaining ticks and remove expired events FIRST
              activeEvents = activeEvents.filter(activeEvent => {
                  activeEvent.remainingTicks--;
-                 if (activeEvent.remainingTicks <= 0) {
-                     console.log(`Event ended: ${activeEvent.event.name}`);
-                     return false;
-                 }
-                 return true;
+                 return activeEvent.remainingTicks > 0;
              });
-
-             // Mark events that were new as no longer new AFTER applying effects
              activeEvents.forEach(ae => { if(ae.isNew) ae.isNew = false; });
-
-
-             // Try to trigger a new event
              if (activeEvents.length < MAX_ACTIVE_EVENTS && Math.random() < EVENT_PROBABILITY) {
                  const availableEvents = marketEvents.filter(event => !activeEvents.some(ae => ae.event.name === event.name));
                  if (availableEvents.length > 0) {
                      const newEvent = availableEvents[Math.floor(Math.random() * availableEvents.length)];
                      activeEvents.push({ event: newEvent, remainingTicks: newEvent.duration, isNew: true });
-                     console.log(`New event triggered: ${newEvent.name} (Duration: ${newEvent.duration} ticks)`);
-                     showEventNotification(`📰 ${newEvent.message}`);
+                     showEventNotification(`${newEvent.message}`);
                  }
              }
          }
 
+        function updateMovingAveragesAndTrends(stock) {
+            const STMA_PERIOD = 5;
+            const LTMA_PERIOD = 15;
+            const TREND_DURATION = 6;
+
+            if (stock.history.length < LTMA_PERIOD) return;
+            const was_above = stock.stma > stock.ltma;
+
+            const stma_history_slice = stock.history.slice(-STMA_PERIOD);
+            stock.stma = stma_history_slice.reduce((sum, h) => sum + h.price, 0) / stma_history_slice.length;
+            const ltma_history_slice = stock.history.slice(-LTMA_PERIOD);
+            stock.ltma = ltma_history_slice.reduce((sum, h) => sum + h.price, 0) / ltma_history_slice.length;
+            
+            stock.stmaHistory.push({ tick: tickCounter, value: stock.stma });
+            if (stock.stmaHistory.length > maxHistoryLength) stock.stmaHistory.shift();
+            stock.ltmaHistory.push({ tick: tickCounter, value: stock.ltma });
+            if (stock.ltmaHistory.length > maxHistoryLength) stock.ltmaHistory.shift();
+
+            const is_above = stock.stma > stock.ltma;
+
+            if (stock.trendTicksRemaining > 0) {
+                stock.trendTicksRemaining--;
+                if (stock.trendTicksRemaining === 0) {
+                    stock.trendState = 'neutral';
+                }
+            }
+
+            if (stock.trendTicksRemaining === 0) {
+                if (!was_above && is_above) {
+                    stock.trendState = 'bullish';
+                    stock.trendTicksRemaining = TREND_DURATION;
+                    showMessage(`¡Cruce Dorado detectado para ${stock.symbol}! Posible tendencia alcista.`, 'success');
+                }
+                else if (was_above && !is_above) {
+                    stock.trendState = 'bearish';
+                    stock.trendTicksRemaining = TREND_DURATION;
+                    showMessage(`¡Cruce de la Muerte detectado para ${stock.symbol}! Posible tendencia bajista.`, 'error');
+                }
+            }
+        }
 
         function initializeChart() {
             const ctx = chartCanvas.getContext('2d');
@@ -674,82 +688,159 @@
                     animation: { duration: 200 }
                 }
             });
-            updateChart();
+        }
+        
+        function initializeRsiChart() {
+            const ctx = document.getElementById('rsiChart').getContext('2d');
+            rsiChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { stepSize: 20 } },
+                        x: { ticks: { display: false }, grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+                        tooltip: { mode: 'index', intersect: false },
+                        annotation: {
+                            annotations: {
+                                line1: { type: 'line', yMin: 70, yMax: 70, borderColor: '#ef4444', borderWidth: 1, label: { content: 'Sobrecompra', enabled: true, position: 'start', backgroundColor: 'rgba(239, 68, 68, 0.2)' } },
+                                line2: { type: 'line', yMin: 30, yMax: 30, borderColor: '#10b981', borderWidth: 1, label: { content: 'Sobreventa', enabled: true, position: 'start', backgroundColor: 'rgba(16, 185, 129, 0.2)' } }
+                            }
+                        }
+                    },
+                    animation: { duration: 200 }
+                }
+            });
         }
 
         function updateChart() {
              if (!stockChart) return;
-
+             
              const visibleStocks = stocks.filter(stock => stock.showOnChart);
+             let chartDatasets = [];
              let labels = [];
 
-             // Determine labels based on the longest history among visible stocks or tickCounter
              let maxHistoryLengthFound = 0;
-             if (visibleStocks.length > 0) {
-                 visibleStocks.forEach(stock => {
-                     if (stock.history && Array.isArray(stock.history) && stock.history.length > maxHistoryLengthFound) {
-                         maxHistoryLengthFound = stock.history.length;
-                         labels = stock.history.map(h => h.tick);
-                     }
-                 });
-             }
-             // Fallback if no visible stocks or they have no history yet
+             visibleStocks.forEach(stock => {
+                 if (stock.history && stock.history.length > maxHistoryLengthFound) {
+                     maxHistoryLengthFound = stock.history.length;
+                     labels = stock.history.map(h => h.tick);
+                 }
+             });
              if (labels.length === 0 && tickCounter >= 0) {
-                 const startTick = Math.max(0, tickCounter - maxHistoryLength + 1);
-                 labels = [];
-                 for (let i = startTick; i <= tickCounter; i++) labels.push(i);
-             }
-             // Ensure labels don't exceed maxHistoryLength visually
-             if (labels.length > maxHistoryLength) {
-                 labels = labels.slice(-maxHistoryLength);
+                 labels = Array.from({length: Math.min(tickCounter + 1, maxHistoryLength)}, (_, i) => Math.max(0, tickCounter - maxHistoryLength + 1) + i);
              }
 
+             const stockForMA = visibleStocks[0]; 
 
-             stockChart.data.labels = labels;
-             stockChart.data.datasets = visibleStocks.map(stock => {
-                 // Get history data corresponding to the labels
-                 const historyData = labels.map(tick => {
+             visibleStocks.forEach(stock => {
+                const priceHistoryData = labels.map(tick => {
                      const historyPoint = stock.history?.find(h => h.tick === tick);
                      return historyPoint ? historyPoint.price : null;
                  });
-
-                 return {
+                 chartDatasets.push({
                      label: stock.symbol,
-                     data: historyData,
+                     data: priceHistoryData,
                      borderColor: stock.color,
                      backgroundColor: stock.color + '33',
+                     borderWidth: 2,
                      tension: 0.1,
                      pointRadius: 0,
                      pointHoverRadius: 5
-                 };
+                 });
+
+                 if (stock === stockForMA) {
+                     const stmaHistoryData = labels.map(tick => {
+                         const historyPoint = stock.stmaHistory?.find(h => h.tick === tick);
+                         return historyPoint ? historyPoint.value : null;
+                     });
+                     chartDatasets.push({
+                         label: `STMA (5) ${stock.symbol}`,
+                         data: stmaHistoryData,
+                         borderColor: '#06b6d4',
+                         borderWidth: 1,
+                         borderDash: [5, 5],
+                         tension: 0.1,
+                         pointRadius: 0
+                     });
+
+                     const ltmaHistoryData = labels.map(tick => {
+                         const historyPoint = stock.ltmaHistory?.find(h => h.tick === tick);
+                         return historyPoint ? historyPoint.value : null;
+                     });
+                     chartDatasets.push({
+                         label: `LTMA (15) ${stock.symbol}`,
+                         data: ltmaHistoryData,
+                         borderColor: '#d946ef',
+                         borderWidth: 1,
+                         borderDash: [5, 5],
+                         tension: 0.1,
+                         pointRadius: 0
+                     });
+                 }
              });
 
+             stockChart.data.labels = labels;
+             stockChart.data.datasets = chartDatasets;
              stockChart.update();
          }
 
+        function updateRsiChart() {
+            if (!rsiChart) return;
+
+            const visibleStocks = stocks.filter(stock => stock.showOnChart);
+            if (visibleStocks.length === 0) {
+                rsiChart.data.labels = [];
+                rsiChart.data.datasets = [];
+                rsiChart.update();
+                return;
+            }
+
+            const labels = stockChart.data.labels;
+            const stockForRSI = visibleStocks[0];
+
+            const rsiHistoryData = labels.map(tick => {
+                const historyPoint = stockForRSI.rsi_history?.find(h => h.tick === tick);
+                return historyPoint ? historyPoint.value : null;
+            });
+
+            rsiChart.data.labels = labels;
+            rsiChart.data.datasets = [{
+                label: `RSI (14) ${stockForRSI.symbol}`,
+                data: rsiHistoryData,
+                borderColor: stockForRSI.color,
+                borderWidth: 2,
+                tension: 0.1,
+                pointRadius: 0
+            }];
+            rsiChart.update();
+        }
 
         function toggleChartVisibility(symbol) {
             const stock = stocks.find(s => s.symbol === symbol);
             if (stock) {
                 stock.showOnChart = !stock.showOnChart;
                 updateChart();
+                updateRsiChart();
             }
         }
 
-        // --- MODIFICADA: updateMarket ---
         function updateMarket() {
             if (isPaused) return;
-
             tickCounter++;
-            manageEvents(); // Decide if new events start/end THIS tick
-            simulatePriceChange(); // Calculate new prices USING current active events (NOW WITH GUARANTEED DIRECTION & IMPACT)
-            renderStockMarket(); // Update market list UI
-            renderPortfolio(); // Update portfolio UI
-            checkAutoOrders(); // Execute SL/TP orders based on new prices
-            updateChart(); // Update the chart with new prices
-
-            // --- NUEVO: Autoguardado ---
-            saveGameState(); // Guarda el estado después de cada actualización completa
+            
+            manageEvents();
+            simulatePriceChange();
+            
+            renderStockMarket();
+            renderPortfolio();
+            checkAutoOrders();
+            updateChart();
+            updateRsiChart();
+            saveGameState();
         }
 
         function setPauseState(shouldPause) {
@@ -757,18 +848,18 @@
              if (isPaused) {
                  if (gameInterval) { clearInterval(gameInterval); gameInterval = null; }
                  pauseResumeBtn.textContent = 'Reanudar';
-                 pauseResumeBtn.classList.remove('pause-button', 'bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
-                 pauseResumeBtn.classList.add('resume-button', 'bg-red-600', 'hover:bg-red-700', 'focus:ring-red-500');
+                 pauseResumeBtn.classList.remove('pause-button');
+                 pauseResumeBtn.classList.add('resume-button');
                  showMessage('Mercado pausado. Haz clic en Reanudar para continuar.', 'info');
              } else {
                  if (!gameInterval) {
-                     updateMarket(); // Run first update immediately on resume
+                     updateMarket();
                      gameInterval = setInterval(updateMarket, updateInterval);
                  }
                  pauseResumeBtn.textContent = 'Pausar';
-                 pauseResumeBtn.classList.remove('resume-button', 'bg-red-600', 'hover:bg-red-700', 'focus:ring-red-500');
-                 pauseResumeBtn.classList.add('pause-button', 'bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
-                 showMessage('Mercado reanudado.', 'info');
+                 pauseResumeBtn.classList.remove('resume-button');
+                 pauseResumeBtn.classList.add('pause-button');
+                 showMessage(`Mercado reanudado. Velocidad: ${updateInterval/1000}s por tick.`, 'info');
              }
          }
 
@@ -776,10 +867,8 @@
             setPauseState(!isPaused);
         }
 
-
         function showHistory() {
              historyListEl.innerHTML = '';
-             // Usa la variable global transactionHistory que ahora se reinicia al cargar
              if (transactionHistory.length === 0) {
                  historyListEl.innerHTML = '<li class="text-gray-500">No hay transacciones todavía en esta sesión.</li>';
              } else {
@@ -812,7 +901,6 @@
              historyModal.classList.remove('hidden');
          }
 
-
         function closeHistory() { historyModal.classList.add('hidden'); }
 
         function getCurrentGlobalBalance() {
@@ -828,93 +916,89 @@
                  const balanceToSave = Math.round(newBalance);
                  if (isNaN(balanceToSave)) { console.error("Intento de guardar un saldo global inválido (NaN)."); return; }
                  localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balanceToSave.toString());
-                 console.log(`Nuevo saldo global guardado: ${balanceToSave}`);
-             } catch (error) { console.error("Error al guardar el saldo global en localStorage:", error); showMessage("Error al actualizar el saldo global.", "error"); }
+             } catch (error) { console.error("Error al guardar el saldo global en localStorage:", error); }
          }
 
-        // --- MODIFICADA: saveGameState ---
         function saveGameState() {
             try {
                 const gameState = {
-                    cash: cash, // <-- AÑADIDO: Guardar cash actual
+                    cash: cash, 
                     stocks: stocks.map(s => ({
                         symbol: s.symbol, name: s.name, price: s.price, lastPrice: s.lastPrice,
                         volatility: s.volatility, trend: s.trend, color: s.color,
-                        showOnChart: s.showOnChart, history: s.history
+                        showOnChart: s.showOnChart, history: s.history,
+                        stma: s.stma, ltma: s.ltma, 
+                        trendState: s.trendState, trendTicksRemaining: s.trendTicksRemaining,
+                        stmaHistory: s.stmaHistory, ltmaHistory: s.ltmaHistory,
+                        rsi: s.rsi, avgGain: s.avgGain, avgLoss: s.avgLoss, rsi_history: s.rsi_history,
+                        rsiReversalTicks: s.rsiReversalTicks, wasOverbought: s.wasOverbought, wasOversold: s.wasOversold
                     })),
                     portfolio: portfolio,
-                    // transactionHistory: transactionHistory, // <-- No guardar historial
                     tickCounter: tickCounter,
-                    activeEvents: activeEvents,
-                    showTrendIndicator: showTrendIndicator,
+                    activeEvents: activeEvents
                 };
                 sessionStorage.setItem(STOCK_GAME_STATE_KEY, JSON.stringify(gameState));
-                // console.log("Estado del juego guardado en sessionStorage."); // Log opcional para autoguardado
             } catch (error) {
-                console.error("Error al guardar el estado del juego en sessionStorage:", error);
-                // No mostrar mensaje al usuario para no ser intrusivo con el autoguardado
-                // showMessage("Error al guardar el progreso del juego.", "error");
+                console.error("Error al guardar el estado del juego:", error);
             }
         }
 
-        // --- MODIFICADA: loadGameState ---
         function loadGameState() {
             let loadedFromSave = false;
             try {
-                // 1. Leer Inversión Inicial (para cálculo G/P al salir)
                 const initialInvestmentStr = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
-                let parsedInvestment = 10000; // Default
+                let parsedInvestment = 10000;
                 if (initialInvestmentStr) {
                     const tempInvestment = parseInt(initialInvestmentStr);
-                    if (!isNaN(tempInvestment) && tempInvestment > 0) {
-                        parsedInvestment = tempInvestment;
-                    } else { console.warn("Inversión inicial inválida en sessionStorage. Usando 10,000."); }
-                } else { console.warn("No se encontró inversión inicial en sessionStorage. Usando 10,000."); }
-                initialInvestment = parsedInvestment; // Guardar para cálculo G/P al salir
+                    if (!isNaN(tempInvestment) && tempInvestment > 0) { parsedInvestment = tempInvestment; }
+                }
+                initialInvestment = parsedInvestment;
 
-                // 2. Intentar cargar el estado guardado del juego
                 const savedStateStr = sessionStorage.getItem(STOCK_GAME_STATE_KEY);
                 if (savedStateStr) {
                     console.log("Cargando estado del juego desde sessionStorage...");
                     const savedState = JSON.parse(savedStateStr);
-                    // --- RESTAURAR ESTADO ---
-                    cash = savedState.cash !== undefined ? savedState.cash : initialInvestment; // <-- Restaurar cash guardado
+                    cash = savedState.cash !== undefined ? savedState.cash : initialInvestment;
                     stocks = savedState.stocks.map(s => ({
                          ...s,
                          lastPrice: s.lastPrice !== undefined ? s.lastPrice : s.price,
-                         history: Array.isArray(s.history) ? s.history : [{ tick: 0, price: s.price }]
+                         history: Array.isArray(s.history) ? s.history : [{ tick: 0, price: s.price }],
+                         stma: s.stma || s.price, ltma: s.ltma || s.price,
+                         trendState: s.trendState || 'neutral',
+                         trendTicksRemaining: s.trendTicksRemaining || 0,
+                         stmaHistory: Array.isArray(s.stmaHistory) ? s.stmaHistory : [],
+                         ltmaHistory: Array.isArray(s.ltmaHistory) ? s.ltmaHistory : [],
+                         rsi: s.rsi || 50, avgGain: s.avgGain || 0, avgLoss: s.avgLoss || 0,
+                         rsi_history: Array.isArray(s.rsi_history) ? s.rsi_history : [],
+                         rsiReversalTicks: s.rsiReversalTicks || 0, wasOverbought: s.wasOverbought || false, wasOversold: s.wasOversold || false
                      }));
                     portfolio = savedState.portfolio || {};
-                    transactionHistory = []; // Siempre empezar con historial vacío
+                    transactionHistory = [];
                     tickCounter = savedState.tickCounter || 0;
                     activeEvents = (savedState.activeEvents || []).map(ae => ({...ae, isNew: false}));
-                    showTrendIndicator = savedState.showTrendIndicator || false;
-                    isPaused = true; // Empezar pausado si se carga
+                    isPaused = true; 
                     loadedFromSave = true;
-                    showMessage(`Partida anterior cargada. Dinero: $${formatCurrency(cash)}. Mercado pausado. Historial reiniciado.`, "info");
+                    showMessage(`Partida anterior cargada. Mercado pausado.`, "info");
                 } else {
-                     // --- INICIAR NUEVA PARTIDA ---
                     console.log("No se encontró estado guardado. Iniciando nueva partida.");
-                    cash = initialInvestment; // <-- Usar inversión inicial para cash
+                    cash = initialInvestment;
                     stocks = initialStockData.map(initialStock => ({
                         ...initialStock, lastPrice: initialStock.price,
-                        history: [{ tick: 0, price: initialStock.price }],
-                        showOnChart: initialStock.showOnChart !== undefined ? initialStock.showOnChart : true,
-                        trend: initialStock.trend
+                        history: [{ tick: 0, price: initialStock.price }]
                     }));
                     portfolio = {};
-                    transactionHistory = []; // Empezar con historial vacío
+                    transactionHistory = [];
                     tickCounter = 0;
-                    activeEvents = []; showTrendIndicator = false; isPaused = false; // No empezar pausado si es nuevo
-                    showMessage(`Inversión inicial: $${formatCurrency(cash)}. ¡Bienvenido! El mercado se actualiza cada ${updateInterval / 1000} segundos.`, "info");
+                    activeEvents = []; 
+                    isPaused = false;
+                    showMessage(`Inversión inicial: $${formatCurrency(cash)}. El mercado se actualiza cada ${updateInterval / 1000}s.`, "info");
                 }
             } catch (error) {
-                // --- FALLBACK EN CASO DE ERROR ---
                 console.error("Error al cargar el estado del juego:", error);
-                cash = initialInvestment > 0 ? initialInvestment : 10000; // Usar inversión leída o default
+                cash = initialInvestment > 0 ? initialInvestment : 10000;
                 stocks = initialStockData.map(initialStock => ({ ...initialStock, lastPrice: initialStock.price, history: [{ tick: 0, price: initialStock.price }] }));
                 portfolio = {}; transactionHistory = []; tickCounter = 0;
-                activeEvents = []; isPaused = false; showTrendIndicator = false;
+                activeEvents = []; isPaused = false;
                 showMessage("Error al cargar datos. Iniciando nueva partida.", "error");
             }
             return loadedFromSave;
@@ -926,54 +1010,33 @@
             renderPortfolio();
             updateGameInfo();
             initializeChart();
-            setPauseState(isPaused); // Set initial pause state based on load
-
-            const cashDisplayElement = document.getElementById('cash');
-            if (cashDisplayElement) {
-                cashDisplayElement.addEventListener('dblclick', () => {
-                    showTrendIndicator = !showTrendIndicator;
-                    console.log(`Trend indicator ${showTrendIndicator ? 'ACTIVATED' : 'DEACTIVATED'}`);
-                    renderPortfolio();
-                    showMessage(`Indicador de tendencia ${showTrendIndicator ? 'activado' : 'desactivado'}.`, 'info');
-                });
-            } else { console.error("Elemento #cash no encontrado para añadir listener de doble clic."); }
+            initializeRsiChart();
+            setPauseState(isPaused);
         }
 
         function handleExitClick(event) {
             event.preventDefault();
-            console.log("Botón Menú presionado. Guardando estado y actualizando saldo global...");
-            if (!isPaused) { setPauseState(true); } // Pause if running
-            saveGameState(); // Save current state (con cash, sin historial)
+            if (!isPaused) { setPauseState(true); } 
+            saveGameState(); 
             try {
                 const finalPortfolioValue = calculatePortfolioValue();
                 const finalTotalValue = cash + finalPortfolioValue;
-                // Usar la variable 'initialInvestment' guardada al inicio de la sesión
                 const netGainLoss = finalTotalValue - initialInvestment;
-                console.log(`Inversión Inicial (esta sesión): ${formatCurrency(initialInvestment)}`);
-                console.log(`Valor Total Final: ${formatCurrency(finalTotalValue)} (Cash: ${formatCurrency(cash)}, Cartera: ${formatCurrency(finalPortfolioValue)})`);
-                console.log(`Ganancia/Pérdida Neta (esta sesión): ${formatCurrency(netGainLoss)}`);
                 const currentGlobalBalance = getCurrentGlobalBalance();
-                console.log(`Saldo Global Actual (antes): ${formatCurrency(currentGlobalBalance)}`);
                 const newGlobalBalance = currentGlobalBalance + netGainLoss;
-                console.log(`Nuevo Saldo Global Calculado: ${formatCurrency(newGlobalBalance)}`);
                 saveGlobalBalance(newGlobalBalance);
-                console.log(`Saldo global actualizado. Estado del juego guardado.`);
             } catch (error) {
                 console.error("Error durante el proceso de actualización del saldo global al salir:", error);
-                showMessage("Ocurrió un error al actualizar tu saldo global. Los cambios podrían no guardarse.", "error");
             }
-            console.log("Redirigiendo a:", event.target.href);
             window.location.href = event.target.href;
         }
 
-        // --- Event Listeners ---
         pauseResumeBtn.addEventListener('click', togglePause);
         historyModal.addEventListener('click', (event) => { if (event.target === historyModal) { closeHistory(); } });
         exitButton.addEventListener('click', handleExitClick);
 
-        // Iniciar el juego
         window.onload = initializeGame;
 
     </script>
 </body>
-</ht
+</html>
