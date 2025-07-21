@@ -45,7 +45,7 @@
     </style>
      <link rel="preconnect" href="https://rsms.me/">
      <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-     <style> body { font-family: 'Inter var', sans-serif; } </style> 
+     <style> body { font-family: 'Inter var', sans-serif; } </style>
 </head>
 <body class="min-h-screen">
 
@@ -137,12 +137,12 @@
             { symbol: 'ECO', name: 'Eco Energy 🌿', price: 70.00, volatility: 0.065, trend: 0.00003, color: '#6B7280', showOnChart: true, stma: 70.00, ltma: 70.00, trendState: 'neutral', trendTicksRemaining: 0, stmaHistory: [], ltmaHistory: [], rsi: 50, avgGain: 0, avgLoss: 0, rsi_history: [], rsiReversalTicks: 0, wasOverbought: false, wasOversold: false }
         ];
         let stocks = [];
-        let transactionHistory = []; 
+        let transactionHistory = [];
         const stopLossThreshold = -4.0;
         const takeProfitThreshold = 5.0;
         let gameInterval = null;
         let isPaused = false;
-        const updateInterval = 10000; 
+        const updateInterval = 10000;
         const maxHistoryLength = 60;
         let tickCounter = 0;
         let initialInvestment = 0;
@@ -150,7 +150,7 @@
         const EVENT_PROBABILITY = 0.25;
         const MAX_ACTIVE_EVENTS = 2;
         let activeEvents = [];
-        
+
         const marketEvents = [
              { name: "Optimismo Global Cauteloso", message: "📰 El mercado muestra optimismo, pero los analistas piden cautela. ¿Oportunidad o trampa?", target: 'ALL', duration: 3, volatility_modifier: 2.5, trend_modifier: -0.00005 },
              { name: "Temor a Recesión", message: "📰 Aumentan los temores de recesión, pero algunos ven oportunidades de compra.", target: 'ALL', duration: 3, volatility_modifier: 2.8, trend_modifier: 0.00006 },
@@ -376,7 +376,7 @@
             updateGameInfo();
             renderPortfolio();
         }
-        
+
         function buyMaxStock(symbol) {
             if (isPaused) { showMessage('El mercado está pausado. Reanuda para operar.', 'error'); return; }
             const stock = stocks.find(s => s.symbol === symbol);
@@ -510,7 +510,7 @@
                 }
             });
         }
-        
+
         const RSI_PERIOD = 14;
 
         function updateRSI(stock) {
@@ -539,7 +539,7 @@
                 stock.rsi_history.shift();
             }
         }
-        
+
         function manageRsiState(stock) {
             const RSI_OVERBOUGHT = 70;
             const RSI_OVERSOLD = 30;
@@ -563,6 +563,8 @@
         }
 
         function simulatePriceChange() {
+            const TREND_DURATION = 6; // Coincide con el valor usado en updateMovingAveragesAndTrends
+
             stocks.forEach(stock => {
                 stock.lastPrice = stock.price;
                 updateMovingAveragesAndTrends(stock);
@@ -570,7 +572,7 @@
                 manageRsiState(stock);
 
                 let totalEffectiveTrend = stock.trend; // Tendencia base
-                
+
                 // 1. Añadir fuerza de Eventos de Noticias
                 activeEvents.forEach(activeEvent => {
                     if (activeEvent.event.target === 'ALL' || activeEvent.event.target === stock.symbol) {
@@ -597,9 +599,26 @@
                     if (stock.rsi < 30) totalEffectiveTrend += 0.0020; // Presión alcista más fuerte (Valor anterior: 0.0005)
                 }
 
-                const randomFactor = (Math.random() - 0.5) * 2;
+                let randomFactor = (Math.random() - 0.5) * 2;
+                const isFirstTickOfTrend = stock.trendTicksRemaining === TREND_DURATION;
+
+                // --- INICIO DE LA MODIFICACIÓN ---
+                // Se comprueba si es el primer tick justo después de un cruce.
+                if (isFirstTickOfTrend) {
+                    if (stock.trendState === 'bullish') {
+                        // Para un Cruce Dorado, se fuerza un factor aleatorio 100% positivo.
+                        // El valor estará entre 0.5 y 1.0.
+                        randomFactor = Math.random() * 0.5 + 0.5;
+                    } else if (stock.trendState === 'bearish') {
+                        // Para un Cruce de la Muerte, se fuerza un factor aleatorio 100% negativo.
+                        // El valor estará entre -1.0 y -0.5.
+                        randomFactor = (Math.random() * 0.5 + 0.5) * -1;
+                    }
+                }
+                // --- FIN DE LA MODIFICACIÓN ---
+
                 let priceChangePercent = randomFactor * stock.volatility + totalEffectiveTrend;
-                
+
                 const newPrice = stock.price * (1 + priceChangePercent);
                 stock.price = Math.max(0.01, newPrice);
 
@@ -638,7 +657,7 @@
             stock.stma = stma_history_slice.reduce((sum, h) => sum + h.price, 0) / stma_history_slice.length;
             const ltma_history_slice = stock.history.slice(-LTMA_PERIOD);
             stock.ltma = ltma_history_slice.reduce((sum, h) => sum + h.price, 0) / ltma_history_slice.length;
-            
+
             stock.stmaHistory.push({ tick: tickCounter, value: stock.stma });
             if (stock.stmaHistory.length > maxHistoryLength) stock.stmaHistory.shift();
             stock.ltmaHistory.push({ tick: tickCounter, value: stock.ltma });
@@ -689,7 +708,7 @@
                 }
             });
         }
-        
+
         function initializeRsiChart() {
             const ctx = document.getElementById('rsiChart').getContext('2d');
             rsiChart = new Chart(ctx, {
@@ -718,7 +737,7 @@
 
         function updateChart() {
              if (!stockChart) return;
-             
+
              const visibleStocks = stocks.filter(stock => stock.showOnChart);
              let chartDatasets = [];
              let labels = [];
@@ -734,7 +753,7 @@
                  labels = Array.from({length: Math.min(tickCounter + 1, maxHistoryLength)}, (_, i) => Math.max(0, tickCounter - maxHistoryLength + 1) + i);
              }
 
-             const stockForMA = visibleStocks[0]; 
+             const stockForMA = visibleStocks[0];
 
              visibleStocks.forEach(stock => {
                 const priceHistoryData = labels.map(tick => {
@@ -831,10 +850,10 @@
         function updateMarket() {
             if (isPaused) return;
             tickCounter++;
-            
+
             manageEvents();
             simulatePriceChange();
-            
+
             renderStockMarket();
             renderPortfolio();
             checkAutoOrders();
@@ -922,12 +941,12 @@
         function saveGameState() {
             try {
                 const gameState = {
-                    cash: cash, 
+                    cash: cash,
                     stocks: stocks.map(s => ({
                         symbol: s.symbol, name: s.name, price: s.price, lastPrice: s.lastPrice,
                         volatility: s.volatility, trend: s.trend, color: s.color,
                         showOnChart: s.showOnChart, history: s.history,
-                        stma: s.stma, ltma: s.ltma, 
+                        stma: s.stma, ltma: s.ltma,
                         trendState: s.trendState, trendTicksRemaining: s.trendTicksRemaining,
                         stmaHistory: s.stmaHistory, ltmaHistory: s.ltmaHistory,
                         rsi: s.rsi, avgGain: s.avgGain, avgLoss: s.avgLoss, rsi_history: s.rsi_history,
@@ -943,81 +962,71 @@
             }
         }
 
-        function loadGameState() {
-            let loadedFromSave = false;
-            try {
-                const initialInvestmentStr = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
-                let parsedInvestment = 10000;
-                if (initialInvestmentStr) {
-                    const tempInvestment = parseInt(initialInvestmentStr);
-                    if (!isNaN(tempInvestment) && tempInvestment > 0) { parsedInvestment = tempInvestment; }
-                }
-                initialInvestment = parsedInvestment;
+        // MODIFICADO: Esta función ahora siempre inicia una nueva partida.
+        function startNewGame() {
+            console.log("Iniciando nueva partida desde cero.");
 
-                const savedStateStr = sessionStorage.getItem(STOCK_GAME_STATE_KEY);
-                if (savedStateStr) {
-                    console.log("Cargando estado del juego desde sessionStorage...");
-                    const savedState = JSON.parse(savedStateStr);
-                    cash = savedState.cash !== undefined ? savedState.cash : initialInvestment;
-                    stocks = savedState.stocks.map(s => ({
-                         ...s,
-                         lastPrice: s.lastPrice !== undefined ? s.lastPrice : s.price,
-                         history: Array.isArray(s.history) ? s.history : [{ tick: 0, price: s.price }],
-                         stma: s.stma || s.price, ltma: s.ltma || s.price,
-                         trendState: s.trendState || 'neutral',
-                         trendTicksRemaining: s.trendTicksRemaining || 0,
-                         stmaHistory: Array.isArray(s.stmaHistory) ? s.stmaHistory : [],
-                         ltmaHistory: Array.isArray(s.ltmaHistory) ? s.ltmaHistory : [],
-                         rsi: s.rsi || 50, avgGain: s.avgGain || 0, avgLoss: s.avgLoss || 0,
-                         rsi_history: Array.isArray(s.rsi_history) ? s.rsi_history : [],
-                         rsiReversalTicks: s.rsiReversalTicks || 0, wasOverbought: s.wasOverbought || false, wasOversold: s.wasOversold || false
-                     }));
-                    portfolio = savedState.portfolio || {};
-                    transactionHistory = [];
-                    tickCounter = savedState.tickCounter || 0;
-                    activeEvents = (savedState.activeEvents || []).map(ae => ({...ae, isNew: false}));
-                    isPaused = true; 
-                    loadedFromSave = true;
-                    showMessage(`Partida anterior cargada. Mercado pausado.`, "info");
-                } else {
-                    console.log("No se encontró estado guardado. Iniciando nueva partida.");
-                    cash = initialInvestment;
-                    stocks = initialStockData.map(initialStock => ({
-                        ...initialStock, lastPrice: initialStock.price,
-                        history: [{ tick: 0, price: initialStock.price }]
-                    }));
-                    portfolio = {};
-                    transactionHistory = [];
-                    tickCounter = 0;
-                    activeEvents = []; 
-                    isPaused = false;
-                    showMessage(`Inversión inicial: $${formatCurrency(cash)}. El mercado se actualiza cada ${updateInterval / 1000}s.`, "info");
-                }
-            } catch (error) {
-                console.error("Error al cargar el estado del juego:", error);
-                cash = initialInvestment > 0 ? initialInvestment : 10000;
-                stocks = initialStockData.map(initialStock => ({ ...initialStock, lastPrice: initialStock.price, history: [{ tick: 0, price: initialStock.price }] }));
-                portfolio = {}; transactionHistory = []; tickCounter = 0;
-                activeEvents = []; isPaused = false;
-                showMessage("Error al cargar datos. Iniciando nueva partida.", "error");
+            try {
+                 const initialInvestmentStr = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
+                 let parsedInvestment = 10000;
+                 if (initialInvestmentStr) {
+                     const tempInvestment = parseInt(initialInvestmentStr);
+                     if (!isNaN(tempInvestment) && tempInvestment > 0) { parsedInvestment = tempInvestment; }
+                 }
+                 initialInvestment = parsedInvestment;
+            } catch(e) {
+                 initialInvestment = 10000;
+                 console.error("Error leyendo la inversión inicial, se usará el valor por defecto.");
             }
-            return loadedFromSave;
+
+            cash = initialInvestment;
+            // Se usa structuredClone para una copia profunda y evitar referencias cruzadas
+            stocks = structuredClone(initialStockData).map(initialStock => ({
+                ...initialStock,
+                lastPrice: initialStock.price,
+                history: [{ tick: -1, price: initialStock.price }] // Empezamos con un punto base
+            }));
+            portfolio = {};
+            transactionHistory = [];
+            tickCounter = -1; // Se inicia en -1 para que el primer tick de la simulación sea 0
+            activeEvents = [];
+            isPaused = true;
         }
 
+        // MODIFICADO: La función principal de inicialización.
         function initializeGame() {
-            const loadedFromSave = loadGameState();
+            // 1. Iniciar una partida nueva siempre.
+            startNewGame();
+
+            // 2. Ejecutar una simulación silenciosa de 100 ticks.
+            console.log("Ejecutando simulación inicial de 100 ticks...");
+            showMessage("Generando historial del mercado...", "info");
+            for (let i = 0; i < 100; i++) {
+                tickCounter++;
+                // No se gestionan eventos en la simulación inicial para no abrumar con mensajes
+                // manageEvents();
+                simulatePriceChange();
+            }
+            console.log("Simulación inicial completada.");
+
+            // 3. Preparar y renderizar la interfaz con los datos ya simulados.
+            initializeChart();
+            initializeRsiChart();
             buildStockMarketList();
             renderPortfolio();
             updateGameInfo();
-            initializeChart();
-            initializeRsiChart();
-            setPauseState(isPaused);
+            updateChart();
+            updateRsiChart();
+
+            // 4. Dejar el juego pausado por defecto.
+            setPauseState(true);
+            showMessage("¡Bienvenido! El mercado está listo y pausado. Analiza los gráficos y opera cuando quieras.", "success");
         }
 
         function handleExitClick(event) {
             event.preventDefault();
-            if (!isPaused) { setPauseState(true); } 
-            saveGameState(); 
+            if (!isPaused) { setPauseState(true); }
+            saveGameState();
             try {
                 const finalPortfolioValue = calculatePortfolioValue();
                 const finalTotalValue = cash + finalPortfolioValue;
