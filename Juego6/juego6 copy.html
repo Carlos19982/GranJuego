@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Bolsa Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lightweight Charts (TradingView) -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            /* bg-slate-900 */
+            color: #f8fafc;
+            /* text-slate-50 */
+            overflow: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Animations for PNL updates */
+        @keyframes flashGreen {
+            0% {
+                background-color: rgba(34, 197, 94, 0.4);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        @keyframes flashRed {
+            0% {
+                background-color: rgba(239, 68, 68, 0.4);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        .flash-up {
+            animation: flashGreen 0.5s ease-out;
+        }
+
+        .flash-down {
+            animation: flashRed 0.5s ease-out;
+        }
+
+        .text-up {
+            color: #22c55e;
+        }
+
+        /* text-green-500 */
+        .text-down {
+            color: #ef4444;
+        }
+
+        /* text-red-500 */
+    </style>
+</head>
+
+<body class="flex flex-col h-screen">
+
+    <!-- Barra Superior -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center z-10 shadow-md">
+        <div class="flex items-center gap-4">
+            <h1 class="text-xl font-bold tracking-tight">📈 TradeMaster <span
+                    class="text-slate-400 text-sm font-normal">SIMULADOR</span></h1>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="text-right">
+                <p class="text-sm text-slate-400">Patrimonio Total</p>
+                <p class="text-xl font-bold font-mono" id="total-equity">0.00 €</p>
+            </div>
+            <button id="btn-pause"
+                class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-md font-semibold transition-colors shadow-lg">
+                Pausar Mercado
+            </button>
+            <button id="btn-exit"
+                class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md font-semibold transition-colors shadow-lg">
+                Liquidación y Salida
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex flex-1 overflow-hidden">
+
+        <!-- Panel Izquierdo: Gráfico -->
+        <div class="flex-1 flex flex-col p-4">
+            <!-- Cabecera del Activo -->
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">CorpTech (CTK)</h2>
+                    <p class="text-sm text-slate-400">Acciones Tecnológicas - Volatilidad Alta</p>
+                </div>
+                <div class="text-right" id="price-container">
+                    <p class="text-3xl font-bold font-mono transition-colors duration-300" id="current-price">150.00 €
+                    </p>
+                    <p class="text-sm font-semibold" id="price-change-text">Cargando...</p>
+                </div>
+            </div>
+
+            <!-- Contenedor del Gráfico Lightweight -->
+            <div id="tvchart"
+                class="flex-1 rounded-xl overflow-hidden border border-slate-700 bg-slate-800 shadow-inner relative">
+                <!-- El gráfico se inyecta aquí -->
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Trading -->
+        <div class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col shadow-xl z-10">
+            <!-- Pestañas de Acción -->
+            <div class="flex border-b border-slate-700">
+                <button
+                    class="flex-1 py-3 font-semibold text-green-400 border-b-2 border-green-400 bg-slate-700/50">Operar</button>
+            </div>
+
+            <div class="p-6 flex-1 flex flex-col gap-6 overflow-y-auto">
+
+                <!-- Info Financiera -->
+                <div class="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                    <div class="flex justify-between mb-2 text-sm">
+                        <span class="text-slate-400">Poder Adquisitivo</span>
+                        <span class="font-mono font-bold" id="available-cash">0.00 €</span>
+                    </div>
+                    <div class="flex justify-between mb-2 text-sm">
+                        <span class="text-slate-400">Acciones en Cartera</span>
+                        <span class="font-mono font-bold" id="owned-shares">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-400">Precio Medio Compra</span>
+                        <span class="font-mono font-bold" id="avg-price">0.00 €</span>
+                    </div>
+                </div>
+
+                <!-- PNL (Ganancias/Pérdidas) -->
+                <div class="bg-slate-900 rounded-lg p-4 border border-slate-700 text-center" id="pnl-container">
+                    <p class="text-sm text-slate-400 mb-1">Beneficio/Pérdida (Abierto)</p>
+                    <p class="text-2xl font-bold font-mono" id="pnl-value">0.00 €</p>
+                    <p class="text-sm font-semibold mt-1" id="roi-value">0.00%</p>
+                </div>
+
+                <!-- Controles de Compra/Venta -->
+                <div class="mt-auto flex flex-col gap-4">
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Cantidad de Acciones</label>
+                        <input type="number" id="trade-amount" min="1" value="1"
+                            class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white font-mono text-center text-lg focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button id="btn-buy"
+                            class="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-md font-bold text-lg transition-colors shadow-lg shadow-green-900/20">
+                            COMPRAR
+                        </button>
+                        <button id="btn-sell"
+                            class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-md font-bold text-lg transition-colors shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                            VENDER
+                        </button>
+                    </div>
+
+                    <!-- Historial Reciente -->
+                    <div class="mt-4 border-t border-slate-700 pt-4">
+                        <p class="text-sm text-slate-400 mb-2">Historial de Operaciones</p>
+                        <div id="trade-history" class="space-y-2 max-h-32 overflow-y-auto text-xs font-mono pr-1">
+                            <!-- Transacciones -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Panel Inferior: Noticias (Opcional) -->
+    <div
+        class="bg-slate-900 border-t border-slate-700 p-2 text-sm text-slate-400 flex items-center overflow-hidden whitespace-nowrap">
+        <span class="font-bold text-indigo-400 mr-4 shrink-0">ÚLTIMA HORA:</span>
+        <div class="animate-[marquee_20s_linear_infinite]" id="news-ticker">
+            Los mercados abren estables. Los analistas predicen alta volatilidad en el sector tecnológico esta semana...
+        </div>
+    </div>
+
+    <style>
+        @keyframes marquee {
+            0% {
+                transform: translateX(100vw);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
+
+    <script>
+        // --- CONSTANTES Y ESTADO ---
+        const BALANCE_LOCAL_STORAGE_KEY = "cardGamePlayerBalance_v3";
+        const GAME6_INVESTMENT_SESSION_KEY = "game6InitialInvestment";
+
+        let state = {
+            cash: 0,
+            shares: 0,
+            avgBuyPrice: 0,
+            currentPrice: 150.00,
+            initialPrice: 150.00
+        };
+        let isPaused = false;
+        const MARKET_SPEED_MS = 5000; // Ralentizado a 5 segundos
+
+        // --- INICIALIZACIÓN DE LA INVERSIÓN ---
+        function initBalance() {
+            // Cargar la inversión que seleccionó en el index.html
+            const sessionInvestment = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
+            if (sessionInvestment) {
+                state.cash = parseFloat(sessionInvestment);
+
+                // Cobrarlo del saldo global temporalmente mientras juega
+                let globalBalance = parseFloat(localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY)) || 5000;
+                globalBalance -= state.cash;
+                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, globalBalance);
+            } else {
+                state.cash = 1000; // Fallback por si entran directo
+            }
+            updateUI();
+        }
+
+        // --- CONFIGURACIÓN DEL GRÁFICO (Lightweight Charts) ---
+        const chartContainer = document.getElementById('tvchart');
+        const chart = LightweightCharts.createChart(chartContainer, {
+            width: chartContainer.clientWidth,
+            height: chartContainer.clientHeight,
+            layout: {
+                background: { type: 'solid', color: '#1e293b' }, // slate-800
+                textColor: '#94a3b8', // slate-400
+            },
+            grid: {
+                vertLines: { color: '#334155' }, // slate-700
+                horzLines: { color: '#334155' },
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+            },
+            rightPriceScale: {
+                borderColor: '#334155',
+            },
+            timeScale: {
+                borderColor: '#334155',
+                timeVisible: true,
+                secondsVisible: false,
+            },
+        });
+
+        // Adaptar al redimensionar ventana
+        window.addEventListener('resize', () => {
+            chart.resize(chartContainer.clientWidth, chartContainer.clientHeight);
+        });
+
+        const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+            upColor: '#22c55e',
+            downColor: '#ef4444',
+            borderDownColor: '#ef4444',
+            borderUpColor: '#22c55e',
+            wickDownColor: '#ef4444',
+            wickUpColor: '#22c55e',
+        });
+
+        // --- GENERACIÓN DE PRECIOS (Movimiento Browniano) ---
+        let currentTime = Math.floor(Date.now() / 1000) - 3600; // Empezamos 1 hora atrás
+        let currentCandle = null;
+        const historicalData = [];
+
+        function calculateNextPrice(currentPrice, volatility = 0.015, trend = 0.0002) {
+            const u1 = Math.random();
+            const u2 = Math.random();
+            const randomShock = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+            const percentageChange = trend + (volatility * randomShock);
+            return Math.max(0.01, currentPrice * (1 + percentageChange));
+        }
+
+        // Generar historial falso al cargar
+        for (let i = 0; i < 60; i++) {
+            let open = state.currentPrice;
+            let close = calculateNextPrice(open);
+            let range = Math.abs(open - close);
+            let high = Math.max(open, close) + (Math.random() * range);
+            let low = Math.min(open, close) - (Math.random() * range);
+
+            historicalData.push({ time: currentTime, open, high, low, close });
+            state.currentPrice = close;
+            currentTime += 60; // velas de 1 minuto
+        }
+        candleSeries.setData(historicalData);
+        state.initialPrice = historicalData[0].close;
+
+        // Loop del mercado (Actualiza precio cada segundo)
+        setInterval(() => {
+            if (isPaused) return;
+
+            let open = state.currentPrice;
+            let close = calculateNextPrice(open, 0.008, 0.0001); // Volatilidad en tiempo real
+            let range = Math.abs(open - close);
+            let high = Math.max(open, close) + (Math.random() * range * 0.5);
+            let low = Math.min(open, close) - (Math.random() * range * 0.5);
+
+            const newCandle = {
+                time: currentTime,
+                open: open,
+                high: high,
+                low: low,
+                close: close
+            };
+
+            candleSeries.update(newCandle);
+
+            // Actualizar el estado y UI
+            const oldPrice = state.currentPrice;
+            state.currentPrice = close;
+            currentTime += 60;
+
+            updateUI(oldPrice);
+        }, MARKET_SPEED_MS);
+
+        // --- LÓGICA DE JUEGO (Comprar/Vender) ---
+        const btnBuy = document.getElementById('btn-buy');
+        const btnSell = document.getElementById('btn-sell');
+        const amountInput = document.getElementById('trade-amount');
+
+        btnBuy.addEventListener('click', () => {
+            const qty = parseInt(amountInput.value);
+            const cost = qty * state.currentPrice;
+
+            if (qty > 0 && state.cash >= cost) {
+                // Recalcular precio medio
+                const totalCostAnterior = state.shares * state.avgBuyPrice;
+                const nuevoCostoTotal = totalCostAnterior + cost;
+
+                state.cash -= cost;
+                state.shares += qty;
+                state.avgBuyPrice = nuevoCostoTotal / state.shares;
+                updateUI();
+                logTrade('COMPRA', qty, state.currentPrice);
+                triggerFlash('pnl-container', 'flash-up');
+            } else {
+                alert("No tienes fondos suficientes para comprar esta cantidad.");
+            }
+        });
+
+        btnSell.addEventListener('click', () => {
+            const qty = parseInt(amountInput.value);
+            if (qty > 0 && state.shares >= qty) {
+                const revenue = qty * state.currentPrice;
+                state.cash += revenue;
+                state.shares -= qty;
+
+                if (state.shares === 0) state.avgBuyPrice = 0;
+                updateUI();
+                logTrade('VENTA', qty, state.currentPrice);
+                triggerFlash('pnl-container', 'flash-up');
+            } else {
+                alert("No tienes suficientes acciones para vender.");
+            }
+        });
+
+        // --- INTERFAZ (UI) ---
+        function updateUI(oldPrice = state.currentPrice) {
+            // Precios y formateros
+            const formatMoney = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+            // Textos superiores
+            document.getElementById('available-cash').textContent = formatMoney(state.cash);
+            document.getElementById('owned-shares').textContent = state.shares;
+            document.getElementById('avg-price').textContent = formatMoney(state.avgBuyPrice);
+
+            const totalEquity = state.cash + (state.shares * state.currentPrice);
+            document.getElementById('total-equity').textContent = formatMoney(totalEquity);
+
+            // Actualizar precio de la acción y color
+            const priceEl = document.getElementById('current-price');
+            priceEl.textContent = formatMoney(state.currentPrice);
+            priceEl.className = `text-3xl font-bold font-mono transition-colors duration-300 ${state.currentPrice >= oldPrice ? 'text-up' : 'text-down'}`;
+
+            // Cálculo PNL (Profit & Loss de las acciones abiertas)
+            const pnlValueEl = document.getElementById('pnl-value');
+            const roiValueEl = document.getElementById('roi-value');
+
+            if (state.shares > 0) {
+                const invested = state.shares * state.avgBuyPrice;
+                const currentValue = state.shares * state.currentPrice;
+                const pnl = currentValue - invested;
+                const roi = (pnl / invested) * 100;
+
+                pnlValueEl.textContent = (pnl >= 0 ? '+' : '') + formatMoney(pnl);
+                pnlValueEl.className = `text-2xl font-bold font-mono ${pnl >= 0 ? 'text-up' : 'text-down'}`;
+
+                roiValueEl.textContent = (roi >= 0 ? '+' : '') + roi.toFixed(2) + '%';
+                roiValueEl.className = `text-sm font-semibold mt-1 ${roi >= 0 ? 'text-up' : 'text-down'}`;
+                btnSell.disabled = false;
+            } else {
+                pnlValueEl.textContent = "0.00 €";
+                pnlValueEl.className = "text-2xl font-bold font-mono text-slate-400";
+                roiValueEl.textContent = "0.00%";
+                roiValueEl.className = "text-sm font-semibold mt-1 text-slate-400";
+                btnSell.disabled = true;
+            }
+        }
+
+        function triggerFlash(elementId, className) {
+            const el = document.getElementById(elementId);
+            el.classList.remove(className);
+            void el.offsetWidth; // trigger reflow
+            el.classList.add(className);
+        }
+
+        function logTrade(type, qty, price) {
+            const historyContainer = document.getElementById('trade-history');
+            const time = new Date().toLocaleTimeString();
+            const colorClass = type === 'COMPRA' ? 'text-green-400' : 'text-red-400';
+
+            const entry = document.createElement('div');
+            entry.className = `flex justify-between items-center bg-slate-900/50 p-1.5 rounded border border-slate-700/50`;
+            entry.innerHTML = `
+                <span class="text-slate-500">${time}</span>
+                <span class="${colorClass} font-bold">${type}</span>
+                <span>${qty} acc.</span>
+                <span>@ ${price.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</span>
+            `;
+            historyContainer.prepend(entry);
+        }
+
+        // --- CONTROLES DE MERCADO ---
+        document.getElementById('btn-pause').addEventListener('click', (e) => {
+            isPaused = !isPaused;
+            e.target.textContent = isPaused ? 'Reanudar Mercado' : 'Pausar Mercado';
+            e.target.className = isPaused
+                ? 'bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-md font-semibold transition-colors shadow-lg'
+                : 'bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-md font-semibold transition-colors shadow-lg';
+        });
+
+        // --- SALIDA Y GUARDADO ---
+        document.getElementById('btn-exit').addEventListener('click', () => {
+            if (confirm("¿Estás seguro de que quieres liquidar tus acciones y salir?")) {
+                // Vender todo automáticamente al precio actual
+                const finalEquity = state.cash + (state.shares * state.currentPrice);
+
+                // Sumarlo al saldo global
+                let globalBalance = parseFloat(localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY)) || 0;
+                globalBalance += finalEquity;
+                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, globalBalance);
+
+                // Limpiar la sesión
+                sessionStorage.removeItem(GAME6_INVESTMENT_SESSION_KEY);
+
+                alert(`Has salido con un patrimonio final de ${finalEquity.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €. ¡Tu saldo global ha sido actualizado!`);
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Arranque
+        initBalance();
+
+    </script>
+</body>
+
+</html>

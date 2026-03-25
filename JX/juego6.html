@@ -101,8 +101,7 @@
         }
 
         /* Ocultar el botón/logo de TradingView inyectado por la librería */
-        #tvchart a,
-        #rsi-chart a {
+        #tvchart a {
             display: none !important;
         }
     </style>
@@ -111,75 +110,76 @@
 <body class="flex flex-col h-screen">
 
     <div id="event-notification-banner"
-        class="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-semibold bg-indigo-600 hidden">
+        class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-sm md:max-w-2xl md:w-auto text-center px-4 py-3 md:px-6 md:py-3 rounded-lg shadow-lg text-white text-xs md:text-sm font-semibold bg-indigo-600 hidden break-words leading-snug">
     </div>
-    <div id="toast-container" class="fixed bottom-16 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toast-container"
+        class="fixed bottom-12 left-4 right-4 md:left-auto md:bottom-16 md:right-4 z-50 flex flex-col items-center md:items-end gap-2 pointer-events-none">
+    </div>
 
-    <header class="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center z-10 shadow-md">
-        <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold tracking-tight text-white">📈 TradeMaster <span
-                    class="text-slate-400 text-sm font-normal">PRO</span></h1>
+    <header
+        class="bg-slate-800 border-b border-slate-700 p-3 md:p-4 flex flex-wrap justify-between items-center z-10 shadow-md gap-3">
+        <div class="flex items-center gap-2 md:gap-4">
+            <h1 class="text-lg md:text-xl font-bold tracking-tight text-white">📈 TradeMaster <span
+                    class="text-slate-400 text-xs md:text-sm font-normal">PRO</span></h1>
         </div>
-        <div class="flex items-center gap-6">
-            <div class="text-right">
-                <p class="text-sm text-slate-400">Patrimonio Total</p>
-                <p class="text-xl font-bold font-mono" id="total-equity">0.00 €</p>
+        <div class="flex items-center gap-2 md:gap-6 flex-1 md:flex-none justify-end">
+            <div class="text-right mr-auto md:mr-0">
+                <p class="text-[10px] md:text-sm text-slate-400">Patrimonio Total</p>
+                <p class="text-sm md:text-xl font-bold font-mono" id="total-equity">0.00 €</p>
             </div>
             <button id="btn-pause"
-                class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-md font-semibold transition-colors shadow-lg">
-                Pausar Mercado
+                class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-1.5 md:px-4 md:py-2 rounded-md text-xs md:text-base font-semibold transition-colors shadow-lg">
+                Pausar
             </button>
             <button id="btn-exit"
-                class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md font-semibold transition-colors shadow-lg">
-                Liquidación y Salida
+                class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1.5 md:px-4 md:py-2 rounded-md text-xs md:text-base font-semibold transition-colors shadow-lg">
+                Liquidar
             </button>
         </div>
     </header>
 
-    <main class="flex flex-1 overflow-hidden">
+    <main class="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden relative">
 
         <!-- Panel Izquierdo: Mercado y Gráficos -->
-        <div class="flex-1 flex flex-col p-4 overflow-hidden">
+        <div class="w-full md:flex-1 flex flex-col p-2 md:p-4 min-h-[45vh] md:min-h-0 md:overflow-hidden">
             <!-- Selector de Activos -->
             <div class="flex gap-1 mb-4 overflow-x-auto border-b border-slate-700 pb-1" id="stock-tabs">
                 <!-- Se inyectan las pestañas por JS -->
             </div>
 
-            <div class="flex justify-between items-end mb-2">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-2 gap-2">
                 <div>
-                    <h2 class="text-2xl font-bold text-white" id="active-stock-name">Cargando...</h2>
-                    <p class="text-sm text-slate-400" id="active-stock-desc">...</p>
+                    <h2 class="text-xl md:text-2xl font-bold text-white" id="active-stock-name">Cargando...</h2>
+                    <p class="text-xs md:text-sm text-slate-400" id="active-stock-desc">...</p>
 
                     <!-- Toggles para limpiar el gráfico visualmente -->
-                    <div class="flex gap-4 mt-3 text-xs font-semibold text-slate-400">
+                    <div class="flex flex-wrap gap-3 md:gap-4 mt-2 md:mt-3 text-xs font-semibold text-slate-400">
                         <label class="flex items-center gap-1.5 cursor-pointer hover:text-slate-200 transition-colors">
                             <input type="checkbox" id="toggle-ma" checked
                                 class="accent-indigo-500 w-3.5 h-3.5 bg-slate-800 border-slate-600 rounded focus:ring-0">
                             Medias Móviles (MA)
                         </label>
-                        <label class="flex items-center gap-1.5 cursor-pointer hover:text-slate-200 transition-colors">
-                            <input type="checkbox" id="toggle-rsi" checked
-                                class="accent-indigo-500 w-3.5 h-3.5 bg-slate-800 border-slate-600 rounded focus:ring-0">
-                            Panel RSI Inferior
-                        </label>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-3xl font-bold font-mono transition-colors duration-300" id="active-stock-price">0.00
-                        €</p>
-                    <p class="text-sm font-semibold" id="active-stock-trend">Cargando...</p>
+                <div
+                    class="text-left md:text-right w-full md:w-auto flex justify-between md:block items-center border-t border-slate-700 md:border-t-0 pt-2 md:pt-0 mt-2 md:mt-0">
+                    <div class="flex items-baseline gap-2 md:justify-end">
+                        <p class="text-2xl md:text-3xl font-bold font-mono transition-colors duration-300"
+                            id="active-stock-price">0.00
+                            €</p>
+                        <p class="text-sm font-bold font-mono text-slate-300" id="active-stock-rsi">RSI: --</p>
+                    </div>
+                    <p class="text-xs md:text-sm font-semibold" id="active-stock-trend">Cargando...</p>
                 </div>
             </div>
 
-            <div id="tvchart"
-                class="flex-[3] rounded-t-xl overflow-hidden border border-slate-700 bg-slate-800 relative"></div>
-            <div id="rsi-chart"
-                class="flex-1 rounded-b-xl overflow-hidden border-x border-b border-slate-700 bg-slate-800 relative">
+            <div id="tvchart" class="flex-[3] rounded-xl overflow-hidden border border-slate-700 bg-slate-800 relative">
             </div>
         </div>
 
         <!-- Panel Derecho: Trading y Cartera -->
-        <div class="w-96 bg-slate-800 border-l border-slate-700 flex flex-col shadow-xl z-10 overflow-hidden">
+        <div
+            class="w-full md:w-96 bg-slate-800 border-t md:border-t-0 md:border-l border-slate-700 flex flex-col shadow-xl z-10 md:overflow-hidden shrink-0">
 
             <!-- Info Global -->
             <div class="p-4 border-b border-slate-700 bg-slate-900">
@@ -232,6 +232,22 @@
                     </label>
                 </div>
 
+                <!-- Cuenta Bancaria -->
+                <div class="bg-slate-800 rounded-lg p-3 border border-slate-700 shadow-inner mb-2">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-slate-300 font-semibold text-sm flex items-center gap-1">
+                            🏦 Cuenta Ahorros
+                        </span>
+                        <span class="font-mono font-bold text-amber-400 text-lg" id="bank-balance">0.00 €</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="btn-bank-deposit"
+                            class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold py-2 rounded transition-all active:scale-95 border border-slate-600">Ingresar</button>
+                        <button id="btn-bank-withdraw"
+                            class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold py-2 rounded transition-all active:scale-95 border border-slate-600">Retirar</button>
+                    </div>
+                </div>
+
                 <!-- Resumen Cartera -->
                 <h3 class="text-lg font-bold mb-3 text-white border-b border-slate-700 pb-2 mt-6">Mi Cartera</h3>
                 <div id="portfolio-list" class="space-y-3 mb-6 min-h-[50px]">
@@ -249,7 +265,7 @@
     </main>
 
     <div
-        class="bg-slate-900 border-t border-slate-700 p-2 text-sm text-slate-400 flex items-center overflow-hidden whitespace-nowrap z-10">
+        class="bg-slate-900 border-t border-slate-700 p-2 text-xs md:text-sm text-slate-400 flex items-center overflow-hidden whitespace-nowrap z-10 shrink-0">
         <span class="font-bold text-indigo-400 mr-4 shrink-0 bg-slate-900 pr-2 relative z-20">NOTICIAS MERCADO:</span>
         <div class="animate-marquee inline-block" id="news-ticker">
             Los mercados abren estables. Los analistas predicen alta volatilidad en el sector tecnológico esta semana...
@@ -257,23 +273,22 @@
     </div>
 
     <script>
-        const BALANCE_LOCAL_STORAGE_KEY = "cardGamePlayerBalance_v3";
-        const GAME6_INVESTMENT_SESSION_KEY = "game6InitialInvestment";
-        const STOCK_GAME_STATE_KEY = "stockSimGameState_Pro";
+        const BANK_ACCOUNT_KEY = "stockGameBankAccount_v3";
+        const STOCK_GAME_STATE_KEY = "stockSimGameState_Pro_v3";
 
         const updateInterval = 10000;
         const maxHistoryLength = 60;
         const stopLossThreshold = -4.0;
         const takeProfitThreshold = 5.0;
 
-        let cash = 10000;
-        let initialInvestment = 0;
+        let cash = 100;
+        let bankBalance = 0;
         let portfolio = {};
         let transactionHistory = [];
         let tickCounter = 0;
         let isPaused = false;
         let gameInterval = null;
-        let selectedStockSymbol = 'TECH';
+        let selectedStockSymbol = 'FOOD';
 
         let activeEvents = [];
         const EVENT_PROBABILITY = 0.25;
@@ -291,18 +306,17 @@
         ];
 
         let stocks = [
-            { symbol: 'TECH', name: 'Tech Corp', desc: 'Tecnología', price: 15.00, volatility: 0.055, trend: 0.00002, color: '#3B82F6' },
-            { symbol: 'FOOD', name: 'Foodies Inc', desc: 'Alimentación', price: 5.00, volatility: 0.030, trend: 0.00001, color: '#F59E0B' },
-            { symbol: 'GAME', name: 'GameDev Co', desc: 'Videojuegos', price: 8.00, volatility: 0.070, trend: -0.00001, color: '#8B5CF6' },
-            { symbol: 'FIN', name: 'Finance Hub', desc: 'Finanzas', price: 20.00, volatility: 0.045, trend: 0.000015, color: '#10B981' },
-            { symbol: 'ECO', name: 'Eco Energy', desc: 'Energía Verde', price: 7.00, volatility: 0.065, trend: 0.00003, color: '#6B7280' }
+            { symbol: 'FOOD', name: 'Foodies Inc', desc: 'Alimentación (Pequeña)', price: 2.00, volatility: 0.030, trend: 0.00001, color: '#F59E0B', unlockReq: 0 },
+            { symbol: 'ECO', name: 'Eco Energy', desc: 'Energía Verde (Pequeña)', price: 5.00, volatility: 0.065, trend: 0.00003, color: '#6B7280', unlockReq: 0 },
+            { symbol: 'GAME', name: 'GameDev Co', desc: 'Videojuegos (Mediana)', price: 15.00, volatility: 0.070, trend: -0.00001, color: '#8B5CF6', unlockReq: 200 },
+            { symbol: 'TECH', name: 'Tech Corp', desc: 'Tecnología (Grande)', price: 40.00, volatility: 0.055, trend: 0.00002, color: '#3B82F6', unlockReq: 600 },
+            { symbol: 'FIN', name: 'Finance Hub', desc: 'Finanzas (Gigante)', price: 100.00, volatility: 0.045, trend: 0.000015, color: '#10B981', unlockReq: 1500 }
         ];
 
         let currentTime = Math.floor(Date.now() / 1000) - (maxHistoryLength * 60);
 
         // --- GRÁFICOS LIGHTWEIGHT CHARTS ---
         let mainChart, candleSeries, stmaSeries, ltmaSeries;
-        let rsiChart, rsiSeries;
 
         function initCharts() {
             const chartOptions = {
@@ -321,25 +335,8 @@
             stmaSeries = mainChart.addSeries(LightweightCharts.LineSeries, { color: 'rgba(6, 182, 212, 0.5)', lineWidth: 2, title: 'STMA(5)' });
             ltmaSeries = mainChart.addSeries(LightweightCharts.LineSeries, { color: 'rgba(217, 70, 239, 0.5)', lineWidth: 2, title: 'LTMA(15)' });
 
-            const rsiContainer = document.getElementById('rsi-chart');
-            rsiChart = LightweightCharts.createChart(rsiContainer, {
-                ...chartOptions,
-                rightPriceScale: { autoScale: false, minValue: 0, maxValue: 100, borderColor: '#334155' }
-            });
-            rsiSeries = rsiChart.addSeries(LightweightCharts.LineSeries, { color: '#8b5cf6', lineWidth: 2, title: 'RSI(14)' });
-
-            rsiSeries.createPriceLine({ price: 70, color: '#ef4444', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, title: 'Sobrecompra' });
-            rsiSeries.createPriceLine({ price: 30, color: '#22c55e', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, title: 'Sobreventa' });
-
-            // Sincronizar escalas de tiempo
-            mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => { if (range) rsiChart.timeScale().setVisibleLogicalRange(range); });
-            rsiChart.timeScale().subscribeVisibleLogicalRangeChange(range => { if (range) mainChart.timeScale().setVisibleLogicalRange(range); });
-
             window.addEventListener('resize', () => {
                 mainChart.resize(mainContainer.clientWidth, mainContainer.clientHeight);
-                if (!rsiContainer.classList.contains('hidden')) {
-                    rsiChart.resize(rsiContainer.clientWidth, rsiContainer.clientHeight);
-                }
             });
 
             // Lógica de los Toggles visuales
@@ -348,18 +345,15 @@
                 stmaSeries.applyOptions({ visible: isVisible });
                 ltmaSeries.applyOptions({ visible: isVisible });
             });
-            document.getElementById('toggle-rsi').addEventListener('change', (e) => {
-                rsiContainer.classList.toggle('hidden', !e.target.checked);
-                window.dispatchEvent(new Event('resize')); // Fuerza a reajustar el tamaño
-            });
         }
 
         function initBalance() {
-            const sessionInvestment = sessionStorage.getItem(GAME6_INVESTMENT_SESSION_KEY);
-            if (sessionInvestment) {
-                initialInvestment = parseFloat(sessionInvestment);
+            let savedBank = localStorage.getItem(BANK_ACCOUNT_KEY);
+            if (savedBank !== null) {
+                bankBalance = parseFloat(savedBank);
             } else {
-                initialInvestment = 10000;
+                bankBalance = 0;
+                localStorage.setItem(BANK_ACCOUNT_KEY, bankBalance);
             }
 
             const savedStateStr = sessionStorage.getItem(STOCK_GAME_STATE_KEY);
@@ -371,8 +365,32 @@
                     tickCounter = saved.tickCounter || 0;
                     currentTime = saved.currentTime || Math.floor(Date.now() / 1000);
                     activeEvents = saved.activeEvents || [];
-                    stocks = saved.stocks;
+
+                    if (saved.stocks) {
+                        saved.stocks.forEach(savedStock => {
+                            let s = stocks.find(x => x.symbol === savedStock.symbol);
+                            if (s) {
+                                s.history = savedStock.history || [];
+                                s.stmaHistory = savedStock.stmaHistory || [];
+                                s.ltmaHistory = savedStock.ltmaHistory || [];
+                                s.rsiHistory = savedStock.rsiHistory || [];
+                                s.price = savedStock.price;
+                                s.stma = savedStock.stma;
+                                s.ltma = savedStock.ltma;
+                                s.rsi = savedStock.rsi;
+                                s.avgGain = savedStock.avgGain || 0;
+                                s.avgLoss = savedStock.avgLoss || 0;
+                                s.trendState = savedStock.trendState;
+                                s.trendTicksRemaining = savedStock.trendTicksRemaining;
+                                s.rsiReversalTicks = savedStock.rsiReversalTicks || 0;
+                                s.wasOverbought = savedStock.wasOverbought || false;
+                                s.wasOversold = savedStock.wasOversold || false;
+                                s.unlocked = savedStock.unlocked !== undefined ? savedStock.unlocked : (s.unlockReq === 0);
+                            }
+                        });
+                    }
                     showToast('Partida cargada correctamente.', 'info');
+                    finishInit();
                 } catch (e) {
                     console.error("Error al cargar state:", e);
                     startFresh();
@@ -382,14 +400,30 @@
             }
         }
 
+        function finishInit() {
+            const firstUnlocked = stocks.find(s => s.unlocked) || stocks[0];
+            switchActiveStock(firstUnlocked.symbol);
+            if (!gameInterval) {
+                gameInterval = setInterval(marketTick, updateInterval);
+            }
+            updateUI();
+        }
+
         function startFresh() {
-            cash = initialInvestment;
+            let hasPlayedBefore = localStorage.getItem('hasPlayedBefore_v3');
+            if (!hasPlayedBefore) {
+                cash = 100;
+                localStorage.setItem('hasPlayedBefore_v3', 'yes');
+            } else {
+                cash = 0;
+            }
             portfolio = {};
             stocks.forEach(s => {
                 s.history = []; s.stmaHistory = []; s.ltmaHistory = []; s.rsiHistory = [];
                 s.stma = s.price; s.ltma = s.price; s.rsi = 50; s.avgGain = 0; s.avgLoss = 0;
                 s.trendState = 'neutral'; s.trendTicksRemaining = 0; s.rsiReversalTicks = 0;
                 s.wasOverbought = false; s.wasOversold = false;
+                s.unlocked = s.unlockReq <= (cash + bankBalance);
             });
 
             // Generar historial inicial
@@ -398,6 +432,7 @@
                 currentTime += 60;
                 simulatePriceChange(true);
             }
+            finishInit();
         }
 
         // --- MOTOR FINANCIERO AVANZADO ---
@@ -496,7 +531,6 @@
                     candleSeries.update(stock.history[lastIdx]);
                     stmaSeries.update(stock.stmaHistory[lastIdx]);
                     ltmaSeries.update(stock.ltmaHistory[lastIdx]);
-                    rsiSeries.update(stock.rsiHistory[lastIdx]);
                 }
             });
         }
@@ -594,42 +628,11 @@
             candleSeries.setData(stock.history);
             stmaSeries.setData(stock.stmaHistory);
             ltmaSeries.setData(stock.ltmaHistory);
-            rsiSeries.setData(stock.rsiHistory);
 
             updateUI();
         }
 
         function updateUI() {
-            // Actualizar pestañas
-            const tabsContainer = document.getElementById('stock-tabs');
-            tabsContainer.innerHTML = '';
-            stocks.forEach(stock => {
-                const isSelected = stock.symbol === selectedStockSymbol;
-                const change = stock.history.length > 1 ? stock.history[stock.history.length - 1].close - stock.history[stock.history.length - 2].close : 0;
-                const cClass = change >= 0 ? 'text-green-400' : 'text-red-400';
-                const btn = document.createElement('button');
-                btn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors whitespace-nowrap ${isSelected ? 'bg-slate-800 text-white border-t-2 border-indigo-500' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`;
-                btn.innerHTML = `${stock.symbol} <span class="${cClass} text-xs ml-1">${change >= 0 ? '▲' : '▼'}</span>`;
-                btn.onclick = () => switchActiveStock(stock.symbol);
-                tabsContainer.appendChild(btn);
-            });
-
-            // Info Activo Seleccionado
-            const activeStock = stocks.find(s => s.symbol === selectedStockSymbol);
-            document.getElementById('active-stock-name').textContent = `${activeStock.name} (${activeStock.symbol})`;
-            document.getElementById('active-stock-desc').textContent = activeStock.desc;
-            document.getElementById('trade-symbol-title').textContent = activeStock.symbol;
-
-            const priceEl = document.getElementById('active-stock-price');
-            const oldPriceStr = priceEl.textContent.replace(' €', '').replace('.', '').replace(',', '.');
-            const oldPrice = parseFloat(oldPriceStr) || activeStock.price;
-            priceEl.textContent = formatMoney(activeStock.price);
-            priceEl.className = `text-3xl font-bold font-mono transition-colors duration-300 ${activeStock.price >= oldPrice ? 'text-up' : 'text-down'}`;
-
-            const trendEl = document.getElementById('active-stock-trend');
-            trendEl.textContent = `Tendencia: ${activeStock.trendState === 'bullish' ? 'Alcista ↗' : (activeStock.trendState === 'bearish' ? 'Bajista ↘' : 'Neutral')}`;
-            trendEl.className = `text-sm font-semibold ${activeStock.trendState === 'bullish' ? 'text-green-400' : (activeStock.trendState === 'bearish' ? 'text-red-400' : 'text-slate-400')}`;
-
             // Cartera y Global
             let portValue = 0;
             const portList = document.getElementById('portfolio-list');
@@ -655,9 +658,60 @@
             }
             if (Object.keys(portfolio).length === 0) portList.innerHTML = '<p class="text-slate-500 italic">Cartera vacía.</p>';
 
+            let totalEquity = cash + portValue + bankBalance;
             document.getElementById('global-cash').textContent = formatMoney(cash);
             document.getElementById('global-portfolio-val').textContent = formatMoney(portValue);
-            document.getElementById('total-equity').textContent = formatMoney(cash + portValue);
+            document.getElementById('bank-balance').textContent = formatMoney(bankBalance);
+            document.getElementById('total-equity').textContent = formatMoney(totalEquity);
+
+            // Revisar Desbloqueos de Empresas
+            stocks.forEach(stock => {
+                if (!stock.unlocked && totalEquity >= stock.unlockReq) {
+                    stock.unlocked = true;
+                    showToast(`¡Has desbloqueado la empresa: ${stock.name}!`, 'success');
+                }
+            });
+
+            // Actualizar pestañas
+            const tabsContainer = document.getElementById('stock-tabs');
+            tabsContainer.innerHTML = '';
+            stocks.forEach(stock => {
+                if (!stock.unlocked) return;
+                const isSelected = stock.symbol === selectedStockSymbol;
+                const change = stock.history.length > 1 ? stock.history[stock.history.length - 1].close - stock.history[stock.history.length - 2].close : 0;
+                const cClass = change >= 0 ? 'text-green-400' : 'text-red-400';
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 rounded-t-lg font-bold text-sm transition-colors whitespace-nowrap ${isSelected ? 'bg-slate-800 text-white border-t-2 border-indigo-500' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}`;
+                btn.innerHTML = `${stock.symbol} <span class="${cClass} text-xs ml-1">${change >= 0 ? '▲' : '▼'}</span>`;
+                btn.onclick = () => switchActiveStock(stock.symbol);
+                tabsContainer.appendChild(btn);
+            });
+
+            // Info Activo Seleccionado
+            const activeStock = stocks.find(s => s.symbol === selectedStockSymbol) || stocks[0];
+            document.getElementById('active-stock-name').textContent = `${activeStock.name} (${activeStock.symbol})`;
+            document.getElementById('active-stock-desc').textContent = activeStock.desc;
+            document.getElementById('trade-symbol-title').textContent = activeStock.symbol;
+
+            const priceEl = document.getElementById('active-stock-price');
+            const oldPriceStr = priceEl.textContent.replace(' €', '').replace('.', '').replace(',', '.');
+            const oldPrice = parseFloat(oldPriceStr) || activeStock.price;
+            priceEl.textContent = formatMoney(activeStock.price);
+            priceEl.className = `text-2xl md:text-3xl font-bold font-mono transition-colors duration-300 ${activeStock.price >= oldPrice ? 'text-up' : 'text-down'}`;
+
+            const rsiEl = document.getElementById('active-stock-rsi');
+            rsiEl.textContent = `RSI: ${activeStock.rsi.toFixed(2)}`;
+            if (activeStock.rsi >= 70) {
+                rsiEl.className = 'text-sm font-bold font-mono text-red-400';
+            } else if (activeStock.rsi <= 30) {
+                rsiEl.className = 'text-sm font-bold font-mono text-green-400';
+            } else {
+                rsiEl.className = 'text-sm font-bold font-mono text-slate-300';
+            }
+
+            const trendEl = document.getElementById('active-stock-trend');
+            trendEl.textContent = `Tendencia: ${activeStock.trendState === 'bullish' ? 'Alcista ↗' : (activeStock.trendState === 'bearish' ? 'Bajista ↘' : 'Neutral')}`;
+            trendEl.className = `text-sm font-semibold ${activeStock.trendState === 'bullish' ? 'text-green-400' : (activeStock.trendState === 'bearish' ? 'text-red-400' : 'text-slate-400')}`;
 
             // Controles Trade y SL/TP para activo seleccionado
             const pInfo = document.getElementById('active-portfolio-info');
@@ -700,7 +754,7 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             const colors = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600');
-            toast.className = `${colors} text-white px-4 py-2 rounded shadow-lg transition-opacity duration-500 text-sm font-semibold`;
+            toast.className = `${colors} text-white px-4 py-2 rounded shadow-lg transition-opacity duration-500 text-xs md:text-sm font-semibold max-w-full text-center md:text-left break-words`;
             toast.textContent = msg;
             container.prepend(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3000);
@@ -769,19 +823,53 @@
             showToast(isPaused ? 'Mercado Pausado' : 'Mercado Reanudado', 'info');
         });
 
+        document.getElementById('btn-bank-deposit').addEventListener('click', () => {
+            const amountStr = prompt(`Poder Adquisitivo disponible: ${formatMoney(cash)}\n\n¿Cuánto deseas ingresar a tu cuenta de ahorros?`);
+            if (amountStr === null) return;
+            const amount = parseFloat(amountStr);
+            if (!isNaN(amount) && amount > 0 && amount <= cash) {
+                cash -= amount;
+                bankBalance += amount;
+                localStorage.setItem(BANK_ACCOUNT_KEY, bankBalance);
+                showToast(`Has ingresado ${formatMoney(amount)} a tu cuenta.`, 'success');
+                updateUI();
+                saveGameState();
+            } else {
+                showToast('Cantidad no válida o saldo insuficiente.', 'error');
+            }
+        });
+
+        document.getElementById('btn-bank-withdraw').addEventListener('click', () => {
+            const amountStr = prompt(`Saldo en cuenta de ahorros: ${formatMoney(bankBalance)}\n\n¿Cuánto deseas retirar para operar?`);
+            if (amountStr === null) return;
+            const amount = parseFloat(amountStr);
+            if (!isNaN(amount) && amount > 0 && amount <= bankBalance) {
+                bankBalance -= amount;
+                cash += amount;
+                localStorage.setItem(BANK_ACCOUNT_KEY, bankBalance);
+                showToast(`Has retirado ${formatMoney(amount)} de tu cuenta.`, 'info');
+                updateUI();
+                saveGameState();
+            } else {
+                showToast('Cantidad no válida o fondos insuficientes.', 'error');
+            }
+        });
+
         document.getElementById('btn-exit').addEventListener('click', () => {
-            if (confirm("¿Estás seguro de que quieres liquidar tus acciones y salir?")) {
+            if (confirm("¿Estás seguro de que quieres liquidar tus acciones y mover todo tu dinero a la cuenta bancaria?")) {
                 for (let sym in portfolio) {
                     sellStock(sym, portfolio[sym].quantity, true, 'LIQUIDACIÓN');
                 }
 
-                const netGainLoss = cash - initialInvestment;
-                let globalBalance = parseFloat(localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY)) || 5000;
-                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, globalBalance + netGainLoss);
+                if (cash > 0) {
+                    bankBalance += cash;
+                    cash = 0;
+                    localStorage.setItem(BANK_ACCOUNT_KEY, bankBalance);
+                }
 
-                sessionStorage.removeItem(STOCK_GAME_STATE_KEY);
-                alert(`Has salido con un patrimonio final de ${formatMoney(cash)}. Tu ganancia/pérdida de ${formatMoney(netGainLoss)} se ha aplicado al saldo global.`);
-                window.location.href = '../index.html';
+                showToast(`Dinero guardado. Saldo actual de tu cuenta: ${formatMoney(bankBalance)}`, 'success');
+                updateUI();
+                saveGameState();
             }
         });
 
@@ -789,8 +877,6 @@
         window.onload = () => {
             initCharts();
             initBalance();
-            switchActiveStock(stocks[0].symbol);
-            setInterval(marketTick, updateInterval);
         };
 
     </script>
