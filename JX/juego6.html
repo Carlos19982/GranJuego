@@ -255,10 +255,24 @@
                 </div>
 
                 <!-- Historial -->
-                <h3 class="text-lg font-bold mb-3 text-white border-b border-slate-700 pb-2">Historial Reciente</h3>
-                <div id="trade-history"
-                    class="space-y-2 max-h-48 overflow-y-auto text-xs font-mono pr-1 custom-scrollbar">
-                    <p class="text-slate-500 italic">No hay operaciones.</p>
+                <h3 class="text-lg font-bold mb-3 text-white border-b border-slate-700 pb-2 mt-6">Guía de Trading</h3>
+                <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                    <div class="bg-slate-900 p-3 rounded-lg border-l-4 border-indigo-500">
+                        <p class="font-bold text-indigo-400 mb-1">📊 RSI (Inercia Continua)</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>El precio siente una "gravedad" constante hacia el centro (50).</li>
+                            <li><span class="text-red-400 font-bold">> 70</span>: Presión fuerte de caída.</li>
+                            <li><span class="text-green-400 font-bold">< 30</span>: Presión fuerte de subida.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border-l-4 border-amber-500">
+                        <p class="font-bold text-amber-400 mb-1">📈 Medias Móviles (MA)</p>
+                        <p>Cuando la línea <span class="text-cyan-400">Cyan (Rápida)</span> cruza hacia arriba a la <span class="text-fuchsia-400">Violeta (Lenta)</span>, es una señal fuerte de tendencia alcista.</p>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border-l-4 border-blue-500">
+                        <p class="font-bold text-blue-400 mb-1">📰 Noticias y Eventos</p>
+                        <p>Los eventos del banner superior afectan los precios de forma inmediata según el sector indicado.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -284,7 +298,6 @@
         let cash = 100;
         let bankBalance = 0;
         let portfolio = {};
-        let transactionHistory = [];
         let tickCounter = 0;
         let isPaused = false;
         let gameInterval = null;
@@ -356,7 +369,15 @@
                 localStorage.setItem(BANK_ACCOUNT_KEY, bankBalance);
             }
 
-            const savedStateStr = sessionStorage.getItem(STOCK_GAME_STATE_KEY);
+            let savedStateStr = localStorage.getItem(STOCK_GAME_STATE_KEY);
+            if (!savedStateStr) {
+                savedStateStr = sessionStorage.getItem(STOCK_GAME_STATE_KEY);
+                if (savedStateStr) {
+                    // Migrar a localStorage inmediatamente
+                    localStorage.setItem(STOCK_GAME_STATE_KEY, savedStateStr);
+                    sessionStorage.removeItem(STOCK_GAME_STATE_KEY);
+                }
+            }
             if (savedStateStr) {
                 try {
                     const saved = JSON.parse(savedStateStr);
@@ -410,13 +431,8 @@
         }
 
         function startFresh() {
-            let hasPlayedBefore = localStorage.getItem('hasPlayedBefore_v3');
-            if (!hasPlayedBefore) {
-                cash = 100;
-                localStorage.setItem('hasPlayedBefore_v3', 'yes');
-            } else {
-                cash = 0;
-            }
+            // Inicializar cash a 100 solo si es la primera vez absoluta o si no hay estado previo
+            cash = 100;
             portfolio = {};
             stocks.forEach(s => {
                 s.history = []; s.stmaHistory = []; s.ltmaHistory = []; s.rsiHistory = [];
@@ -504,8 +520,8 @@
                 if (stock.rsiReversalTicks > 0) { totalTrend += 0.0040; stock.rsiReversalTicks--; }
                 else if (stock.rsiReversalTicks < 0) { totalTrend -= 0.0040; stock.rsiReversalTicks++; }
                 else {
-                    if (stock.rsi > 70) totalTrend -= 0.0020;
-                    if (stock.rsi < 30) totalTrend += 0.0020;
+                    // Gravedad suave continua (Mean Reversion)
+                    totalTrend += (50 - stock.rsi) * 0.0001; 
                 }
 
                 const randomShock = (Math.random() - 0.5) * 2;
@@ -592,7 +608,6 @@
                 portfolio[symbol] = { quantity: qty, avgPrice: stock.price, slActive: false, tpActive: false };
             }
 
-            logTrade('COMPRA', symbol, qty, stock.price);
             showToast(`Compraste ${qty} de ${symbol}`, 'success');
             triggerFlash('active-portfolio-info', 'flash-up');
             updateUI();
@@ -606,8 +621,6 @@
             cash += rev;
             portfolio[symbol].quantity -= qty;
             if (portfolio[symbol].quantity <= 0) delete portfolio[symbol];
-
-            logTrade(type, symbol, qty, stock.price);
 
             if (isAuto) {
                 showToast(`Auto-Venta (${type}): ${qty} de ${symbol}`, type === 'SL' ? 'error' : 'success');
@@ -658,7 +671,7 @@
             }
             if (Object.keys(portfolio).length === 0) portList.innerHTML = '<p class="text-slate-500 italic">Cartera vacía.</p>';
 
-            let totalEquity = cash + portValue + bankBalance;
+            let totalEquity = cash + portValue;
             document.getElementById('global-cash').textContent = formatMoney(cash);
             document.getElementById('global-portfolio-val').textContent = formatMoney(portValue);
             document.getElementById('bank-balance').textContent = formatMoney(bankBalance);
@@ -700,12 +713,15 @@
             priceEl.className = `text-2xl md:text-3xl font-bold font-mono transition-colors duration-300 ${activeStock.price >= oldPrice ? 'text-up' : 'text-down'}`;
 
             const rsiEl = document.getElementById('active-stock-rsi');
-            rsiEl.textContent = `RSI: ${activeStock.rsi.toFixed(2)}`;
+            let rsiText = `RSI: ${activeStock.rsi.toFixed(2)}`;
             if (activeStock.rsi >= 70) {
+                rsiEl.textContent = `${rsiText} (Sobrecompra)`;
                 rsiEl.className = 'text-sm font-bold font-mono text-red-400';
             } else if (activeStock.rsi <= 30) {
+                rsiEl.textContent = `${rsiText} (Sobreventa)`;
                 rsiEl.className = 'text-sm font-bold font-mono text-green-400';
             } else {
+                rsiEl.textContent = rsiText;
                 rsiEl.className = 'text-sm font-bold font-mono text-slate-300';
             }
 
@@ -774,27 +790,9 @@
             }, 5000);
         }
 
-        function logTrade(type, symbol, qty, price) {
-            transactionHistory.unshift({ type, symbol, qty, price, time: new Date().toLocaleTimeString() });
-            if (transactionHistory.length > 30) transactionHistory.pop();
-
-            const historyContainer = document.getElementById('trade-history');
-            historyContainer.innerHTML = '';
-            transactionHistory.forEach(t => {
-                const c = ['COMPRA', 'TP'].includes(t.type) ? 'text-green-400' : 'text-red-400';
-                historyContainer.innerHTML += `
-                    <div class="flex justify-between items-center bg-slate-900/50 p-1.5 rounded border border-slate-700/50 mb-1">
-                        <span class="text-slate-500 text-[10px]">${t.time}</span>
-                        <span class="${c} font-bold">${t.type}</span>
-                        <span class="text-white">${t.symbol} x${t.qty}</span>
-                        <span>@ ${formatMoney(t.price)}</span>
-                    </div>`;
-            });
-        }
-
         function saveGameState() {
             const state = { cash, portfolio, tickCounter, currentTime, activeEvents, stocks };
-            sessionStorage.setItem(STOCK_GAME_STATE_KEY, JSON.stringify(state));
+            localStorage.setItem(STOCK_GAME_STATE_KEY, JSON.stringify(state));
         }
 
         // --- EVENT LISTENERS UI ---
