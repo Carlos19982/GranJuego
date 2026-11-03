@@ -1401,7 +1401,8 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     });
     const body = model.body || model.root;
     const d = model.dims || {};
-    const o = { i, model, holder, body, bodyY: body.position.y, mats: [...mats],
+    const envI = new Map(); mats.forEach((m) => { envI.set(m, m.envMapIntensity); if (S.envK != null) m.envMapIntensity *= S.envK; });
+    const o = { i, model, holder, body, bodyY: body.position.y, mats: [...mats], envI, refl: true,
       halfW: (d.width || 2) / 2, halfL: (d.length || 4.7) / 2, halfT: (d.track || 1.92) / 2, wr: d.wheelRadius || 0.34, fz: d.frontAxleZ ?? 1.42, rz: d.rearAxleZ ?? -1.38 };
     carObjs[i] = o;
     return o;
@@ -1417,7 +1418,7 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     arriveT: 10, idleT: 0, flick: false, drag: 0, dragV: 0,
     sweepRate: 2, flash: 0, flashCol: new THREE.Color(1, 1, 1), flashDecay: 4, whip: 0, whipDir: 1, speed: 0,
     camAz: 0, camRush: 0, fovMul: 1, holoGl: 0, holoA: 1, fx: 0, fxLevel: 0, power: 1, bgPower: 1,
-    impT: 0, bolts: [], nextBolt: 0, white: 0,
+    impT: 0, bolts: [], nextBolt: 0, white: 0, envK: null,
   };
   const mb = { w: 1, from: S.mood, to: S.mood }; // mezcla de luces/colores de la ambientación
   const view = { w: 390, h: 844, cx: 195, cy: 300, vis: [0, 58, 390, 422], vfov: 60, s: 0.016 };
@@ -1445,8 +1446,10 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     S.bolts.length = 0; S.nextBolt = 0;
   }
 
+  function reflLayer(o, on) { if (o && o.refl !== on) { o.refl = on; o.model.root.traverse((x) => (on ? x.layers.enable(L_REFL) : x.layers.disable(L_REFL))); } }
   function placeCar(cs, i) {
     const o = ensureCar(i);
+    reflLayer(o, true);
     cs.o = o; cs.vis = true; o.holder.visible = true;
     cs.s = 0; cs.v = 0; cs.vs = 0; cs.acc = 0; cs.pitch = 0; cs.pv = 0; cs.heave = 0; cs.hv = 0; cs.roll = 0; cs.rv = 0; cs.flame = 0; cs.shake = 0; cs.brake = 0; cs.steer = 0;
     cs.yaw = HERO_YAW; cs.mode = 'idle';
@@ -1485,7 +1488,7 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     const i = tr.to;
     // el coche actual pasa a ser el saliente
     if (tr.kind === 'drive') {
-      if (A.o) { Object.assign(B, A); B.mode = 'exit'; B.t = 0; B.s0 = A.s; B.v0 = A.v; B.yaw0 = A.yaw; trail.n = 0; trail.life = 1; }
+      if (A.o) { Object.assign(B, A); B.mode = 'exit'; B.t = 0; B.s0 = A.s; B.v0 = A.v; B.yaw0 = A.yaw; trail.n = 0; trail.life = 1; reflLayer(B.o, false); }
       A.o = null; A.vis = false;
     } else { hideCar(A); hideCar(B); }
     placeCar(A, i);
@@ -1785,7 +1788,9 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     key.color.copy(_tmpC); key.intensity = lerp(M0.keyI, M1.keyI, w) * S.power * (0.12 + 0.88 * sat(U.uSeq.value / 0.5));
     key.position.set(lerp(M0.keyPos[0], M1.keyPos[0], w), lerp(M0.keyPos[1], M1.keyPos[1], w), lerp(M0.keyPos[2], M1.keyPos[2], w));
     top.color.copy(_tmpC);
-    mix3(M0.hemiS, M1.hemiS, hemi.color); mix3(M0.hemiG, M1.hemiG, hemi.groundColor); hemi.intensity = lerp(M0.hemiI, M1.hemiI, w) * (0.35 + 0.65 * S.bgPower);
+    mix3(M0.hemiS, M1.hemiS, hemi.color); mix3(M0.hemiG, M1.hemiG, hemi.groundColor); hemi.intensity = lerp(M0.hemiI, M1.hemiI, w) * (0.12 + 0.88 * S.bgPower);
+    const envK = 0.2 + 0.8 * sat(U.uSeq.value / 0.6);
+    if (envK !== S.envK) { S.envK = envK; carObjs.forEach((c) => c && c.mats.forEach((m) => { m.envMapIntensity = (c.envI.get(m) ?? 1) * envK; })); }
     mix3(M0.amb, M1.amb, _tmpC); U.uAmb.value.set(_tmpC.r, _tmpC.g, _tmpC.b);
     mix3(M0.dust, M1.dust, _tmpC); dustU.uDust.value.set(_tmpC.r, _tmpC.g, _tmpC.b);
     U.uConeK.value = lerp(M0.cone, M1.cone, w);
@@ -2016,6 +2021,7 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     if (introResolve) { introResolve(); introResolve = null; }
     if (outroResolve) { outroResolve(); outroResolve = null; }
     carObjs.forEach((c) => { if (!c) return; scene.remove(c.holder); c.holder.remove(c.model.root); try { c.model.dispose && c.model.dispose(); } catch (e) {} });
+    carObjs.forEach((c) => c && c.envI.forEach((v, m) => { m.envMapIntensity = v; }));
     origEnv.forEach((env, m) => { m.envMap = env; });
     props.forEach((p) => { if (p) { p.mesh.geometry.dispose(); if (p.rays) p.rays.geometry.dispose(); } });
     disposables.forEach((d) => { try { d.dispose(); } catch (e) {} });

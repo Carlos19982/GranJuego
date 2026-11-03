@@ -320,6 +320,7 @@ function patchMaterial(mat, o) {
       fs = fs.replace('#include <lights_physical_fragment>', '#include <lights_physical_fragment>\n#ifdef USE_CLEARCOAT\n material.clearcoat *= 1.0 - max( dmgSc, dmgDirt * 0.8 );\n#endif');
     }
     if (o.lights) fs = fs.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= vCh.x + vCh.y * uHead + vCh.z * uBrake + max( vCh.w, 0.0 ) * uBeaconA + max( -vCh.w, 0.0 ) * uBeaconB;');
+    if (o.damage) fs = fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n#ifdef USE_COLOR\n totalEmissiveRadiance *= vColor.rgb;\n#endif\n totalEmissiveRadiance *= 1.0 - max( dmgSc, dmgDirt * 0.8 );');
     if (o.rim) fs = fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uRimColor * uRim * pow( 1.0 - saturate( dot( normal, normalize( vViewPosition ) ) ), 2.6 );');
     if (o.glow) fs = fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += vec3( 1.0, 0.3, 0.05 ) * ( vGlow.x * uHeat * uHeat * 4.0 * ( 0.35 + 0.65 * diffuseColor.r ) ) + uGlowColor * ( vGlow.y * uGlow );');
     if (o.glass) fs = fs.replace('#include <opaque_fragment>', ' diffuseColor.a = mix( diffuseColor.a, 0.97, pow( 1.0 - saturate( abs( dot( normal, normalize( vViewPosition ) ) ) ), 2.2 ) );\n#include <opaque_fragment>');
@@ -2092,7 +2093,7 @@ function buildModel(def, D, { tier = 'high', envMap = null, index = 0 } = {}) {
       const on = k > 0.02; flame.visible = on;
       if (on) { const f = 0.8 + Math.random() * 0.4; flameMat.userData.u.uFl.value = (0.5 + 0.6 * k) * (0.85 + Math.random() * 0.3); flameMat.opacity = Math.min(1, k * f); }
     },
-    setHighlight(k) { k = clamp(k, 0, 1); if (k !== hi) { hi = k; U.uRim.value = k * 1.6; UT.uRim.value = k * 0.9; UW.uGlow.value = k * 0.6 + (D.wheelGlow ? 1.2 : 0); } },
+    setHighlight(k) { k = clamp(k, 0, 1); if (k !== hi) { hi = k; U.uRim.value = k * 0.9; UT.uRim.value = k * 0.5; UW.uGlow.value = k * 0.6 + (D.wheelGlow ? 1.2 : 0); } },
     setDamage(k) {
       k = clamp(k, 0, 1); if (k === dmg) return; dmg = k;
       U.uDamage.value = k; U.uLoose.value = UT.uLoose.value = clamp((k - 0.45) / 0.55, 0, 1);

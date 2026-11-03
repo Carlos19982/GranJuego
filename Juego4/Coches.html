@@ -1180,7 +1180,9 @@ function qualify(ctx, cond, form, estado, rng) {
   const base = ctx.T.L / (wet ? 55 : 63);
   const times = SIM_CARS.map((c, i) => {
     const perf = wt[0] * c.spd + wt[1] * c.acc + wt[2] * c.grip;
-    return base * (1 - (perf - 80) * 0.0016 - ((form[i] == null ? 3 : form[i]) - 3) * 0.002 + (1 - (estado ? estado[i] : 1)) * 0.012 + g() * 0.0035);
+    const e = estado ? estado[i] : 1;
+    const ep = typeof SIM.estadoPace === 'function' ? SIM.estadoPace(e) : 1 - (1 - e) * 0.012;
+    return (base * (1 - (perf - 80) * 0.0016 - ((form[i] == null ? 3 : form[i]) - 3) * 0.002 + g() * 0.0035)) / (ep || 1);
   });
   const grid = times.map((t, i) => i).sort((a, b) => times[a] - times[b]);
   return { grid, times };

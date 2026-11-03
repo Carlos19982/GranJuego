@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import LAYOUT from './pistas/puerto.js';
 
 const TIERS = {
-  high: { cell: 5, crowd: 1900, palms: 1, lamps: 30, bunting: true, flags: true, wakes: true, jets: true, fill: 1, rocks: 1, clouds: 1, strings: true, rainN: 1800 },
+  high: { cell: 6, crowd: 1900, palms: 1, lamps: 30, bunting: true, flags: true, wakes: true, jets: true, fill: 1, rocks: 1, clouds: 1, strings: true, rainN: 1800 },
   med: { cell: 6, crowd: 1100, palms: 0.8, lamps: 34, bunting: true, flags: true, wakes: true, jets: true, fill: 0.8, rocks: 0.6, clouds: 1, strings: true, rainN: 1100 },
   low: { cell: 9, crowd: 420, palms: 0.55, lamps: 40, bunting: false, flags: false, wakes: false, jets: false, fill: 0.55, rocks: 0.3, clouds: 0, strings: false, rainN: 600 },
 };
@@ -612,11 +612,11 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     const b = baseH(x, z);
     let ws = 0, ys = 0, emin = 1e9, ymin = 0;
     const gx = Math.floor(x / SGC), gz = Math.floor(z / SGC);
-    SGL.length = 0;
-    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = SG.get(sgk(gx + a, gz + b)); if (l) for (let q = 0; q < l.length; q++) SGL.push(l[q]); }
-    if (!SGL.length) return b;
-    for (let q = 0; q < SGL.length; q++) {
-      const k = SGL[q];
+    let any = false;
+    for (let ca = -1; ca <= 1; ca++) for (let cb = -1; cb <= 1; cb++) {
+    const l = SG.get(sgk(gx + ca, gz + cb)); if (!l) continue; any = true;
+    for (let q = 0; q < l.length; q++) {
+      const k = l[q];
       const dx = x - SX[k], dz = z - SZ[k];
       if (dx > 130 || dx < -130 || dz > 130 || dz < -130) continue;
       const d = Math.sqrt(dx * dx + dz * dz); if (d > 130) continue;
@@ -627,6 +627,8 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       const w = (1 / (dd * dd * dd)) * (d < 60 ? 1 : sstep(130, 60, d));
       ws += w; ys += w * SYY[k];
     }
+    }
+    if (!any) return b;
     let h = (ys + wB * b) / (ws + wB);
     TH_E = emin;
     if (emin < 1.2) h = ymin - 0.28;
@@ -727,6 +729,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
   const ROOF_T = hex('#9b4a2e', 0.9), ROOF_F = hex('#5b5550', 0.9);
   const WARM_L = [5.2, 3.6, 1.9], WARM_G = [1.0, 0.66, 0.34], WARM_S = [0.55, 0.34, 0.15];
   const COUNT = { buildings: 0, lamps: 0, palms: 0, yachts: 0, trees: 0 };
+  let ENV_RT = null;
   let GANTRY_META = null, HAIRPIN = null, BRIDGE = null, FARO = null;
   const JETS = [];
   const PROPS_EXTRA = new Batch({ aLit: 1 });
@@ -2146,7 +2149,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       for (const m of ms) { if (m.map) m.map.dispose(); m.dispose(); }
     });
     [paveTex, puddleTex, signTex].forEach((t) => t && t.dispose());
-    if (ENV) ENV.dispose();
+    if (ENV_RT) ENV_RT.dispose(); else if (ENV && ENV !== envMap) ENV.dispose();
     if (group.parent) group.parent.remove(group);
   }
 
@@ -2208,6 +2211,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       const rt = pm.fromScene(es, 0.02);
       pm.dispose();
       es.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+      ENV_RT = rt;
       return rt.texture;
     } catch (e) { return envMap || null; }
   }

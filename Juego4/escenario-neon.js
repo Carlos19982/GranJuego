@@ -56,7 +56,7 @@ function applyXf(g, o) {
 class Bucket {
   constructor(spec) { this.spec = spec; this.list = []; this.tris = 0; }
   add(geo, o, vals) {
-    const g = geo.index ? geo : geo; // las geometrías que llegan son nuevas: se modifican in situ
+    const g = geo; // las geometrías que llegan son nuevas: se modifican in situ
     if (!g.index) {
       const n = g.attributes.position.count, ix = new Uint32Array(n);
       for (let i = 0; i < n; i++) ix[i] = i;
@@ -239,7 +239,6 @@ export function buildScenery(opts = {}) {
   const group = new THREE.Group();
   group.name = 'escenario-neon';
   const textures = [];
-  const extraDispose = [];
   const o1 = {}, o2 = {}, o3 = {};
 
   /* --------------------------------------------- uniforms compartidos */
@@ -673,15 +672,15 @@ export function buildScenery(opts = {}) {
     EMI.add(ribbon(sd * (lat0 - 0.4), base + 0.22, sd * (lat0 - 0.4), base + 0.36, sA, sB, 3, { anim: (s) => [8, s * 0.05, 3, 1] }), null, { color: lin(NEON.cyan, 2.2) });
     // pared trasera, cubierta, fachada de patrocinadores
     LIT.add(ribbon(sd * latEnd, toGround, sd * latEnd, roofY, sA, sB, 4, { colA: [0.045, 0.04, 0.085] }));
-    LIT.add(ribbon(sd * (lat0 - 3.2), roofY, sd * (latEnd + 0.8), roofY + 1.3, sA, sB, 4, { colA: [0.06, 0.05, 0.12] }));
-    LIT.add(ribbon(sd * (lat0 - 3.2), roofY - 2.3, sd * (lat0 - 3.2), roofY + 0.05, sA, sB, 4, { colA: [0.05, 0.04, 0.09] }));
-    EMI.add(ribbon(sd * (lat0 - 3.25), roofY - 2.42, sd * (lat0 - 3.25), roofY - 2.26, sA, sB, 4), null, { color: lin('#ffe6c8', 2.6) });
-    EMI.add(ribbon(sd * (lat0 - 3.25), roofY + 0.0, sd * (lat0 - 3.25), roofY + 0.14, sA, sB, 4, { anim: (s) => [1, s * 0.035, 1.4, 0.8] }), null, { color: lin(NEON.pink, 2.6) });
+    LIT.add(ribbon(sd * (lat0 - 0.65), roofY, sd * (latEnd + 0.8), roofY + 1.3, sA, sB, 4, { colA: [0.06, 0.05, 0.12] }));
+    LIT.add(ribbon(sd * (lat0 - 0.65), roofY - 2.3, sd * (lat0 - 0.65), roofY + 0.05, sA, sB, 4, { colA: [0.05, 0.04, 0.09] }));
+    EMI.add(ribbon(sd * (lat0 - 0.7), roofY - 2.42, sd * (lat0 - 0.7), roofY - 2.26, sA, sB, 4), null, { color: lin('#ffe6c8', 2.6) });
+    EMI.add(ribbon(sd * (lat0 - 0.7), roofY + 0.0, sd * (lat0 - 0.7), roofY + 0.14, sA, sB, 4, { anim: (s) => [1, s * 0.035, 1.4, 0.8] }), null, { color: lin(NEON.pink, 2.6) });
     // laterales
     [sA, sB].forEach((s) => {
       TK.at(s, o2);
       const sh = new THREE.Shape();
-      sh.moveTo(lat0 - 3.2, roofY + 0.2); sh.lineTo(latEnd + 0.8, roofY + 1.3); sh.lineTo(latEnd, -o2.y - 0.3); sh.lineTo(lat0 - 0.35, -o2.y - 0.3); sh.lineTo(lat0 - 0.35, base);
+      sh.moveTo(lat0 - 0.65, roofY + 0.2); sh.lineTo(latEnd + 0.8, roofY + 1.3); sh.lineTo(latEnd, -o2.y - 0.3); sh.lineTo(lat0 - 0.35, -o2.y - 0.3); sh.lineTo(lat0 - 0.35, base);
       const g = new THREE.ShapeGeometry(sh);
       // shape XY → (lateral, altura); orientar: x local = normal * side
       const pos = g.attributes.position;
@@ -696,21 +695,21 @@ export function buildScenery(opts = {}) {
     }
     // luces bajo la cubierta
     for (let s = sA + 4; s < sB - 2; s += 8) {
-      boxAt(EMI, s, sd * (lat0 - 1.4), roofY - 0.12, 1.2, 0.12, 0.5, EM('#fff1dd', 3.2));
-      TK.at(s, o2); glowAt(o2.x + o2.nx * sd * (lat0 - 1.4), o2.y + roofY - 0.4, o2.z + o2.nz * sd * (lat0 - 1.4), 6.5, [0.75, 0.68, 0.6]);
+      boxAt(EMI, s, sd * (lat0 + 0.7), roofY - 0.12, 1.2, 0.12, 0.5, EM('#fff1dd', 3.2));
+      TK.at(s, o2); glowAt(o2.x + o2.nx * sd * (lat0 + 0.7), o2.y + roofY - 0.4, o2.z + o2.nz * sd * (lat0 + 0.7), 6.5, [0.75, 0.68, 0.6]);
     }
     // vallas de patrocinadores en el frontal de la cubierta
     let bi = opt.brand0 || 0;
     for (let s = sA + 1; s + 12.4 <= sB; s += 13) {
       TK.at(s + 6.2, o2);
-      const lat = sd * (lat0 - 3.28);
+      const lat = sd * (lat0 - 0.73);
       billPanel(o2.x + o2.nx * lat, o2.y + roofY - 1.15, o2.z + o2.nz * lat, -o2.nx * sd, -o2.nz * sd, 12.2, 2.05, rect('brand' + (bi % 8)), [1, bi * 0.37, 1 / 14, 1.25], rect('brand' + ((bi + 3) % 8)));
       bi++;
     }
     // ocluyentes por tramos
     for (let s = sA; s < sB; s += 20) {
       const pts = [];
-      for (let q = s; q <= Math.min(sB, s + 22); q += 5.5) { TK.at(q, o2); pts.push([o2.x + o2.nx * sd * (lat0 - 0.3), 0, o2.z + o2.nz * sd * (lat0 - 0.3)], [o2.x + o2.nx * sd * latEnd, o2.y + roofY + 1.2, o2.z + o2.nz * sd * latEnd]); }
+      for (let q = s; q <= Math.min(sB, s + 22); q += 5.5) { TK.at(q, o2); pts.push([o2.x + o2.nx * sd * (lat0 - 0.65), 0, o2.z + o2.nz * sd * (lat0 - 0.65)], [o2.x + o2.nx * sd * latEnd, o2.y + roofY + 1.2, o2.z + o2.nz * sd * latEnd]); }
       occPts(pts);
     }
     for (let s = sA; s <= sB; s += 5) { TK.at(s, o2); const lm = sd * (lat0 + latEnd) / 2; ogMark(o2.x + o2.nx * lm, o2.z + o2.nz * lm, (latEnd - lat0) / 2 + 3); }
@@ -730,6 +729,7 @@ export function buildScenery(opts = {}) {
     if (s1 - s0 < 60) return;
     let latF = Math.abs(p.lat1) + 3.2;
     for (let s = s0; s <= s1; s += 4) latF = Math.max(latF, wallAt(s, sd) + 3.2);
+    latF += 2.7; // el voladizo de la planta VIP (2,6 m) también queda a más de muro + 3 m
     const depth = 17, H1 = 5.4, H2 = 9.0, roofY = 10.6, latB = latF + depth;
     const L0 = (v) => sd * v;
     const col = { wall: [0.06, 0.05, 0.1], slab: [0.08, 0.07, 0.13], roof: [0.05, 0.045, 0.09] };
@@ -796,9 +796,9 @@ export function buildScenery(opts = {}) {
     const yaw = yawOf(o2), base = o2.y;
     const pit = TK.pit, sd = pit ? pit.side : -1;
     const inPit = pit && TK.dS(pit.s0, sG) > 0 && TK.dS(sG, pit.s1) > 0;
-    const latA = standSide * (wallAt(sG, standSide) + 3.3);
-    let latB = sd * (wallAt(sG, sd) + (inPit ? 1.6 : 3.3));
-    if (PITB && inPit) latB = sd * (PITB.latF - 0.9);
+    const latA = standSide * (wallAt(sG, standSide) + 3.9);
+    let latB = sd * (wallAt(sG, sd) + 3.9);
+    if (PITB && inPit) latB = sd * Math.max(PITB.latF - 0.9, wallAt(sG, sd) + 3.9);
     const H = 10.4;
     // pilonos
     [latA, latB].forEach((lat, i) => {
@@ -853,13 +853,6 @@ export function buildScenery(opts = {}) {
      + túnel de luz en la frenada de la Curva 1 + láseres
      ========================================================================= */
   const LASER_SRC = [];
-  function archPolyline(latL, latR, yL, yR, H) {
-    // arco apuntado: pies → codos → cumbrera (coordenadas (lat, y) relativas a la pista)
-    const span = latL - latR, c = (latL + latR) / 2;
-    return [
-      [latL, yL], [latL - span * 0.06, H * 0.55], [c + span * 0.28, H * 0.9], [c, H], [c - span * 0.28, H * 0.9], [latR + span * 0.06, H * 0.55], [latR, yR],
-    ];
-  }
   function buildArch(s, pts, ci, th, neonK, phase) {
     TK.at(s, o2);
     const P3 = pts.map(([lat, y]) => [o2.x + o2.nx * lat, o2.y + y, o2.z + o2.nz * lat]);
@@ -868,9 +861,8 @@ export function buildScenery(opts = {}) {
       occPts([P3[i], P3[i + 1]], th * 0.7);
       // tubo de neón por la cara interior (desplazado hacia la pista)
       const a = P3[i], b = P3[i + 1];
-      const off = [-o2.tx * 0, -th * 0.55, 0];
       const c = ci % 2 ? NEON.cyan : NEON.pink;
-      bar(EMI, [a[0] - o2.tx * (th * 0.55), a[1] + off[1] * 0, a[2] - o2.tz * (th * 0.55)], [b[0] - o2.tx * (th * 0.55), b[1], b[2] - o2.tz * (th * 0.55)], th * 0.32, EM(c, neonK, [1, phase, 2.2, 0.85]));
+      bar(EMI, [a[0] - o2.tx * (th * 0.55), a[1], a[2] - o2.tz * (th * 0.55)], [b[0] - o2.tx * (th * 0.55), b[1], b[2] - o2.tz * (th * 0.55)], th * 0.32, EM(c, neonK, [1, phase, 2.2, 0.85]));
       bar(EMI, [a[0] + o2.tx * (th * 0.55), a[1], a[2] + o2.tz * (th * 0.55)], [b[0] + o2.tx * (th * 0.55), b[1], b[2] + o2.tz * (th * 0.55)], th * 0.32, EM(ci % 2 ? NEON.violet : NEON.gold, neonK * 0.8, [1, phase + 0.5, 2.2, 0.85]));
     }
     return P3;
@@ -1011,6 +1003,10 @@ export function buildScenery(opts = {}) {
         const lat = clearLat(s, sd, 0.4);
         const x = o2.x + o2.nx * lat, z = o2.z + o2.nz * lat;
         if (!canPlace(x, z, 5.4, 0.1)) continue;
+        // los extremos del tablero (±5,3 m a lo largo) también deben quedar fuera de muro + 3 m
+        let endsOK = true;
+        for (const d of [-5.3, 5.3]) { const ex = x + o2.tx * d, ez = z + o2.tz * d; if (TK.margin(ex, ez) < 0.35) endsOK = false; }
+        if (!endsOK) continue;
         // tablero 10 × 2.5 m de cara a la pista, sobre patas
         const fx = -o2.nx * sd, fz = -o2.nz * sd, yaw = Math.atan2(fx, fz);
         const gy = Math.max(0, o2.y - 0.2);
@@ -1032,9 +1028,10 @@ export function buildScenery(opts = {}) {
       for (let k = 0; k < 3; k++) {
         const s = c.s0 + (c.apex - c.s0) * (0.2 + k * 0.35);
         TK.at(s, o2);
-        const lat = clearLat(s, side, 0.3);
+        const lat = clearLat(s, side, 2.2); // el panel va girado: su extremo interior queda a > muro + 3 m
         const x = o2.x + o2.nx * lat, z = o2.z + o2.nz * lat;
-        if (!canPlace(x, z, 2.8, 0.05)) continue;
+        if (!canPlace(x, z, 2.8, 1.5)) continue;
+        if (TK.margin(x + o2.tx * 2.7, z + o2.tz * 2.7) < 1.2 || TK.margin(x - o2.tx * 2.7, z - o2.tz * 2.7) < 1.2) continue;
         // mirando al coche que llega (−t), girado hacia la pista
         let fx = -o2.tx * 0.55 - o2.nx * side * 0.83, fz = -o2.tz * 0.55 - o2.nz * side * 0.83;
         const l = Math.hypot(fx, fz); fx /= l; fz /= l;
@@ -1505,7 +1502,7 @@ export function buildScenery(opts = {}) {
         float cut = 0.0;
         if (sy < 0.3) { float band = fract(sy * 6.5 - uTime * 0.1); cut = step(band, (0.3 - sy) * 0.4); }
         float disc = smoothstep(R, R - 0.004, sd) * (1.0 - cut) * (1.0 - uCloud * 0.75);
-        col = mix(col, sc * 1.5, disc);
+        col = mix(col, sc * 1.12, disc);
         col += vec3(1.0, 0.2, 0.5) * 0.14 * exp(-sd * 5.0) * (1.0 - uCloud * 0.6);
         #ifdef CLOUDS
         // nubes estiradas iluminadas por la ciudad
@@ -2320,7 +2317,6 @@ export function buildScenery(opts = {}) {
     mats.forEach((m) => m.dispose());
     textures.forEach((t) => t.dispose());
     if (envRT) envRT.dispose();
-    extraDispose.forEach((f) => f());
   }
 
   return {

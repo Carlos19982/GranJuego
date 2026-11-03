@@ -1620,16 +1620,18 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
           float hStorm = uGround + aSeed.y * aSeed.y * 14.0;
           wp.y = mix(hDry, hStorm, clamp(uMode, 0.0, 1.0));
           if (rainM > 0.5) wp.y = uCam.y + rel.y;
-          vec3 V = normalize(wp - cameraPosition);
-          vec3 axisL = normalize(vel);
-          vec3 side = normalize(cross(axisL, V));
+          // estela orientada en espacio de vista (robusta aunque el viento apunte a cámara)
           float len = mix(mix(1.8, 7.0, uMode), 1.4, rainM);
-          float wid = mix(mix(0.07, 0.3, uMode), 0.025, rainM);
-          vec3 pos = wp + side * position.x * wid * (1.0 + aSeed.z) + axisL * position.y * len;
+          float wid = mix(mix(0.07, 0.3, uMode), 0.025, rainM) * (1.0 + aSeed.z);
+          vec3 dv = mat3(viewMatrix) * normalize(vel);
+          float fl = length(dv.xy);
+          vec2 dir = fl > 1e-3 ? dv.xy / fl : vec2(0.0, 1.0);
+          vec4 mv = viewMatrix * vec4(wp, 1.0);
+          mv.xy += dir * position.y * len * max(fl, 0.12) + vec2(-dir.y, dir.x) * position.x * wid;
           vQ = position.xy; vS = aSeed.w;
           float dc = length(rel.xz) / uBox.x;
-          vA = (1.0 - smoothstep(0.65, 1.0, dc)) * smoothstep(1.0, 4.0, length(wp - cameraPosition));
-          gl_Position = projectionMatrix * viewMatrix * vec4(pos, 1.0);
+          vA = (1.0 - smoothstep(0.65, 1.0, dc)) * smoothstep(1.0, 4.0, -mv.z);
+          gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `uniform float uMode; uniform float uStorm; varying float vA; varying vec2 vQ; varying float vS;
         void main(){
