@@ -510,6 +510,25 @@
     #bar { grid-column: 2; grid-row: 2; }
     .cell { font-size: 16px; }
   }
+  @media (min-width: 700px) {
+    #app { max-width: 640px; }
+  }
+  /* Móvil en horizontal: rueda a la izquierda, mesa a la derecha */
+  @media (orientation: landscape) and (max-height: 560px) {
+    #app {
+      max-width: 920px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+      column-gap: 14px;
+      row-gap: 6px;
+    }
+    #stage { grid-row: 1 / span 2; grid-column: 1; height: auto; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding-bottom: calc(var(--ax-safe-bottom) + 6px); }
+    #wheelSlot { height: auto; width: min(100%, calc(100dvh - var(--hud) - 148px)); }
+    #info { flex: none; width: 100%; gap: 5px; }
+    #tableWrap { grid-column: 2; grid-row: 1; }
+    #bar { grid-column: 2; grid-row: 2; }
+  }
   @media (max-height: 700px) {
     #actions .act span { display: none; }
   }
@@ -724,7 +743,8 @@
   helpBtn.className = "ax-icon-btn";
   helpBtn.setAttribute("aria-label", "Ayuda");
   helpBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9"/><path d="M12 17.3h.01"/></svg>`;
-  const hud = AX.hud({ title: "RULETA", back: "../index.html", right: helpBtn });
+  // Si se sale durante un giro, la jugada (ya decidida) se cobra antes de irse.
+  const hud = AX.hud({ title: "RULETA", back: "../index.html", right: helpBtn, onBack: () => { if (state !== "idle") settlePending(); } });
 
   /* =====================================================================
      SONIDO PERSONALIZADO (bola rodando, golpes en trastes, rombos)
@@ -1716,9 +1736,9 @@
     const total = totalOf(bets);
     const bal = AX.getBalance();
     $("#tblTotal").textContent = AX.money(total);
-    $("#spinSub").textContent = total ? "Apuesta " + AX.money(total) : "Coloca tus fichas";
-    document.body.classList.toggle("has-bets", total > 0);
     const idle = state === "idle";
+    $("#spinSub").textContent = !idle ? (state === "spin" ? "Girando…" : "Pagando…") : total ? "Apuesta " + AX.money(total) : "Coloca tus fichas";
+    document.body.classList.toggle("has-bets", total > 0);
     undoBtn.disabled = !idle || !undoStack.length;
     clearBtn.disabled = !idle || !total;
     repeatBtn.disabled = !idle || !Object.keys(lastBets).length;
@@ -2106,11 +2126,13 @@
     AX.fx.sparks(bp.x, bp.y, { count: 26, speed: 500, colors: "gold" });
     await sleep(500);
 
-    // Historial
-    history.unshift(n);
-    history = history.slice(0, MAX_HISTORY);
-    saveHistory();
-    store.set(PENDING_KEY, { n, payout, total, hist: true, t: Date.now() });
+    // Historial (solo si la jugada no se liquidó ya al salir)
+    if (store.get(PENDING_KEY, null)) {
+      history.unshift(n);
+      history = history.slice(0, MAX_HISTORY);
+      saveHistory();
+      store.set(PENDING_KEY, { n, payout, total, hist: true, t: Date.now() });
+    }
 
     // Revelación del número
     const rvP = showReveal(n);
@@ -2256,8 +2278,10 @@
       }, i * 120);
     });
     await sleep(650);
-    store.del(PENDING_KEY);
-    AX.addBalance(payout);
+    if (store.get(PENDING_KEY, null)) {
+      store.del(PENDING_KEY);
+      AX.addBalance(payout);
+    }
     S.play("cash");
     bets = {};
     if (profit < 0) AX.toast(`Recuperas ${AX.money(payout)} de ${AX.money(total)}`, "info");
