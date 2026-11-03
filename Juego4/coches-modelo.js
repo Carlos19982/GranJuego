@@ -1990,7 +1990,7 @@ function buildModel(def, D, { tier = 'high', envMap = null, index = 0 } = {}) {
     ? new THREE.MeshPhysicalMaterial({ map: livTex, emissiveMap: livTex, emissive: 0xffffff, emissiveIntensity: SELF_LIT, vertexColors: true, metalness: D.paint.metal, roughness: D.paint.rough, clearcoat: 1, clearcoatRoughness: 0.06, envMap, envMapIntensity: 1.15 })
     : new THREE.MeshStandardMaterial({ map: livTex, emissiveMap: livTex, emissive: 0xffffff, emissiveIntensity: SELF_LIT, vertexColors: true, metalness: D.paint.metal, roughness: D.paint.rough * 0.85, envMap, envMapIntensity: 1.2 }), { rim: true, damage: true, loose: true, dmgTex });
   const trimMat = patchMaterial(new THREE.MeshStandardMaterial({ map: sh.carbon, vertexColors: true, envMap, envMapIntensity: 1 }), { rm: true, loose: true, rim: true });
-  const glassMat = patchMaterial(new THREE.MeshStandardMaterial({ color: 0x5a6e88, metalness: 0.62, roughness: 0.05, transparent: true, opacity: 0.6, envMap, envMapIntensity: 1.6, depthWrite: false }), { glass: true });
+  const glassMat = patchMaterial(new THREE.MeshStandardMaterial({ color: 0x5a6e88, metalness: 0.62, roughness: 0.1, transparent: true, opacity: 0.6, envMap, envMapIntensity: 1.6, depthWrite: false }), { glass: true });
   const lightMat = patchMaterial(new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }), { lights: true });
   const wheelMat = patchMaterial(new THREE.MeshStandardMaterial({ map: sh.wheel, vertexColors: true, envMap, envMapIntensity: 1 }), { rm: true, glow: true });
   const flameMat = patchMaterial(new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide, opacity: 1 }), { flame: true });

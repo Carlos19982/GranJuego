@@ -154,7 +154,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
   const pads = []; // {x,z,rx,rz,y,f}  (elipses planas)
   const bands = []; // {s0,s1,side,l0,l1,dy,f} (franjas relativas a la pista)
   const LAKE = { x: 40, z: -150, rx: 120, rz: 48, y: -0.9 };
-  const LAKE2 = { x: hairpin ? 0 : 0, z: 0, rx: 34, rz: 22, y: 1.1 }; // charca del oasis de la horquilla (se coloca luego)
+  const LAKE2 = { x: 0, z: 0, rx: 34, rz: 22, y: 1.1 }; // charca del oasis de la horquilla (se coloca luego)
   const FIELD = { x: 30, z: 300, r: 232 };
   const PODIUM = { s: 232, lat: 62 };
   function trackRelPoint(s, lat) { at(s); return [tp.x + tp.nx * lat, tp.y, tp.z + tp.nz * lat]; }
@@ -691,7 +691,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       GLOW(cx, yb + canopyH - 0.2, cz, 7, 1.0, 0.62, 0.3);
     }
     // borde LED ámbar en el frente de la cubierta
-    sweep(bagEmis, sA, sB, 6, [[side * (lat0 - 1.5), topH + 4.0], [side * (lat0 - 1.5), topH + 4.35]], () => new THREE.Color(1.6, 0.85, 0.35));
+    sweep(bagEmis, sA, sB, 6, [[side * (lat0 - 1.5), topH + 4.0], [side * (lat0 - 1.5), topH + 4.35]], () => new THREE.Color(1.1, 0.6, 0.25));
     // público
     const o = {};
     for (let r = 0; r < rows; r++) {
@@ -1603,7 +1603,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     geo.setAttribute('aSeed', new THREE.InstancedBufferAttribute(seeds, 4));
     geo.instanceCount = Q.sandDry;
     const mat = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false,
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
       uniforms: { uTime: U.uTime, uCam: { value: new THREE.Vector3() }, uGround: { value: 0 }, uMode: { value: 0 }, uWind: U.uWind, uStorm: U.uStorm, uSunDir: U.uSunDir, uBox: { value: new THREE.Vector3(90, 14, 90) } },
       vertexShader: `attribute vec4 aSeed; uniform float uTime; uniform vec3 uCam; uniform float uGround; uniform float uMode; uniform vec2 uWind; uniform vec3 uBox; varying float vA; varying vec2 vQ; varying float vS;
         void main(){
@@ -1621,13 +1621,13 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
           wp.y = mix(hDry, hStorm, clamp(uMode, 0.0, 1.0));
           if (rainM > 0.5) wp.y = uCam.y + rel.y;
           // estela orientada en espacio de vista (robusta aunque el viento apunte a cámara)
-          float len = mix(mix(1.8, 7.0, uMode), 1.4, rainM);
-          float wid = mix(mix(0.07, 0.3, uMode), 0.025, rainM) * (1.0 + aSeed.z);
+          float len = mix(mix(1.8, 6.0, uMode), 1.4, rainM);
+          float wid = mix(mix(0.07, 0.11, uMode), 0.025, rainM) * (1.0 + aSeed.z);
           vec3 dv = mat3(viewMatrix) * normalize(vel);
           float fl = length(dv.xy);
           vec2 dir = fl > 1e-3 ? dv.xy / fl : vec2(0.0, 1.0);
           vec4 mv = viewMatrix * vec4(wp, 1.0);
-          mv.xy += dir * position.y * len * max(fl, 0.12) + vec2(-dir.y, dir.x) * position.x * wid;
+          mv.xy += dir * position.y * len * max(fl, 0.12) + vec2(dir.y, -dir.x) * position.x * wid;
           vQ = position.xy; vS = aSeed.w;
           float dc = length(rel.xz) / uBox.x;
           vA = (1.0 - smoothstep(0.65, 1.0, dc)) * smoothstep(1.0, 4.0, -mv.z);
@@ -1637,8 +1637,8 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
         void main(){
           float e = 1.0 - abs(vQ.x) * 2.0; float t = sin(vQ.y * 3.14159);
           float a = vA * e * t;
-          vec3 c = uMode > 1.5 ? vec3(0.75, 0.78, 0.85) : mix(vec3(1.0, 0.9, 0.72), vec3(0.42, 0.26, 0.15), step(0.55, vS) * clamp(uMode, 0.0, 1.0));
-          float k = uMode > 1.5 ? 0.35 : mix(0.42, 0.6, clamp(uMode, 0.0, 1.0));
+          vec3 c = uMode > 1.5 ? vec3(0.75, 0.78, 0.85) : mix(mix(vec3(1.0, 0.9, 0.72), vec3(0.92, 0.7, 0.46), clamp(uMode, 0.0, 1.0)), vec3(0.45, 0.29, 0.16), step(0.5, vS) * clamp(uMode, 0.0, 1.0));
+          float k = uMode > 1.5 ? 0.35 : mix(0.5, 0.42, clamp(uMode, 0.0, 1.0));
           gl_FragColor = vec4(c, a * k);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>

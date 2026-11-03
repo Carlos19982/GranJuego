@@ -1418,7 +1418,7 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     arriveT: 10, idleT: 0, flick: false, drag: 0, dragV: 0,
     sweepRate: 2, flash: 0, flashCol: new THREE.Color(1, 1, 1), flashDecay: 4, whip: 0, whipDir: 1, speed: 0,
     camAz: 0, camRush: 0, fovMul: 1, holoGl: 0, holoA: 1, fx: 0, fxLevel: 0, power: 1, bgPower: 1,
-    impT: 0, bolts: [], nextBolt: 0, white: 0, envK: null,
+    impT: 0, bolts: [], nextBolt: 0, white: 0, envK: null, bloomOn: !LOW,
   };
   const mb = { w: 1, from: S.mood, to: S.mood }; // mezcla de luces/colores de la ambientación
   const view = { w: 390, h: 844, cx: 195, cy: 300, vis: [0, 58, 390, 422], vfov: 60, s: 0.016 };
@@ -1793,7 +1793,7 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     if (envK !== S.envK) { S.envK = envK; carObjs.forEach((c) => c && c.mats.forEach((m) => { m.envMapIntensity = (c.envI.get(m) ?? 1) * envK; })); }
     mix3(M0.amb, M1.amb, _tmpC); U.uAmb.value.set(_tmpC.r, _tmpC.g, _tmpC.b);
     mix3(M0.dust, M1.dust, _tmpC); dustU.uDust.value.set(_tmpC.r, _tmpC.g, _tmpC.b);
-    U.uConeK.value = lerp(M0.cone, M1.cone, w);
+    U.uConeK.value = lerp(M0.cone, M1.cone, w) * (S.bloomOn ? 1 : 0.65);
     floorU.uReflK.value = lerp(M0.refl, M1.refl, w);
     const seqOn = (s0) => sat((U.uSeq.value - s0) / 0.03);
     top.intensity = 24 * lerp(M0.top, M1.top, w) * seqOn(0.02);
@@ -1805,7 +1805,7 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     updateFx(dt, pal, M0, M1, w);
 
     // ---- holograma ----
-    holoU.uGlitch.value = S.holoGl; holoU.uHoloA.value = S.holoA * (S.intro ? sat((S.intro.t - 1.5) / 0.3) : 1);
+    holoU.uGlitch.value = S.holoGl; holoU.uHoloA.value = S.holoA * (S.intro ? sat((S.intro.t - 1.5) / 0.3) : 1) * (S.bloomOn ? 1 : 0.62);
     if (S.intro && S.intro.t < 1.5) holoU.uReveal.value = 0;
 
     // ---- suelo ----
@@ -2047,7 +2047,7 @@ export function createShowroom({ renderer, tier = 'med', cars = [], makeCar = nu
     /** Sugerencias para el integrador (exposición y bloom de esta ambientación). */
     get env() { const M = MOODS[S.mood]; return { exposure: M.exposure, bloom: M.bloom, background: scene.background }; },
     /** Ajuste del halo falso cuando no hay bloom real. */
-    setBloom(on) { U.uHaloK.value = on ? 0.22 : 0.5; },
+    setBloom(on) { S.bloomOn = !!on; U.uHaloK.value = on ? 0.22 : 0.5; },
     debug: { S, U, A, B, props, ensureCar, view },
   };
   return api;

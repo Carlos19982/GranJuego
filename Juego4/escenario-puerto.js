@@ -347,14 +347,14 @@ const SKY_VS = /* glsl */ `
   void main(){ vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`;
 const SKY_FS = /* glsl */ `
   uniform vec3 uZen; uniform vec3 uMid; uniform vec3 uHor; uniform vec3 uGlow; uniform vec3 uGlow2; uniform vec2 uGlowDir;
-  uniform vec3 uMoon; uniform float uTime; uniform float uRain; uniform float uClouds;
+  uniform vec3 uMoon; uniform float uTime; uniform float uRain; uniform float uClouds; uniform vec3 uFogC;
   varying vec3 vDir;
   ${HASH}
   float fbm(vec2 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 4; i++) { s += a * vnoise(p); p = p * 2.03 + 11.7; a *= 0.5; } return s; }
   void main(){
     vec3 d = normalize(vDir);
     float h = d.y;
-    vec3 col = mix(uHor, uMid, smoothstep(0.0, 0.2, h));
+    vec3 col = mix(mix(uFogC, uHor, smoothstep(0.0, 0.035, h)), uMid, smoothstep(0.02, 0.2, h));
     col = mix(col, uZen, smoothstep(0.16, 0.8, h));
     vec2 dz = normalize(d.xz + vec2(1e-4));
     float gA = max(dot(dz, uGlowDir), 0.0);
@@ -383,7 +383,7 @@ const SKY_FS = /* glsl */ `
       col = mix(col, cc, cl * 0.8);
     }
     col = mix(col, mix(vec3(0.07, 0.085, 0.12), vec3(0.16, 0.17, 0.2), smoothstep(0.4, -0.05, h)) + uGlow * gl * exp(-hp * 8.0) * 0.12, uRain * 0.88);
-    if (h < 0.0) col = mix(col, uHor, smoothstep(0.0, -0.04, h));
+    if (h < 0.0) col = mix(col, uFogC, smoothstep(0.0, -0.03, h));
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -510,6 +510,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
   const MOON_DIR = new THREE.Vector3(0.55, 0.42, -0.72).normalize();
   const FOG_DRY = new THREE.Color(0.06, 0.082, 0.165), FOG_WET = new THREE.Color(0.085, 0.095, 0.125);
   const FOG_D = 0.0012;
+  const FOGC = FOG_DRY.clone();
 
   // ------------------------------------------------------------ pista
   const N = T.N, L = T.L, DS = T.ds || T.L / T.N;
@@ -930,7 +931,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       }
       occluderRect(x, z, w, D, yaw, yg, yg + H);
       markRect(x, z, w, D + 4, yaw, 1);
-      if (!JUMBO_AT && sm > -80) JUMBO_AT = { o: at(Math.max(s0 + 20, -55), {}), lat: side * (U0 + 5), y: yg + H };
+      if (!JUMBO_AT && s + segL > 45) JUMBO_AT = { o: at(Math.min(Math.max(s0 + 20, 45), s1 - 15), {}), lat: side * (U0 + 5), y: yg + H };
     }
     // torre de control
     {
@@ -1313,6 +1314,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       const a = arr[k], b = arr[k + 1];
       const d = Math.hypot(b.x - a.x, b.z - a.z);
       if (d > Q.lamps * 1.35 || d < 8) continue;
+      { const n = near((a.x + b.x) / 2, (a.z + b.z) / 2, 60); if (n.d < n.wall + 1.5) continue; }
       bunting([a.x, 0, a.z], [b.x, 0, b.z], a.yb + 6.2, b.yb + 6.2, 1.2);
     }
   }
@@ -1707,7 +1709,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
 
   // ================================================================= CIELO + COLINAS LEJANAS
   const skyMat = new THREE.ShaderMaterial({
-    uniforms: { uZen: { value: PAL.zen }, uMid: { value: PAL.mid }, uHor: { value: PAL.hor }, uGlow: { value: PAL.glow }, uGlow2: { value: PAL.glow2 }, uGlowDir: { value: GLOW_DIR }, uMoon: { value: MOON_DIR }, uTime: U.uTime, uRain: U.uRain, uClouds: { value: Q.clouds } },
+    uniforms: { uFogC: { value: FOGC }, uZen: { value: PAL.zen }, uMid: { value: PAL.mid }, uHor: { value: PAL.hor }, uGlow: { value: PAL.glow }, uGlow2: { value: PAL.glow2 }, uGlowDir: { value: GLOW_DIR }, uMoon: { value: MOON_DIR }, uTime: U.uTime, uRain: U.uRain, uClouds: { value: Q.clouds } },
     vertexShader: SKY_VS, fragmentShader: SKY_FS, side: THREE.BackSide, depthWrite: false, fog: false,
   });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 16), skyMat);
@@ -2064,7 +2066,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
   tick('rest');
   // ================================================================= ENTORNO / API
   const fog = new THREE.FogExp2(FOG_DRY.getHex(), FOG_D);
-  fog.color.copy(FOG_DRY);
+  fog.color = FOGC;
   const background = FOG_DRY.clone();
   const env = {
     background, fog, exposure: 1.0,
@@ -2084,7 +2086,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     U.uWind.value = weather === 'viento' ? 1 : wet ? 0.45 : 0.15;
     U.uBoost.value = wet ? 1.35 : 1;
     const fc = wet ? FOG_WET : FOG_DRY, fd = wet ? FOG_D * 1.75 : weather === 'viento' ? FOG_D * 0.85 : FOG_D;
-    fog.color.copy(fc); fog.density = fd; background.copy(fc);
+    FOGC.copy(fc); fog.density = fd; background.copy(fc);
     hillMat.uniforms.uHaze.value.copy(fc);
     if (scene && scene.fog && scene.fog !== fog && scene.fog.isFogExp2) { scene.fog.color.copy(fc); scene.fog.density = fd; }
     if (scene && scene.background && scene.background.isColor && scene.background !== background) scene.background.copy(fc);
@@ -2171,7 +2173,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
 
   return {
     id: 'puerto', group, env, occluders: OCCL, tvCams: tvCams.map((c) => ({ x: c.x, y: c.y, z: c.z, s: c.s })),
-    gantry, jumbo, podium: Object.assign({}, PODIUM, { fireworks: { x: fireworks.x, y: fireworks.y, z: fireworks.z } }),
+    gantry, jumbo, podium: { x: PODIUM.x, y: PODIUM.y, z: PODIUM.z, yaw: PODIUM.yaw, slots: PODIUM.slots, fireworks: { x: fireworks.x, y: fireworks.y, z: fireworks.z } },
     crowd, fireworks, setWeather, update, dispose, stats,
     landmarks: { lighthouse: FARO, casino: CASINO && { x: CASINO.cx, y: CASINO.yg, z: CASINO.cz }, hairpinFountain: HAIRPIN && { x: HAIRPIN.cx, y: HAIRPIN.yg, z: HAIRPIN.cz }, cruise: { x: 160, y: WY, z: -470 } },
   };
@@ -2215,7 +2217,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       return rt.texture;
     } catch (e) { return envMap || null; }
   }
-  function skyUniformsForEnv() { return { uZen: { value: PAL.zen }, uMid: { value: PAL.mid }, uHor: { value: PAL.hor }, uGlow: { value: PAL.glow }, uGlow2: { value: PAL.glow2 }, uGlowDir: { value: GLOW_DIR }, uMoon: { value: MOON_DIR }, uTime: { value: 0 }, uRain: { value: 0 }, uClouds: { value: 0 } }; }
+  function skyUniformsForEnv() { return { uFogC: { value: FOG_DRY }, uZen: { value: PAL.zen }, uMid: { value: PAL.mid }, uHor: { value: PAL.hor }, uGlow: { value: PAL.glow }, uGlow2: { value: PAL.glow2 }, uGlowDir: { value: GLOW_DIR }, uMoon: { value: MOON_DIR }, uTime: { value: 0 }, uRain: { value: 0 }, uClouds: { value: 0 } }; }
 }
 
 // ---------------------------------------------------------------- texturas de lienzo (una sola vez por construcción)

@@ -61,6 +61,8 @@ export function pronostico(o) {
   if (!n || !o.pWin) return { text: '', sentences: [] };
   const C = (o.circuit && o.circuit.name) || 'el circuito';
   const id = (o.circuit && o.circuit.id) || 'neon';
+  const when = { neon: 'la noche', desierto: 'la tarde', puerto: 'la velada' }[id] || 'la jornada';
+  const q = (t) => '«' + lc(t) + '»';
   const wx = o.weather || 'seco';
   const nm = (i) => 'el ' + cars[i].name;
   const est = o.estado || [];
@@ -104,10 +106,10 @@ export function pronostico(o) {
   const good = notes.filter((q) => q && q.effect > 0 && q.car != null && q.car !== fav && cars[q.car]);
   const favBad = notes.find((q) => q && q.effect < 0 && q.car === fav);
   if (favBad) {
-    s3 = pick(r, ['Eso sí, en su box admiten {N}, y eso puede pasarle factura.', 'Ojo, porque en su garaje reconocen {N}: cualquier problema y la carrera se abre.']).replace('{N}', lc(favBad.text));
+    s3 = pick(r, ['Eso sí, en su box hablan de {N}, y eso puede pasarle factura.', 'Ojo, porque en su garaje reconocen {N}: cualquier problema y la carrera se abre.']).replace('{N}', q(favBad.text));
   } else if (bad.length && r() < 0.6) {
-    const q = bad[Math.floor(r() * bad.length)];
-    s3 = pick(r, ['Preocupa {X}: en su box admiten {N} y podría no ver la bandera a cuadros.', 'Cuidado con {X}, que sale con {N}: tendrá que cuidar la mecánica.']).replace('{X}', nm(q.car)).replace('{N}', lc(q.text));
+    const qn = bad[Math.floor(r() * bad.length)];
+    s3 = pick(r, ['Preocupa {X}: en su box hablan de {N} y podría no ver la bandera a cuadros.', 'Cuidado con {X}, que arrastra {N}: tendrá que mimar la mecánica.']).replace('{X}', nm(qn.car)).replace('{N}', q(qn.text));
   } else {
     // sorpresa: cuota alta pero con un motivo
     const cands = order.slice(2).map((i) => {
@@ -122,7 +124,7 @@ export function pronostico(o) {
     }).sort((a, b) => b.w - a.w);
     const sp = cands.length ? cands[0].i : order[1];
     const g = good.find((q) => q.car === sp);
-    if (g) s3 = pick(r, ['Atención a {X}: en su box confirman {N} y llega con ganas de dar la sorpresa.', 'Y no pierdan de vista a {X}, que estrena {N}: puede ser la sorpresa de la noche.']).replace('{X}', nm(sp)).replace('{N}', lc(g.text));
+    if (g) s3 = pick(r, ['Atención a {X}: en su box presumen de {N} y llega con ganas de dar la sorpresa.', 'Y no pierdan de vista a {X}, con {N}: puede ser la sorpresa de {W}.']).replace('{X}', nm(sp)).replace('{N}', q(g.text)).replace('{W}', when);
     else if (sp === best) s3 = pick(r, ['La sorpresa puede venir de {X}: el trazado juega a su favor.', 'Ojo a {X}, al que este circuito le va como un guante.']).replace('{X}', nm(sp));
     else s3 = pick(r, ['El rival a batir será {R}, que no piensa regalar nada.', '{R} es la gran alternativa si el favorito falla.', 'Ojo a {R}: a poco que la carrera se complique, estará ahí.']).replace('{R}', nm(order[1]));
     s3 = cap(s3);

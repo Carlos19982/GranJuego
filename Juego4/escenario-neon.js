@@ -2140,9 +2140,9 @@ export function buildScenery(opts = {}) {
   const tvCams = [];
   {
     const cand = [];
-    const n = 18;
-    for (let k = 0; k < n * 2; k++) {
-      const s = 25 + (k * TK.L) / (n * 2);
+    const nC = 48; // candidatas cada ~L/48 m
+    for (let k = 0; k < nC; k++) {
+      const s = 25 + (k * TK.L) / nC;
       TK.at(s, o2);
       const pref = Math.abs(o2.k) > 1 / 300 ? -Math.sign(o2.k) : (k % 2 ? 1 : -1);
       for (const side of [pref, -pref]) {
@@ -2170,11 +2170,11 @@ export function buildScenery(opts = {}) {
         if (done) break;
       }
     }
-    // reparto uniforme: como mucho 18, separadas ≥ 60 m de recorrido
+    // reparto uniforme: como mucho 18, separadas ≥ 60 m de recorrido (≥ 38 m si faltan para llegar a 12)
     cand.sort((a, b) => b.score - a.score);
-    for (const c of cand) {
-      if (tvCams.length >= 18) break;
-      if (tvCams.some((t) => Math.abs(TK.dS(t.s, c.s)) < 60)) continue;
+    for (const gap of [60, 38]) for (const c of cand) {
+      if (tvCams.length >= (gap === 60 ? 18 : 12)) break;
+      if (tvCams.includes(c) || tvCams.some((t) => Math.abs(TK.dS(t.s, c.s)) < gap)) continue;
       tvCams.push(c);
     }
     tvCams.sort((a, b) => a.s - b.s);
