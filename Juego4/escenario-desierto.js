@@ -1637,8 +1637,8 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
         void main(){
           float e = 1.0 - abs(vQ.x) * 2.0; float t = sin(vQ.y * 3.14159);
           float a = vA * e * t;
-          vec3 c = uMode > 1.5 ? vec3(0.75, 0.78, 0.85) : mix(mix(vec3(1.0, 0.9, 0.72), vec3(0.92, 0.7, 0.46), clamp(uMode, 0.0, 1.0)), vec3(0.45, 0.29, 0.16), step(0.5, vS) * clamp(uMode, 0.0, 1.0));
-          float k = uMode > 1.5 ? 0.35 : mix(0.5, 0.42, clamp(uMode, 0.0, 1.0));
+          vec3 c = uMode > 1.5 ? vec3(0.75, 0.78, 0.85) : mix(mix(vec3(0.98, 0.8, 0.58), vec3(0.92, 0.7, 0.46), clamp(uMode, 0.0, 1.0)), vec3(0.45, 0.29, 0.16), step(0.5, vS) * clamp(uMode, 0.0, 1.0));
+          float k = uMode > 1.5 ? 0.35 : mix(0.36, 0.42, clamp(uMode, 0.0, 1.0));
           gl_FragColor = vec4(c, a * k);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>

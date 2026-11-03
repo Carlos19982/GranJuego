@@ -1844,7 +1844,7 @@ function evalShot(sh, dt, P, L) {
     }
     case 'podium': {
       const pd = W.pod, c0 = podCenter(_sp);
-      const a = (pd ? pd.yaw : 0) + Math.sin(now * 0.25) * 0.45, r = 11 * pk;
+      const a = (pd ? pd.yaw : 0) + Math.sin(now * 0.25) * 0.4, r = clamp(9 * pk, 10, 12); // más lejos, las barreras de la pista entran en plano
       P.set(c0.x + Math.sin(a) * r, c0.y + 3.6 + Math.sin(now * 0.3) * 0.3, c0.z + Math.cos(a) * r);
       L.set(c0.x, c0.y + 0.9, c0.z);
       fov = fitFov(r, 17, 5, 0.95);

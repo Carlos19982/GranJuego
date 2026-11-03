@@ -561,7 +561,7 @@ function makeKit(D, body, B, lod, colors) {
     /** Torno alrededor del eje X local (perfil [[radio, x], ...]); m orienta/ubica. */
     lathe(b, prof, seg, m, o = {}) {
       const run = () => {
-        const n = prof.length, a0 = o.a0 ?? 0, a1 = o.a1 ?? TAU, full = o.a1 === undefined;
+        const n = prof.length, a0 = o.a0 ?? 0, a1 = o.a1 ?? TAU;
         const segs = [];
         if (o.hard) for (let i = 0; i < n - 1; i++) segs.push([prof[i], prof[i + 1]]);
         else segs.push(prof);
@@ -587,7 +587,6 @@ function makeKit(D, body, B, lod, colors) {
             const a = base + s * nn + i, c2 = base + (s + 1) * nn + i;
             b.t(a, c2, c2 + 1); b.t(a, c2 + 1, a + 1);
           }
-          if (full) void 0;
         }
       };
       if (m) b.with(m, run); else run();
@@ -632,14 +631,13 @@ function makeKit(D, body, B, lod, colors) {
         }
       }
       stripNormals(P, J, L, 0, L - 1, N);
-      // la rejilla avanza en x; la orientación depende del sentido del contorno
-      const fl = 1;
+      // la rejilla avanza en x (contorno: borde de salida → extradós → borde de ataque → intradós)
       emitGrid(P, N, J, L, 0, L - 1, () => b, false, false);
       // tapas
       for (const j of [0, J - 1]) {
         const ids = [], nx = j === 0 ? -1 : 1;
         for (let k = 0; k < L - 1; k++) { const i = (j * L + k) * 3; ids.push(b.v(P[i], P[i + 1], P[i + 2], nx, 0, 0)); }
-        for (let k = 1; k < ids.length - 1; k++) { if (nx * fl > 0) b.t(ids[0], ids[k], ids[k + 1]); else b.t(ids[0], ids[k + 1], ids[k]); }
+        for (let k = 1; k < ids.length - 1; k++) { if (nx > 0) b.t(ids[0], ids[k], ids[k + 1]); else b.t(ids[0], ids[k + 1], ids[k]); }
       }
     },
     sym(bs, fn) { bs = [].concat(bs); fn(1); const wrap = (i) => (i === bs.length ? fn(-1) : bs[i].with(MIRROR, () => wrap(i + 1))); wrap(0); },
@@ -2068,7 +2066,7 @@ function buildModel(def, D, { tier = 'high', envMap = null, index = 0 } = {}) {
   if (kitL.beacon) lamps.beacon = kitL.beacon.map(V);
   const exhaust = kitL.exhaust.map(V);
   // ---- estado
-  let lod = hasLod0 ? 0 : 1, brake = -1, head = -1, flameK = 0, hi = -1, dmg = -1, heat = 0, lastT = 0, disposed = false;
+  let lod = hasLod0 ? 0 : 1, brake = -1, head = -1, hi = -1, dmg = -1, heat = 0, lastT = 0, disposed = false;
   const U = paintMat.userData.u, UT = trimMat.userData.u, UL = lightMat.userData.u, UW = wheelMat.userData.u;
   const applyLod = () => { for (const m of lod0) m.visible = lod === 0; for (const m of lod1) m.visible = lod === 1; };
   applyLod();
@@ -2089,7 +2087,7 @@ function buildModel(def, D, { tier = 'high', envMap = null, index = 0 } = {}) {
     },
     setHeadlights(k) { k = clamp(k, 0, 1); if (k !== head) { head = k; UL.uHead.value = k; } },
     setFlame(k) {
-      k = clamp(k, 0, 1); flameK = k;
+      k = clamp(k, 0, 1);
       const on = k > 0.02; flame.visible = on;
       if (on) { const f = 0.8 + Math.random() * 0.4; flameMat.userData.u.uFl.value = (0.5 + 0.6 * k) * (0.85 + Math.random() * 0.3); flameMat.opacity = Math.min(1, k * f); }
     },
