@@ -207,7 +207,7 @@ body { overflow: hidden; }
 
 /* bote */
 .pot {
-  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 1;
+  position: absolute; left: 50%; bottom: 10px; translate: -50% 0; z-index: 1;
   display: flex; align-items: stretch; border-radius: 16px; overflow: hidden;
   background: rgba(5,4,14,.62); border: 1px solid rgba(255,204,51,.4);
   box-shadow: 0 8px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
@@ -331,13 +331,13 @@ body { overflow: hidden; }
 }
 .face.front.ace .pip { font-size: calc(var(--cw) * .82); filter: drop-shadow(0 calc(var(--cw) * .03) 0 rgba(0,0,0,.15)); }
 .face.front.court .pip {
-  inset: 18% 19%; border-radius: calc(var(--cw) * .06);
+  inset: 15% 25%; border-radius: calc(var(--cw) * .06);
   background: linear-gradient(160deg, #fff7d6, #f1d98f);
   box-shadow: inset 0 0 0 calc(var(--cw) * .02) #c99316, inset 0 0 0 calc(var(--cw) * .045) #fff7d6, inset 0 0 0 calc(var(--cw) * .06) #c99316;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
 }
 .face.front.court .pip em {
-  font-style: normal; font-family: var(--ax-display); font-size: calc(var(--cw) * .38); line-height: 1;
+  font-style: normal; font-family: var(--ax-display); font-size: calc(var(--cw) * .34); line-height: 1;
   text-shadow: 0 calc(var(--cw) * .02) 0 rgba(0,0,0,.15);
 }
 .face.front.court .pip i { font-style: normal; font-size: calc(var(--cw) * .24); line-height: 1; }
@@ -444,6 +444,11 @@ body { overflow: hidden; }
 .hold.holding { animation: holdShake .12s linear infinite; }
 @keyframes holdShake { 0% { transform: translate(1px, 3px); } 50% { transform: translate(-1px, 4px); } 100% { transform: translate(1px, 3px); } }
 
+/* barra de probabilidad */
+.pbar { position: relative; height: 22px; border-radius: 999px; overflow: hidden; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.14); }
+.pbar i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; background: linear-gradient(90deg, #8b5cff, #ff2fb3); box-shadow: 0 0 14px rgba(255,47,179,.6); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.pbar span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+
 /* apuesta */
 .bet-row { display: grid; grid-template-columns: 52px 1fr 52px; gap: 8px; align-items: stretch; }
 .sq { min-height: 56px; padding: 0; font-size: 28px; font-weight: 900; border-radius: 16px; }
@@ -530,7 +535,6 @@ body { overflow: hidden; }
 }
 /* intro: "ADIVINA" / "LA CARTA" en dos líneas */
 .ax-cine-title { line-height: 1.08; }
-.ax-cine-title span:nth-child(8) { display: block; height: 0; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   #bg .suit, #bg .beams, .table::before, .fan, .step.active { animation: none !important; }
 }
@@ -988,11 +992,14 @@ body { overflow: hidden; }
     table.style.setProperty("--cw", cw.toFixed(1) + "px");
     const gap = clamp((r.width - 20 - cw * 4) / 3, 6, 14);
     table.style.setProperty("--gap", gap.toFixed(1) + "px");
-    // abanico
+    // abanico: centrado en el hueco libre sobre el bote, con su rótulo debajo
     const cH = slotsVisible ? r.height - (cw * 1.45 + 12) : r.height;
-    const fw = clamp(Math.min((cH * 0.5) / 1.45, r.width * 0.22), 40, 104);
+    const avail = Math.max(60, cH - 62);
+    const fw = clamp(Math.min((avail * 0.56 - 16) / 0.95, (avail * 0.62) / 1.45, r.width * 0.22), 30, 104);
+    const fy = avail * 0.46;
     fan.style.setProperty("--fw", fw.toFixed(1) + "px");
-    $("fanCap").style.setProperty("--fw", fw.toFixed(1) + "px");
+    fan.style.top = fy.toFixed(1) + "px";
+    $("fanCap").style.top = (fy + fw * 0.98).toFixed(1) + "px";
     // escenario de revelado (carta grande, tamaño real)
     const cR = center.getBoundingClientRect();
     const sh = clamp(cR.height * 0.84, cw * 1.45 * 1.1, 330);
@@ -1054,6 +1061,8 @@ body { overflow: hidden; }
     dock.innerHTML = html;
     void dock.offsetWidth;
     dock.classList.add("enter");
+    const bar = dock.querySelector(".pbar i");
+    if (bar) setTimeout(() => (bar.style.width = bar.style.getPropertyValue("--w")), 120);
   }
   function lockDock(v = true) {
     dock.classList.toggle("locked", v);
@@ -1167,7 +1176,7 @@ body { overflow: hidden; }
     await shuffleAnim();
     markNextSlot();
     roundBanner(1);
-    await sleep(RM ? 100 : 450);
+    await sleep(RM ? 60 : 220);
     render();
     S.busy = false;
   }
@@ -1259,12 +1268,11 @@ body { overflow: hidden; }
       updateLadder(R);
       if (R === 4) {
         AX.cine.banner("¡PERFECTO!", { sub: "4 de 4 · ¿cobras o duelo?", color: "rgba(255, 47, 179, 0.92)", duration: 1600, sound: "powerup" });
-        await sleep(RM ? 100 : 600);
       } else {
         markNextSlot();
         roundBanner(S.round);
-        await sleep(RM ? 100 : 450);
       }
+      await sleep(RM ? 60 : 220);
       render();
     } else {
       el.classList.add("lose");
@@ -1349,7 +1357,8 @@ body { overflow: hidden; }
     const pool = S.deck;
     const pw = duelProb(pool);
     setDock(`
-      <div class="q"><h3>¿TODO O NADA?</h3><p>Tu carta contra la de la banca · prob. <b>${pct(pw)}</b></p></div>
+      <div class="q"><h3>¿TODO O NADA?</h3><p>Tu carta contra la de la banca · el empate pierde</p></div>
+      <div class="pbar"><i style="--w:${(pw * 100).toFixed(1)}%"></i><span><em style="font-style:normal">Prob. de ganar el duelo</em><b>${pct(pw)}</b></span></div>
       <div class="offer">
         <button class="ax-btn ax-btn-green" id="collectBtn"><small>COBRAR x24</small><span class="big">${money(S.bet * MULT[4])}</span></button>
         <button class="ax-btn gamble" id="gambleBtn"><small>⚔ DUELO x50</small><span class="big">${money(S.bet * R5_MULT)}</span></button>
@@ -1406,7 +1415,8 @@ body { overflow: hidden; }
   function renderDuel() {
     const pw = duelProb(S.deck.concat([S.duel.p, S.duel.d]));
     setDock(`
-      <div class="q"><h3>⚔ DUELO FINAL</h3><p>Tu carta debe ser <b>MAYOR</b> · empate pierde · prob. <b>${pct(pw)}</b></p></div>
+      <div class="q"><h3>⚔ DUELO FINAL</h3><p>Tu carta debe ser <b>MAYOR</b> · el empate pierde</p></div>
+      <div class="pbar"><i style="--w:${(pw * 100).toFixed(1)}%"></i><span><em style="font-style:normal">Prob. de ganar</em><b>${pct(pw)}</b></span></div>
       <button class="ax-btn ax-btn-gold ax-btn-block hold" id="holdBtn"><span class="fill"></span><span class="txt">MANTÉN PARA REVELAR</span></button>`);
     const b = $("holdBtn");
     let raf = 0, t0 = 0, fired = false, lastTick = -1;

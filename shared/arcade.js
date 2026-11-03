@@ -423,7 +423,7 @@
   }
   let last = 0;
   function loop(now) {
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
     last = now;
     cx.setTransform(dpr, 0, 0, dpr, 0, 0);
     cx.clearRect(0, 0, innerWidth, innerHeight);
@@ -537,7 +537,7 @@
       }
       case "ring": {
         cx.globalCompositeOperation = "lighter";
-        const r = p.size + (p.maxR - p.size) * AX.ease.outCubic(k);
+        const r = Math.max(0, p.size + (p.maxR - p.size) * AX.ease.outCubic(k));
         cx.strokeStyle = p.color;
         cx.lineWidth = Math.max(0.5, p.width * (1 - k));
         cx.beginPath();
@@ -799,10 +799,18 @@
     return new Promise((resolve) => {
       const l = layer("ax-cine");
       l.style.setProperty("--cine-color", opts.color || "#8b5cff");
+      // Letras animadas, pero agrupadas por palabra para que no se partan
+      let li = 0;
       const letters = String(opts.title || "")
-        .split("")
-        .map((ch, i) => `<span style="animation-delay:${0.55 + i * 0.04}s">${ch === " " ? "&nbsp;" : ch}</span>`)
-        .join("");
+        .split(" ")
+        .map(
+          (word) =>
+            `<span style="white-space:nowrap;display:inline-block;animation:none;background:none">${word
+              .split("")
+              .map((ch) => `<span style="animation-delay:${0.55 + li++ * 0.04}s">${ch}</span>`)
+              .join("")}</span>`
+        )
+        .join(" ");
       l.innerHTML = `
         <div class="ax-cine-bg"></div>
         <div class="ax-bar top"></div><div class="ax-bar bot"></div>

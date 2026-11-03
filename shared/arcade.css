@@ -470,7 +470,7 @@ button {
   animation: ax-slam 0.7s 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
   max-width: 94vw;
 }
-.ax-cine-title span {
+.ax-cine-title span span {
   display: inline-block;
   background: var(--ax-gold-grad);
   -webkit-background-clip: text;
