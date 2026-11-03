@@ -2475,7 +2475,7 @@ async function boot() {
   SND.rev(0.6);
 }
 DEBUG.get = () => ({ state, sel, bet, shot: shot.type, tier: TIER, bloom: !!composer, pixelRatio, t: race.t, winner: race.winner, order: race.order.slice(), photo: race.photo, stake: stake && Object.assign({}, stake) });
-DEBUG.scene = scene; DEBUG.THREE = THREE;
+DEBUG.scene = scene; DEBUG.THREE = THREE; DEBUG.camera = camera; DEBUG.garage = garage;
 DEBUG.select = (i) => { if (state === 'garage') { sel = i; putOnTurntable(sel, false); renderCard(); } };
 boot();
 </script>
