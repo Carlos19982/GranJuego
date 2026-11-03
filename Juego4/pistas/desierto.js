@@ -129,5 +129,5 @@ export default {
   ],
 
   night: false,
-  surface: { asphalt: '#3e3d41', kerbA: '#e8452c', kerbB: '#f6eee0', line: '#fff3dc', glow: '#ffb04a' },
+  surface: { asphalt: '#3a3a3f', kerbA: '#e8452c', kerbB: '#f6eee0', line: '#fff3dc', glow: '#ffb04a' },
 };

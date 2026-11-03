@@ -3050,7 +3050,7 @@ async function boot() {
     if (!ok) throw e;
   }
   market = restoreMarket(circuitId) || newMarket(circuitId, history);
-  showroom = createShowroom({ renderer, tier: TIER, cars: CARS, makeCar: (i) => MODELOS.createCarModel(CARS[i], { tier: TIER, envMap: garageEnv, index: i }) });
+  showroom = createShowroom({ renderer, tier: TIER, cars: CARS, circuit: circuitId, makeCar: (i) => MODELOS.createCarModel(CARS[i], { tier: TIER, envMap: garageEnv, index: i }) });
   showroom.setCircuit(circuitId);
   showroom.showCar(sel, 0);
   renderCard(); renderPronostico();

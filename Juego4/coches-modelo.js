@@ -1875,7 +1875,7 @@ function buildCanopy(D, body, kit, lod, colors, setTrim) {
   paint.set('color', colors.helmet2);
   kit.ellipsoid(paint, dx, hy + 0.025, dz - 0.01, 0.114, 0.055, 0.124, 14, 6);
   paint.set('proj', 1); paint.set('color', 1, 1, 1);
-  trim.set('color', 0.05, 0.06, 0.08); trim.set('aRM', 0.06, 1, 0);
+  trim.set('color', 0.035, 0.04, 0.055); trim.set('aRM', 0.28, 0.6, 0);
   kit.ellipsoid(trim, dx, hy, dz + 0.052, 0.094, 0.042, 0.08, 12, 6);
   trim.set('color', colors.cabin); trim.set('aRM', 0.7, 0, 0);
   kit.box(trim, dx, hy - 0.12, dz - 0.19, 0.16, 0.2, 0.05, -0.15);

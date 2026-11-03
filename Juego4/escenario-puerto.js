@@ -963,9 +963,9 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       markCircle(p[0], p[1], 2);
     }
     const mx = o.x + o.nx * mid, mz = o.z + o.nz * mid;
-    PROPS.add(BOXC, M(mx, yb + 8.4, mz, yaw + Math.PI / 2, span, 1.2, 1.3), [0.1, 0.12, 0.2], { aLit: 0.2 });
-    EMIS.add(BOXC, M(mx, yb + 9.06, mz, yaw + Math.PI / 2, span, 0.1, 1.36), [1.5, 1.05, 0.38]);
-    EMIS.add(BOXC, M(mx, yb + 7.78, mz, yaw + Math.PI / 2, span, 0.1, 1.36), [1.5, 1.05, 0.38]);
+    PROPS.add(BOXC, M(mx, yb + 8.4, mz, yaw, span, 1.2, 1.3), [0.1, 0.12, 0.2], { aLit: 0.2 });
+    EMIS.add(BOXC, M(mx, yb + 9.06, mz, yaw, span, 0.1, 1.36), [1.5, 1.05, 0.38]);
+    EMIS.add(BOXC, M(mx, yb + 7.78, mz, yaw, span, 0.1, 1.36), [1.5, 1.05, 0.38]);
     // panel de semáforos sobre el centro de la pista
     PROPS.add(BOXC, M(o.x - o.tx * 0.1, yb + 10.3, o.z - o.tz * 0.1, yaw, 11.6, 2.4, 0.5), [0.02, 0.02, 0.03]);
     for (let i = 0; i < 5; i++) for (let r = 0; r < 2; r++) {
@@ -1015,7 +1015,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     PODIUM = { x: px, y: py, z: pz, yaw, slots: slots.map((s) => ({ x: s.x, y: s.y, z: s.z, yaw: s.yaw })), signAt: { x: bx + fx * 0.65, y: py + 12.15, z: bz + fz * 0.65, yaw }, numsAt: slots.map((s) => ({ x: s.x + fx * 3.22, y: s.y - s.h / 2, z: s.z + fz * 3.22 })) };
     const fw = { x: px - fx * 72, y: WY, z: pz - fz * 72 };
     // barcaza
-    PROPS.add(BOXC, M(fw.x, WY + 0.5, fw.z, yaw + Math.PI / 2, 26, 1.8, 10), [0.08, 0.08, 0.1], { aLit: 0.1 });
+    PROPS.add(BOXC, M(fw.x, WY + 0.5, fw.z, yaw, 26, 1.8, 10), [0.08, 0.08, 0.1], { aLit: 0.1 });
     for (let k = -4; k <= 4; k++) PROPS.add(BOXC, M(fw.x - lx * k * 2.6, WY + 1.8, fw.z - lz * k * 2.6, yaw, 1.6, 0.9, 3), [0.18, 0.16, 0.14]);
     for (let k = -1; k <= 1; k += 2) { glow(fw.x - lx * k * 12.5, WY + 2.2, fw.z - lz * k * 12.5, 1.4, [1, 0.12, 0.1], 0.8, k * 0.25); streak(fw.x - lx * k * 12.5, WY + 2.2, fw.z - lz * k * 12.5, WY, 0.5, [0.5, 0.05, 0.04]); }
     PODIUM.fw = fw;
@@ -1487,11 +1487,11 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     if (ok) {
       const yaw = yawAlong(o), span = lL - lR, mid = (lL + lR) / 2, mx = o.x + o.nx * mid, mz = o.z + o.nz * mid;
       const dy = o.y + 7.6;
-      PROPS.add(BOXC, M(mx, dy + 0.35, mz, yaw + Math.PI / 2, span + 4, 0.7, 3.4), [0.85, 0.86, 0.88], { aLit: 0.2 });
+      PROPS.add(BOXC, M(mx, dy + 0.35, mz, yaw, span + 4, 0.7, 3.4), [0.85, 0.86, 0.88], { aLit: 0.2 });
       for (const sd of [-1, 1]) {
-        PROPS.add(BOXC, M(mx + o.tx * sd * 1.6, dy + 1.25, mz + o.tz * sd * 1.6, yaw + Math.PI / 2, span + 4, 1.1, 0.08), [0.7, 0.75, 0.8], { aLit: 0.3 });
+        PROPS.add(BOXC, M(mx + o.tx * sd * 1.6, dy + 1.25, mz + o.tz * sd * 1.6, yaw, span + 4, 1.1, 0.08), [0.7, 0.75, 0.8], { aLit: 0.3 });
       }
-      EMIS.add(BOXC, M(mx, dy - 0.02, mz, yaw + Math.PI / 2, span + 3, 0.06, 0.4), [2.8, 2.3, 1.6]);
+      EMIS.add(BOXC, M(mx, dy - 0.02, mz, yaw, span + 3, 0.06, 0.4), [2.8, 2.3, 1.6]);
       for (const p of [pL, pR]) {
         const yg = terrainH(p[0], p[1]);
         PROPS.add(BOX, M(p[0], yg - 1, p[1], yaw, 4.2, dy + 0.7 - yg + 1, 4.2), [0.8, 0.8, 0.82], { aLit: 0.25 });

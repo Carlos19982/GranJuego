@@ -1119,9 +1119,13 @@ export function buildScenery(opts = {}) {
   const SKY = new Bucket({ normal: 3, aB: 4, aCol: 3, aTop: 2 });
   const TOWERS = []; // edificios altos (para hologramas / reflectores)
   const BLOCK = 90, ROAD = 14;
+  // sol synthwave: dirección (azimut hacia +z, ~9° de altura); la ciudad abre un «valle» bajo él
+  const SUN = new THREE.Vector3(0.1, 0.16, 1).normalize();
+  const sunAz = Math.atan2(SUN.x, SUN.z);
   const CLUSTERS = [
     { x: B.cx + 40, z: B.minZ - 520, r: 380, k: 1.6 },   // detrás de la tribuna principal
-    { x: B.cx - 120, z: B.maxZ + 620, r: 420, k: 1.8 },  // hacia el sol synthwave
+    { x: B.cx - 680, z: B.maxZ + 560, r: 420, k: 1.8 },  // flanqueando el sol synthwave
+    { x: B.cx + 520, z: B.maxZ + 640, r: 360, k: 1.4 },
     { x: B.maxX + 600, z: B.cz + 60, r: 360, k: 1.3 },
     { x: B.minX - 560, z: B.cz - 80, r: 340, k: 1.2 },
   ];
@@ -1250,6 +1254,8 @@ export function buildScenery(opts = {}) {
       if (ins) hCap = Math.min(46, 12 + (m - 30) * 0.4);
       else hCap = Math.min(330, m < 60 ? 12 + (m - 20) * 0.5 : m < 250 ? 32 + (m - 60) * 0.72 : 169 + (m - 250) * 0.9);
       let boost = 1;
+      // valle bajo el sol: edificios bajos en su azimut (vistos desde el centro del circuito)
+      if (!ins) { let da = Math.atan2(x - B.cx, z - B.cz) - sunAz; da -= Math.round(da / TAU) * TAU; if (Math.abs(da) < 0.2) hCap = Math.min(hCap, 26 + Math.abs(da) * 500); }
       for (const c of CLUSTERS) boost += c.k * Math.exp(-((x - c.x) ** 2 + (z - c.z) ** 2) / (c.r * c.r));
       if (!ins && m > 120 && rng() < 0.1) continue; // plazas
       let h = hCap * (0.3 + 0.7 * Math.pow(rng(), 1.3)) * (0.6 + 0.4 * boost);
@@ -1459,7 +1465,7 @@ export function buildScenery(opts = {}) {
   const addMesh = (m, order) => { if (!m) return null; if (order != null) m.renderOrder = order; group.add(m); meshes.push(m); return m; };
 
   // --- cielo
-  const SUN_DIR = new THREE.Vector3(0.1, 0.085, 1).normalize();
+  const SUN_DIR = SUN;
   const skyMat = new THREE.ShaderMaterial({
     uniforms: Object.assign(uni('uTime', 'uFogColor', 'uFogDensity', 'uCloud', 'uStars', 'uWind'), { uSun: { value: SUN_DIR } }),
     defines: Q.clouds ? { CLOUDS: 1 } : {},
@@ -1979,7 +1985,7 @@ export function buildScenery(opts = {}) {
 
   // --- dirigible
   let blimp = null;
-  const BLIMP = { rx: B.rx + 170, rz: B.rz + 150, h: 128, w: 7 / Math.max(B.rx + 170, 1) };
+  const BLIMP = { rx: B.rx + 90, rz: B.rz + 80, h: 165, w: 7 / Math.max(B.rx + 90, 1) };
   if (Q.blimp) {
     const alb = canvasTex(512, 256), emi = canvasTex(512, 256);
     {
