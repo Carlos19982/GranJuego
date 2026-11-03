@@ -1,1150 +1,2362 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruleta v10 - Logros Integrados</title> 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* --- Estilos (SIN CAMBIOS RESPECTO A v9) --- */
-        /* --- Reset Básico y Estilos Globales --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { height: 100%; }
-        body {
-            font-family: 'Inter', sans-serif; background-color: #1a1a2e; color: #e0e0e0;
-            line-height: 1.5; min-height: 100vh; padding: 10px;
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
-            position: relative;
-            min-width: 390px; /* Minimum width to avoid layout breaks */
-        }
-        #game-container {
-            display: flex; flex-direction: column; align-items: center; width: 100%;
-            max-width: 900px; margin: 10px auto;
-            min-width: 380px; /* Consistent minimum width for the container */
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#07060f">
+<title>Ruleta Europea</title>
+<link rel="stylesheet" href="../shared/arcade.css">
+<style>
+  :root {
+    --hud: calc(58px + var(--ax-safe-top));
+    --line: rgba(255, 214, 120, 0.42);
+    --felt-a: #0f6a4b;
+    --felt-b: #06392a;
+    --felt-c: #03251b;
+  }
 
-        /* --- Botón Salir --- */
-        #exit-button-roulette-user { position: absolute; top: 15px; right: 15px; padding: 8px 12px; background-color: #4a5568; color: #f7fafc; text-decoration: none; border-radius: 6px; font-size: 0.8em; font-weight: 600; border: 1px solid #718096; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 100; transition: all 0.2s ease; user-select: none; }
-        #exit-button-roulette-user:hover { background-color: #718096; border-color: #a0aec0; }
+  /* ------------------------------------------------------------ LAYOUT */
+  #app {
+    position: absolute;
+    top: var(--hud);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 2px calc(10px + var(--ax-safe-right)) 0 calc(10px + var(--ax-safe-left));
+  }
 
-        /* --- Sección Ruleta y Historial --- */
-        .roulette-section {
-            width: 100%; display: flex;
-            justify-content: center; align-items: flex-start;
-            padding: 20px 0; margin-bottom: 20px;
-            gap: 20px;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
-        }
+  #stage {
+    flex: none;
+    height: clamp(124px, calc(100dvh - var(--hud) - var(--ax-safe-bottom) - 636px), 330px);
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
 
-        /* --- Panel de Historial --- */
-        #history-panel {
-            width: 80px; /* Fixed width for history panel */
-            max-height: 400px; /* Max height */
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow: hidden; /* Hide overflow */
-            order: 1; /* History first by default */
-        }
-        #history-panel h3 {
-            color: #f4a261;
-            font-size: 0.9em;
-            margin-bottom: 10px;
-            text-align: center;
-            white-space: nowrap; /* Prevent title wrapping */
-        }
-        #historyList {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            width: 100%;
-            max-height: calc(400px - 50px); /* Adjust max height based on title */
-            overflow-y: auto; /* Enable vertical scroll */
-            display: flex;
-            flex-direction: column; /* Stack history items vertically */
-            align-items: center;
-            gap: 5px; /* Space between history items */
-        }
-        #historyList li {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 35px; /* Fixed size for history circles */
-            height: 35px;
-            border-radius: 50%; /* Make them circular */
-            font-size: 0.9em;
-            font-weight: 600;
-            color: white;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
-            flex-shrink: 0; /* Prevent shrinking */
-        }
-        #historyList li.history-red { background-color: #c53030; }
-        #historyList li.history-black { background-color: #1A202C; }
-        #historyList li.history-green { background-color: #2ecc71; }
+  #wheelSlot {
+    position: relative;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    flex: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: radial-gradient(circle, rgba(255, 47, 179, 0.18) 0%, rgba(139, 92, 255, 0.12) 55%, transparent 72%);
+  }
+  #wheelSlot::after {
+    content: "";
+    position: absolute;
+    inset: -6%;
+    border-radius: 50%;
+    box-shadow: 0 0 32px rgba(255, 204, 51, 0.18), 0 0 60px rgba(255, 47, 179, 0.15);
+    pointer-events: none;
+  }
+  .slot-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    transform: translate(-50%, 0);
+    z-index: 801;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #ffe9a6;
+    background: rgba(20, 12, 0, 0.85);
+    border: 1px solid rgba(255, 204, 51, 0.5);
+    padding: 2px 8px;
+    border-radius: 99px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  body.has-bets:not(.spinning) .slot-hint { opacity: 1; animation: ax-blink 1.6s ease-in-out infinite; }
 
-        /* --- Área de la Ruleta --- */
-        .roulette-area {
-            position: relative; display: flex; justify-content: center; align-items: center;
-            /* Responsive sizing for the roulette wheel */
-            max-width: min(85vw, 700px); /* Max width based on viewport or fixed */
-            max-height: min(70vh, 700px); /* Max height based on viewport or fixed */
-            min-width: calc(380px * 0.75); /* Minimum size based on container */
-            min-height: calc(380px * 0.75);
-            order: 2; /* Roulette after history */
-        }
+  #info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 10px;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .last-row { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .last-txt { min-width: 0; }
+  .last-k { font-size: 9px; letter-spacing: 0.22em; font-weight: 800; color: var(--ax-muted); text-transform: uppercase; }
+  .last-d { font-size: 12px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .strip { display: flex; gap: 3px; overflow: hidden; min-height: 20px; align-items: center; -webkit-mask: linear-gradient(90deg, #000 80%, transparent); mask: linear-gradient(90deg, #000 80%, transparent); }
+  .strip .badge, .hc .badge { width: 20px; height: 20px; font-size: 8.5px; }
+  .strip .empty { font-size: 11px; color: var(--ax-muted); }
+  .hc { display: flex; align-items: center; gap: 3px; min-height: 20px; overflow: hidden; }
+  .hc .lbl { font-size: 13px; width: 16px; text-align: center; flex: none; }
+  .hc .sep { flex: 1; min-width: 4px; }
+  .rb { display: flex; height: 6px; border-radius: 9px; overflow: hidden; background: rgba(255, 255, 255, 0.08); }
+  .rb i { display: block; height: 100%; transition: width 0.6s ease; }
+  .rb .r { background: linear-gradient(90deg, #ff4d6a, #c8102e); }
+  .rb .z { background: #19c16f; }
+  .rb .b { background: linear-gradient(90deg, #3a3650, #14121f); }
+  .rb-legend { display: flex; justify-content: space-between; font-size: 9px; font-weight: 800; color: var(--ax-muted); margin-top: -3px; }
 
-        canvas { display: block; border: 4px solid #f4a261; border-radius: 50%; background-color: #e0e0e0; box-shadow: 0 0 15px rgba(244, 162, 97, 0.5); width: 100%; height: 100%; aspect-ratio: 1 / 1; /* Maintain square aspect ratio */ cursor: pointer; transition: transform 0.2s ease; }
-        canvas:hover { transform: scale(1.02); } /* Slight zoom on hover */
-        .pointer { width: 0; height: 0; --pointer-size: max(12px, min(2.5vw, 20px)); /* Responsive pointer size */ border-left: calc(var(--pointer-size) * 0.6) solid transparent; border-right: calc(var(--pointer-size) * 0.6) solid transparent; border-top: var(--pointer-size) solid #e76f51; position: absolute; top: 50%; left: 50%; z-index: 10; transition: transform 0.3s ease; /* Smooth transform */ }
+  .badge {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: var(--ax-display);
+    font-size: 9px;
+    color: #fff;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 220, 140, 0.35);
+  }
+  .badge.r { background: radial-gradient(circle at 35% 30%, #ff6b80, #c8102e 60%, #7a0619); }
+  .badge.b { background: radial-gradient(circle at 35% 30%, #4a4562, #15131f 60%, #050408); }
+  .badge.z { background: radial-gradient(circle at 35% 30%, #5dffb0, #0f9d58 60%, #05502b); }
+  .badge.big { width: 42px; height: 42px; font-size: 16px; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 214, 120, 0.8), 0 0 16px rgba(255, 204, 51, 0.45); }
+  .badge.big.none { background: rgba(255, 255, 255, 0.06); color: var(--ax-muted); }
+  .badge.fresh { animation: badgeIn 0.6s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+  .badge.hot { box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35), 0 0 0 1px #ff9f1c, 0 0 8px rgba(255, 120, 30, 0.7); }
+  .badge.cold { box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35), 0 0 0 1px #22e4ff, 0 0 8px rgba(34, 228, 255, 0.6); }
+  @keyframes badgeIn { from { transform: scale(0) rotate(-120deg); opacity: 0; } to { transform: none; opacity: 1; } }
 
-        /* --- Sección Controles (Tapete) --- */
-        .controls-section {
-            width: 100%; background-color: #1a472a; /* Dark green felt color */ border: 5px solid #8B4513; /* Wood-like border */
-            padding: 15px;
-            border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: inset 0 0 15px rgba(0,0,0,0.4); /* Inner shadow for depth */
-        }
-        .controls-section h1 { color: #f4a261; margin-bottom: 15px; font-size: 1.4em; text-align: center; text-shadow: 1px 1px 2px #000; }
-        .balance-info { margin-bottom: 10px; text-align: center; width: 100%; font-size: 1em; color: #f0e68c; /* Khaki color for text */ }
-        .balance-info span { font-weight: bold; color: #ffffff; background-color: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px; display: inline-block; margin-left: 5px; }
-        .current-round-bets { width: 100%; max-width: 600px; margin-bottom: 15px; padding: 10px; background-color: rgba(0,0,0,0.2); border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .total-bet-amount { font-size: 0.9em; margin-bottom: 8px; color: #f0e68c;}
-        .total-bet-amount span { color: #fff; }
-        #betsList { list-style: none; padding: 0; margin: 0; max-height: 80px; overflow-y: auto; font-size: 0.8em; text-align: left; border: 1px solid rgba(0,0,0,0.3); border-radius: 5px; padding: 8px; background-color: rgba(0,0,0,0.2); color: #eee; }
-        #betsList li { margin-bottom: 4px; padding: 3px 0; border-bottom: 1px dashed rgba(255,255,255,0.2); }
-        #betsList li:last-child { border-bottom: none; }
-        .controls { width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 15px;}
-        .controls label { color: #f0e68c; font-size: 0.9em; margin-bottom: 8px; }
-        .controls input[type="number"] { padding: 8px 12px; border: 1px solid #a0aec0; border-radius: 6px; background-color: #edf2f7; color: #2d3748; font-family: 'Inter', sans-serif; font-weight: 600; width: 120px; text-align: center; margin-bottom: 10px; font-size: 1em; }
+  /* ------------------------------------------------------------- MESA */
+  #tableWrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    border-radius: 18px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #tableWrap::-webkit-scrollbar { display: none; }
 
-        /* --- Layout del Tapete de Apuestas (bet-options) --- */
-        .bet-options {
-            display: grid;
-            /* Grid layout for desktop: 1 (zero) + 12 (numbers) + 1 (columns) = 14 columns */
-            grid-template-columns: minmax(40px, auto) repeat(12, minmax(30px, 1fr)) minmax(40px, auto);
-            /* 5 rows: 3 (numbers/columns) + 1 (dozens) + 1 (outside) */
-            grid-template-rows: repeat(3, auto) auto auto;
-            gap: 4px; width: 100%;
-            max-width: 700px; /* Max width for the betting table */
-            margin-top: 10px; background-color: #1c5f3a; /* Slightly lighter green for the table */ padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.2);
-        }
+  #table {
+    position: relative;
+    min-height: 100%;
+    display: grid;
+    grid-template-columns: 46px 36px repeat(3, minmax(0, 1fr));
+    grid-template-rows: 34px repeat(12, minmax(32px, 1fr)) 30px;
+    gap: 2px;
+    padding: 6px;
+    border-radius: 18px;
+    background:
+      repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0 2px, transparent 2px 5px),
+      radial-gradient(130% 70% at 50% 0%, var(--felt-a), var(--felt-b) 60%, var(--felt-c));
+    border: 1px solid rgba(255, 214, 120, 0.5);
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55), inset 0 0 0 3px rgba(0, 0, 0, 0.25), 0 0 0 3px #2a1206, 0 0 0 4px rgba(255, 204, 51, 0.35), 0 0 30px rgba(43, 255, 136, 0.12);
+  }
+  #table.lose { animation: tableLose 0.7s ease; }
+  @keyframes tableLose {
+    0%, 100% { box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55), 0 0 0 3px #2a1206, 0 0 0 4px rgba(255, 204, 51, 0.35); transform: none; }
+    15% { transform: translateX(-6px); }
+    30% { box-shadow: inset 0 0 80px rgba(255, 0, 40, 0.6), 0 0 0 3px #2a1206, 0 0 30px 4px rgba(255, 59, 92, 0.7); transform: translateX(5px); }
+    45% { transform: translateX(-3px); }
+    60% { transform: translateX(2px); }
+  }
 
-        /* Explicit grid positioning for desktop */
-        .number-button.zero {
-            grid-column: 1 / 2; /* First column */
-            grid-row: 1 / 4;     /* Span 3 rows */
-            height: 100%; /* Fill cell height */
-            aspect-ratio: auto; /* Allow non-square */
-        }
-        .number-grid {
-            grid-column: 2 / 14; /* Columns 2 to 13 */
-            grid-row: 1 / 4;     /* Span 3 rows */
-            display: grid; /* Inner grid for numbers */
-            grid-template-columns: repeat(12, 1fr); /* 12 equal columns */
-            grid-template-rows: repeat(3, 1fr); /* 3 equal rows */
-            gap: 3px; align-items: stretch; /* Stretch items to fill cells */
-        }
-        .column-bets {
-            grid-column: 14 / 15; /* Last column */
-            grid-row: 1 / 4;     /* Span 3 rows */
-            display: grid; /* Inner grid for column bets */
-            grid-template-columns: 1fr; /* Single column */
-            grid-template-rows: repeat(3, 1fr); /* 3 equal rows */
-            gap: 3px;
-        }
-        .dozen-bets {
-            grid-column: 2 / 14; /* Span number columns */
-            grid-row: 4 / 5;     /* Fourth row */
-            display: grid; /* Inner grid for dozen bets */
-            grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 equal columns */
-            gap: 4px;
-        }
-        .outside-bets-bottom {
-            grid-column: 2 / 14; /* Span number columns */
-            grid-row: 5 / 6;     /* Fifth row */
-            display: grid; /* Inner grid for outside bets */
-            grid-template-columns: repeat(6, minmax(0, 1fr)); /* 6 equal columns */
-            gap: 4px;
-        }
+  .cell {
+    position: relative;
+    margin: 0;
+    padding: 0 0 0 0;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.035);
+    color: #fff;
+    font-family: var(--ax-display);
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+    transition: transform 0.1s ease, filter 0.2s ease, box-shadow 0.25s ease, opacity 0.25s;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .cell:active { transform: scale(0.95); filter: brightness(1.35); }
+  .cell.n { padding-right: 22px; }
+  .cell.r { background: linear-gradient(180deg, #e62e48, #a10e27); border-color: rgba(255, 190, 150, 0.45); }
+  .cell.b { background: linear-gradient(180deg, #2c2942, #0d0b17); }
+  .cell.zero {
+    background: linear-gradient(180deg, #22d07c, #077a40);
+    border-radius: 50% 50% 8px 8px / 100% 100% 8px 8px;
+    padding-right: 0;
+    font-size: 17px;
+  }
+  .cell.out { font-family: var(--ax-font); font-weight: 900; font-size: 11px; letter-spacing: 0.02em; flex-direction: column; gap: 3px; }
+  .cell.out small { font-size: 8px; font-weight: 800; color: rgba(255, 255, 255, 0.6); letter-spacing: 0.08em; }
+  .cell.doz { font-family: var(--ax-font); font-weight: 900; font-size: 11px; letter-spacing: 0.12em; padding-bottom: 12px; }
+  .cell.doz span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; }
+  .cell.col { font-size: 12px; }
+  .cell.col .stk { right: 4px; }
+  .diamond { width: 18px; height: 18px; transform: rotate(45deg); border-radius: 3px; border: 1px solid rgba(255, 230, 170, 0.7); }
+  .diamond.r { background: linear-gradient(135deg, #ff5a72, #b30f2b); box-shadow: 0 0 10px rgba(255, 40, 80, 0.6); }
+  .diamond.b { background: linear-gradient(135deg, #4a4562, #0b0a12); box-shadow: 0 0 8px rgba(0, 0, 0, 0.8); }
+  .deco {
+    border: 1px dashed rgba(255, 214, 120, 0.25);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 233, 166, 0.75);
+    text-align: center;
+    line-height: 1.2;
+    padding: 0 2px;
+    pointer-events: none;
+  }
+  .deco b { font-size: 12px; letter-spacing: 0; color: #fff; font-family: var(--ax-font); font-weight: 900; }
 
-        /* General betting button styles */
-        .bet-table-button {
-            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.7em; /* Smaller font for buttons */
-            padding: 5px; border: 1px solid rgba(0,0,0,0.6); border-radius: 3px;
-            cursor: pointer; transition: all 0.15s ease; text-align: center;
-            background-color: #1a472a; /* Match section background */ color: white;
-            display: flex; align-items: center; justify-content: center;
-            min-height: 30px; line-height: 1.2;
-            word-break: break-word; /* Allow text wrapping */
-        }
-        .bet-table-button:hover:not(:disabled) { background-color: #2f855a; } /* Hover effect */
-        .bet-table-button:disabled { opacity: 0.6; cursor: not-allowed; } /* Disabled state */
-        .bet-table-button.active-bet { background-color: #f4a261; color: #1a472a; border-color: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); } /* Highlight active bet */
+  /* Estados de la mesa */
+  .cell.cover { filter: brightness(1.45); box-shadow: 0 0 0 1px #fff3b0, 0 0 12px rgba(255, 220, 120, 0.7); }
+  #table.result .cell:not(.lit) { filter: brightness(0.5) saturate(0.6); }
+  .cell.lit { box-shadow: 0 0 0 1px rgba(255, 236, 170, 0.95), 0 0 12px rgba(255, 204, 51, 0.55); z-index: 1; }
+  .cell.won { z-index: 2; animation: wonPulse 0.55s ease-in-out infinite alternate; }
+  @keyframes wonPulse {
+    from { box-shadow: 0 0 0 2px #ffe680, 0 0 14px rgba(255, 204, 51, 0.8); filter: brightness(1.15); }
+    to { box-shadow: 0 0 0 3px #fff, 0 0 30px rgba(255, 204, 51, 1), 0 0 50px rgba(255, 159, 28, 0.6); filter: brightness(1.45); }
+  }
+  .cell.hit { z-index: 3; box-shadow: 0 0 0 2px #fff, 0 0 18px #fff, 0 0 36px rgba(255, 204, 51, 0.9); filter: brightness(1.3); }
+  .dolly {
+    position: absolute;
+    left: calc((100% - 22px) / 2 - 7px);
+    top: -13px;
+    width: 14px;
+    height: 20px;
+    z-index: 4;
+    pointer-events: none;
+    animation: dollyDrop 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  }
+  .dolly::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 0;
+    height: 9px;
+    border-radius: 3px 3px 5px 5px;
+    background: linear-gradient(90deg, rgba(220, 240, 255, 0.7), #fff, rgba(200, 225, 255, 0.6));
+    box-shadow: 0 0 8px #fff;
+  }
+  .dolly::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff, #cfe6ff 60%, #8fb6e6);
+    box-shadow: 0 0 10px #fff;
+  }
+  @keyframes dollyDrop { from { transform: translateY(-60px) scale(1.6); opacity: 0; } to { transform: none; opacity: 1; } }
 
-        /* Specific button styles */
-        .number-button { font-size: 0.8em; aspect-ratio: 1 / 1; min-width: 30px; } /* Square number buttons */
-        .number-button.red { background-color: #c53030; border-color: #9B2C2C; }
-        .number-button.red:hover:not(:disabled) { background-color: #e53e3e; }
-        .number-button.red.active-bet { background-color: #f4a261; color: #c53030; border-color: #fff; }
-        .number-button.black { background-color: #1A202C; border-color: #000; }
-        .number-button.black:hover:not(:disabled) { background-color: #2D3748; }
-        .number-button.black.active-bet { background-color: #f4a261; color: #1A202C; border-color: #fff; }
-        .number-button.zero { background-color: #276749; border-color: #1a472a; font-size: 0.9em; }
-        .number-button.zero:hover:not(:disabled) { background-color: #2f855a; }
-        .number-button.zero.active-bet { background-color: #f4a261; color: #276749; border-color: #fff; }
-        .column-bets .bet-table-button { aspect-ratio: auto; height: 100%; } /* Column buttons fill height */
-        .bet-table-button-red { background-color: #c53030; border-color: #9B2C2C; }
-        .bet-table-button-red:hover:not(:disabled) { background-color: #e53e3e; }
-        .bet-table-button-black { background-color: #1A202C; border-color: #000; }
-        .bet-table-button-black:hover:not(:disabled) { background-color: #2D3748; }
+  /* Pilas de fichas */
+  .stk { position: absolute; right: 5px; top: 50%; width: 24px; height: 24px; margin-top: -12px; pointer-events: none; z-index: 2; }
+  .cell.doz .stk { right: auto; left: 50%; margin-left: -12px; top: auto; bottom: 3px; margin-top: 0; }
+  .cell.out .stk { right: -4px; top: auto; bottom: -3px; margin-top: 0; }
+  .cell.has { z-index: 2; }
+  .cell.zero .stk { right: 14%; }
+  .cell.zero .dolly { left: calc(50% - 7px); }
+  .stk .chip { position: absolute; left: 0; --s: 24px; font-size: 8.5px; }
+  .stk.pop { animation: stkPop 0.32s cubic-bezier(0.2, 1.6, 0.4, 1); }
+  @keyframes stkPop { 0% { transform: translateY(-10px) scale(1.35); } 100% { transform: none; } }
 
-        /* --- Botones de Acción (Limpiar, Repetir) --- */
-        .action-buttons-container { /* Renamed for clarity */
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap; /* Allow wrapping if needed */
-            width: 90%;
-            max-width: 450px; /* Slightly wider max-width */
-            margin-top: 20px;
-            gap: 15px; /* Space between buttons */
-        }
-        .action-button { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.9em; padding: 10px 15px; border: none; border-radius: 6px; color: white; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); flex-grow: 1; max-width: 200px; /* Adjusted max-width */ }
-        #clearBetsButton { background-color: #e53e3e; } /* Red for clear */
-        #clearBetsButton:hover:not(:disabled) { background-color: #c53030; }
-        #repeatBetButton { background-color: #3182ce; } /* Blue for repeat */
-        #repeatBetButton:hover:not(:disabled) { background-color: #2b6cb0; }
-        .action-button:disabled { background-color: #a0aec0; cursor: not-allowed; opacity: 0.7; }
+  /* --------------------------------------------------------- FICHAS */
+  .chip {
+    --s: 40px;
+    --c: #e8e6f0;
+    --st: #fff;
+    position: relative;
+    width: var(--s);
+    height: var(--s);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: var(--ax-font);
+    font-weight: 900;
+    font-size: calc(var(--s) * 0.3);
+    letter-spacing: -0.03em;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+    background:
+      radial-gradient(circle, var(--c) 0 54%, rgba(0, 0, 0, 0.28) 55%, var(--c) 58%, transparent 59%),
+      repeating-conic-gradient(from 7deg, var(--c) 0 30deg, var(--st) 30deg 45deg);
+    box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.3), inset 0 2px 1px rgba(255, 255, 255, 0.4), inset 0 -2px 2px rgba(0, 0, 0, 0.3), 0 2px 0 rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.45);
+  }
+  .chip::before { content: ""; position: absolute; inset: 21%; border-radius: 50%; border: 1px dashed rgba(255, 255, 255, 0.55); }
+  .chip.c1 { --c: #ecebf4; --st: #5e5a7e; color: #2a2740; text-shadow: none; }
+  .chip.c1::before, .chip.c1000::before { border-color: rgba(0, 0, 0, 0.3); }
+  .chip.c5 { --c: #d91f3d; --st: #fff; }
+  .chip.c25 { --c: #0fa15a; --st: #fff; }
+  .chip.c100 { --c: #1d1a2c; --st: #ffcc33; color: #ffe9a6; }
+  .chip.c500 { --c: #7a3cff; --st: #efe6ff; }
+  .chip.c1000 { --c: #ffb51f; --st: #7a3d00; color: #3a1d00; text-shadow: none; }
+  .chip.c5000 { --c: #0bb5d6; --st: #eafdff; }
+  .chip.fly { position: fixed; left: 0; top: 0; z-index: 850; pointer-events: none; --s: 30px; will-change: transform; }
 
-        /* --- Mensaje --- */
-        #message { margin-top: 15px; font-size: 0.9em; min-height: 1.5em; line-height: 1.4; color: #f0e68c; text-align: center; width: 100%; font-weight: 600; text-shadow: 1px 1px 1px #000;}
+  /* ------------------------------------------------------ BARRA INFERIOR */
+  #bar { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 2px 0 calc(var(--ax-safe-bottom) + 10px); }
+  #chips { display: flex; justify-content: space-between; align-items: center; gap: 3px; padding: 4px 2px 0; }
+  .chipBtn {
+    --s: min(46px, calc((100vw - 52px) / 7.3));
+    padding: 0;
+    border: 0;
+    background: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.18s cubic-bezier(0.2, 1.5, 0.4, 1), filter 0.2s;
+    filter: saturate(0.75) brightness(0.85);
+  }
+  .chipBtn .chip { --s: inherit; width: var(--s); height: var(--s); }
+  .chipBtn.sel { transform: translateY(-5px) scale(1.1); filter: none; }
+  .chipBtn.sel .chip { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(255, 204, 51, 0.9), 0 0 18px rgba(255, 204, 51, 0.8), 0 6px 10px rgba(0, 0, 0, 0.5); }
+  .chipBtn:disabled { opacity: 0.35; filter: grayscale(1); }
+  #actions { display: flex; gap: 6px; align-items: stretch; }
+  .act { width: 50px; min-height: 52px; padding: 0; flex: none; flex-direction: column; gap: 2px; font-size: 9px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 14px; }
+  .act svg { width: 20px; height: 20px; }
+  .act b { font-family: var(--ax-display); font-weight: 400; font-size: 17px; line-height: 20px; }
+  #spinBtn { flex: 1; min-width: 0; min-height: 52px; flex-direction: column; gap: 0; padding: 0 10px; }
+  #spinBtn .sp-main { font-family: var(--ax-display); font-weight: 400; font-size: 20px; letter-spacing: 0.06em; line-height: 1.05; }
+  #spinBtn .sp-sub { font-size: 11px; font-weight: 800; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  body.has-bets:not(.spinning) #spinBtn { animation: spinGlow 1.4s ease-in-out infinite; }
+  @keyframes spinGlow {
+    0%, 100% { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 6px 0 #8a4b00, 0 10px 28px rgba(255, 160, 0, 0.35); }
+    50% { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 6px 0 #8a4b00, 0 0 34px rgba(255, 204, 51, 0.85); }
+  }
+  #bar.nudge { animation: nudge 0.4s ease; }
+  @keyframes nudge { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
 
-        /* --- Media Queries (SIN CAMBIOS) --- */
-        @media (max-width: 700px) {
-            .roulette-section { justify-content: space-around; align-items: center; }
-            #history-panel { max-height: 300px; width: 65px; }
-            #historyList li { width: 30px; height: 30px; font-size: 0.8em; }
-            /* Tablet layout for betting table using grid areas */
-            .bet-options {
-                display: grid;
-                grid-template-areas:
-                    "zero    numbers numbers"
-                    "column  column  column"
-                    "dozen   dozen   dozen"
-                    "outside outside outside";
-                grid-template-columns: auto 1fr; /* Zero column takes auto width */
-                grid-template-rows: auto auto auto auto; /* Rows adjust to content */
-                gap: 6px; padding: 8px;
-            }
-            /* Reset explicit grid placement for elements */
-            .number-button.zero, .number-grid, .column-bets, .dozen-bets, .outside-bets-bottom {
-                grid-column: auto; grid-row: auto;
-            }
-            /* Assign grid areas */
-            .number-button.zero { grid-area: zero; height: auto; aspect-ratio: 1 / 1;} /* Back to square if desired */
-            .number-grid { grid-area: numbers; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, auto); } /* 6 columns for numbers */
-            .column-bets { grid-area: column; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto; border: none; padding: 0; background: none; } /* Horizontal columns */
-            .dozen-bets { grid-area: dozen; display: grid; grid-template-columns: repeat(3, 1fr); border: none; padding: 0; background: none; } /* Horizontal dozens */
-            .outside-bets-bottom { grid-area: outside; display: grid; grid-template-columns: repeat(3, 1fr); } /* 3 columns for outside bets */
+  /* ----------------------------------------------------- CANVAS / ESCENA */
+  #wheelCv { position: fixed; left: 0; top: 0; z-index: 800; pointer-events: none; }
+  #backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 790;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.6s ease, visibility 0s linear 0.6s;
+    background:
+      radial-gradient(60% 45% at 50% var(--by, 50%), rgba(255, 190, 60, 0.16), transparent 70%),
+      radial-gradient(120% 80% at 50% var(--by, 50%), rgba(40, 18, 70, 0.75), rgba(3, 2, 8, 0.97) 70%);
+  }
+  #backdrop.on { opacity: 1; visibility: visible; transition: opacity 0.6s ease; }
+  #backdrop::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: var(--by, 50%);
+    width: 200vmax;
+    height: 200vmax;
+    margin: -100vmax 0 0 -100vmax;
+    background: repeating-conic-gradient(from 0deg, rgba(255, 210, 63, 0.05) 0 6deg, transparent 6deg 18deg);
+    -webkit-mask: radial-gradient(circle, #000 0, transparent 45%);
+    mask: radial-gradient(circle, #000 0, transparent 45%);
+    animation: ax-spin 40s linear infinite;
+  }
+  #spinInfo {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--ax-safe-bottom) + 22px);
+    z-index: 810;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  body.spinning #spinInfo { opacity: 1; transform: none; }
+  #spinInfo .si-bet { font-family: var(--ax-display); font-size: 18px; color: #ffe9a6; text-shadow: 0 0 14px rgba(255, 190, 40, 0.7); }
+  #spinInfo .si-hint { margin-top: 4px; font-size: 10px; letter-spacing: 0.24em; font-weight: 800; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); animation: ax-blink 1.6s ease-in-out infinite; }
+  body.turbo #spinInfo .si-hint { color: var(--ax-cyan); animation: none; opacity: 1; }
 
-            .bet-table-button { font-size: 0.65em; padding: 5px 3px; min-height: 30px;}
-            .number-button { font-size: 0.7em; min-width: 25px; }
-            .action-button { font-size: 0.85em; padding: 9px 12px; }
-        }
+  /* --------------------------------------------------------- REVELACIÓN */
+  #reveal {
+    position: fixed;
+    inset: 0;
+    z-index: 2050;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  #reveal.show { visibility: visible; }
+  #reveal::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 48%, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.2) 45%, transparent 70%);
+  }
+  .rv-rays {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    width: 200vmax;
+    height: 200vmax;
+    margin: -100vmax 0 0 -100vmax;
+    background: repeating-conic-gradient(from 0deg, var(--rv-ray) 0 7deg, transparent 7deg 20deg);
+    -webkit-mask: radial-gradient(circle, #000 0, transparent 38%);
+    mask: radial-gradient(circle, #000 0, transparent 38%);
+    animation: ax-spin 12s linear infinite, ax-fade-in 0.5s ease both;
+  }
+  .rv-disc {
+    position: relative;
+    width: min(54vw, 240px);
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: var(--ax-display);
+    font-size: min(27vw, 120px);
+    color: #fff;
+    border: 4px solid #ffd76a;
+    text-shadow: 0 6px 0 rgba(0, 0, 0, 0.35), 0 0 26px rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 0 7px rgba(0, 0, 0, 0.55), 0 0 0 9px rgba(255, 214, 106, 0.6), 0 0 50px var(--rv-glow), 0 0 140px var(--rv-glow), inset 0 -16px 34px rgba(0, 0, 0, 0.5), inset 0 12px 26px rgba(255, 255, 255, 0.28);
+    animation: rvIn 0.75s cubic-bezier(0.2, 1.5, 0.35, 1) both;
+  }
+  .rv-disc::after {
+    content: "";
+    position: absolute;
+    inset: 6%;
+    border-radius: 50%;
+    border: 2px dashed rgba(255, 255, 255, 0.35);
+    animation: ax-spin 8s linear infinite;
+  }
+  #reveal.r { --rv-glow: rgba(255, 40, 80, 0.85); --rv-ray: rgba(255, 60, 90, 0.16); }
+  #reveal.b { --rv-glow: rgba(160, 140, 255, 0.75); --rv-ray: rgba(170, 150, 255, 0.13); }
+  #reveal.z { --rv-glow: rgba(43, 255, 136, 0.85); --rv-ray: rgba(43, 255, 136, 0.16); }
+  #reveal.r .rv-disc { background: radial-gradient(circle at 35% 28%, #ff6b82, #c8102e 55%, #5e0414); }
+  #reveal.b .rv-disc { background: radial-gradient(circle at 35% 28%, #5a5478, #191626 55%, #040307); }
+  #reveal.z .rv-disc { background: radial-gradient(circle at 35% 28%, #6dffb8, #0f9d58 55%, #033d1f); }
+  .rv-tags { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 92vw; }
+  .rv-tags span {
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: rgba(10, 6, 24, 0.85);
+    border: 1px solid rgba(255, 214, 106, 0.6);
+    color: #ffe9a6;
+    box-shadow: 0 0 16px rgba(255, 190, 40, 0.25);
+    animation: ax-rise 0.45s ease both;
+  }
+  #reveal.out .rv-disc { animation: rvOut 0.4s ease forwards; }
+  #reveal.out .rv-tags, #reveal.out .rv-rays { animation: ax-fade-out 0.3s ease forwards; }
+  @keyframes rvIn {
+    0% { transform: scale(0.2) rotate(-200deg); opacity: 0; filter: blur(10px); }
+    60% { transform: scale(1.12) rotate(8deg); opacity: 1; filter: blur(0); }
+    100% { transform: none; opacity: 1; }
+  }
+  @keyframes rvOut { to { transform: scale(0.4) translateY(30vh); opacity: 0; } }
 
-        @media (max-width: 480px) {
-            .roulette-section { flex-direction: column; align-items: center; gap: 15px; }
-            #history-panel { order: 1; width: 90%; max-height: 80px; flex-direction: row; justify-content: center; padding: 5px; }
-            #history-panel h3 { display: none; } /* Hide title on small screens */
-            #historyList { flex-direction: row; overflow-x: auto; overflow-y: hidden; max-height: 40px; width: auto; padding: 0 5px; justify-content: flex-start; } /* Horizontal scroll for history */
-            #historyList li { width: 30px; height: 30px; font-size: 0.8em; margin-right: 5px; }
-            .roulette-area { order: 2; min-width: calc(320px * 0.8); min-height: calc(320px * 0.8); }
+  /* Intro: rueda que gira */
+  .ax-cine-icon .intro-wheel { width: 150px; height: 150px; display: block; animation: ax-spin 5s linear infinite; filter: drop-shadow(0 0 30px rgba(255, 190, 40, 0.6)); }
 
-            /* Mobile layout for betting table using grid areas */
-            .bet-options {
-                display: grid;
-                grid-template-areas:
-                    "zero"
-                    "numbers"
-                    "column"
-                    "dozen"
-                    "outside";
-                grid-template-columns: 1fr; /* Single column */
-                grid-template-rows: auto auto auto auto auto; /* Rows adjust */
-                gap: 10px;
-            }
-             /* Reset explicit grid placement */
-            .number-button.zero, .number-grid, .column-bets, .dozen-bets, .outside-bets-bottom {
-                grid-column: auto; grid-row: auto;
-            }
-            /* Assign grid areas */
-            .number-button.zero { grid-area: zero; height: auto; aspect-ratio: auto; } /* Zero takes full width */
-            .number-grid { grid-area: numbers; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(9, auto); } /* 4 columns for numbers */
-            .column-bets { grid-area: column; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 5px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 5px; padding: 5px; background-color: rgba(0, 0, 0, 0.1); } /* Stack columns */
-            .dozen-bets { grid-area: dozen; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 5px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 5px; padding: 5px; background-color: rgba(0, 0, 0, 0.1); } /* Stack dozens */
-            .outside-bets-bottom { grid-area: outside; display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; } /* 2 columns for outside bets */
+  /* Modales */
+  .pay-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .pay-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+  .pay-table td:last-child { text-align: right; font-weight: 900; color: var(--ax-gold); white-space: nowrap; }
+  .help-list { margin: 12px 0 0; padding-left: 18px; color: #cfc8f2; font-size: 14px; }
+  .help-list li { margin: 4px 0; }
+  .stats-grid { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 14px; }
+  .stats-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+  .stats-row .k { width: 92px; font-size: 12px; font-weight: 800; color: var(--ax-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .stats-bars { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px; align-items: center; font-size: 13px; font-weight: 700; }
+  .stats-bars .bar { height: 8px; border-radius: 9px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+  .stats-bars .bar i { display: block; height: 100%; background: var(--ax-gold-grad); }
 
-            .bet-table-button { font-size: 0.7em; min-height: 32px; padding: 6px 5px; }
-            .number-button { font-size: 0.75em; }
-            .controls-section { padding: 10px; }
-            .controls input[type="number"] { width: 100px; font-size: 0.9em; }
-            .action-button { font-size: 0.8em; padding: 8px 10px; }
-            .action-buttons-container { flex-direction: row; /* Keep buttons side-by-side if possible */ align-items: center; gap: 10px; }
-            .action-button { width: 45%; /* Approx half width */ max-width: 150px; } /* Adjust button width */
-        }
-
-        /* Estilos para modo guiado (visual) */
-        @keyframes colorSwapRed { 0%, 100% { background-color: #c53030; } 50% { background-color: #1A202C; } }
-        @keyframes colorSwapBlack { 0%, 100% { background-color: #1A202C; } 50% { background-color: #c53030; } }
-        .cheat-swap-red { animation: colorSwapRed 0.5s infinite; }
-        .cheat-swap-black { animation: colorSwapBlack 0.5s infinite; }
-    </style>
+  /* ------------------------------------------------------ ESCRITORIO */
+  @media (min-width: 900px) and (min-aspect-ratio: 5/4) {
+    #app {
+      max-width: 1180px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(380px, 450px);
+      grid-template-rows: minmax(0, 1fr) auto;
+      column-gap: 36px;
+      row-gap: 8px;
+      padding-top: 8px;
+    }
+    #stage { grid-row: 1 / span 2; grid-column: 1; height: auto; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+    #wheelSlot { height: auto; width: min(100%, calc(100dvh - var(--hud) - 210px)); }
+    #info { flex: none; width: min(100%, 460px); }
+    #tableWrap { grid-column: 2; grid-row: 1; }
+    #bar { grid-column: 2; grid-row: 2; }
+    .cell { font-size: 16px; }
+  }
+  @media (max-height: 700px) {
+    #actions .act span { display: none; }
+  }
+</style>
 </head>
-<body>
-    <a href="../index.html" id="exit-button-roulette-user">
-        &larr; Menu
-    </a>
+<body class="ax-fullscreen">
 
-    <div id="game-container">
-
-        <section class="roulette-section">
-            <div id="history-panel">
-                <h3>Historial</h3>
-                <ul id="historyList">
-                    </ul>
-            </div>
-
-            <div class="roulette-area">
-                 <div class="pointer"></div>
-                 <canvas id="rouletteCanvas" width="550" height="550"></canvas>
-            </div>
-        </section>
-
-        <section class="controls-section">
-            <h1>Ruleta</h1>
-            <div class="balance-info">
-                Saldo: <span id="balance">Cargando...</span> €
-            </div>
-
-            <div class="controls">
-                <label for="betAmount">Cantidad a Apostar por Clic:</label>
-                <input type="number" id="betAmount" min="1" value="10">
-            </div>
-            <div class="current-round-bets">
-                <div class="total-bet-amount">Apostado en esta ronda: <span id="totalBetSpan">0</span> €</div>
-                <ul id="betsList"></ul>
-            </div>
-
-            <div class="bet-options">
-                <button class="bet-table-button number-button zero" data-bet-type="number" data-number="0">0</button>
-                <div class="number-grid">
-                    </div>
-                 <div class="column-bets">
-                     <button class="bet-table-button" data-bet-type="column-3">Columna 3 (2:1)</button>
-                     <button class="bet-table-button" data-bet-type="column-2">Columna 2 (2:1)</button>
-                     <button class="bet-table-button" data-bet-type="column-1">Columna 1 (2:1)</button>
-                 </div>
-                 <div class="dozen-bets">
-                     <button class="bet-table-button" data-bet-type="dozen-1">1ª Docena (1-12)</button>
-                     <button class="bet-table-button" data-bet-type="dozen-2">2ª Docena (13-24)</button>
-                     <button class="bet-table-button" data-bet-type="dozen-3">3ª Docena (25-36)</button>
-                 </div>
-                 <div class="outside-bets-bottom">
-                     <button class="bet-table-button" data-bet-type="low">1-18 (Falta)</button>
-                     <button class="bet-table-button" data-bet-type="even">PAR</button>
-                     <button class="bet-table-button bet-table-button-red" data-bet-type="color-red">ROJO</button>
-                     <button class="bet-table-button bet-table-button-black" data-bet-type="color-black">NEGRO</button>
-                     <button class="bet-table-button" data-bet-type="odd">IMPAR</button>
-                     <button class="bet-table-button" data-bet-type="high">19-36 (Pasa)</button>
-                 </div>
-            </div>
-
-            <div class="action-buttons-container">
-                 <button id="clearBetsButton" class="action-button">Limpiar Apuestas</button>
-                 <button id="repeatBetButton" class="action-button" disabled>Repetir Apuesta</button>
-            </div>
-
-            <div id="message">Haz clic en el tapete para apostar y en la ruleta para girar!</div>
-        </section>
-
+<div id="app">
+  <section id="stage">
+    <div id="wheelSlot" role="button" aria-label="Girar la ruleta"><div class="slot-hint">Toca para girar</div></div>
+    <div id="info" class="ax-panel" role="button" aria-label="Estadísticas">
+      <div class="last-row">
+        <div id="lastBadge" class="badge big none">–</div>
+        <div class="last-txt">
+          <div class="last-k">Último número</div>
+          <div id="lastDesc" class="last-d">Hagan juego</div>
+        </div>
+      </div>
+      <div id="histStrip" class="strip"></div>
+      <div class="hc">
+        <span class="lbl" title="Calientes">🔥</span><span id="hot" style="display:flex;gap:3px"></span>
+        <span class="sep"></span>
+        <span class="lbl" title="Fríos">❄️</span><span id="cold" style="display:flex;gap:3px"></span>
+      </div>
+      <div>
+        <div class="rb"><i class="r" id="rbR"></i><i class="z" id="rbZ"></i><i class="b" id="rbB"></i></div>
+      </div>
+      <div class="rb-legend"><span id="lgR">R 0%</span><span id="lgZ">0 0%</span><span id="lgB">N 0%</span></div>
     </div>
-    <script>
-        // --- Configuración y Variables Globales ---
-        const canvas = document.getElementById('rouletteCanvas');
-        const ctx = canvas.getContext('2d');
-        const balanceDisplay = document.getElementById('balance');
-        const messageDisplay = document.getElementById('message');
-        const betAmountInput = document.getElementById('betAmount');
-        const pointer = document.querySelector('.pointer');
-        const betOptionsContainer = document.querySelector('.bet-options');
-        const clearBetsButton = document.getElementById('clearBetsButton');
-        const repeatBetButton = document.getElementById('repeatBetButton');
-        const betsListDisplay = document.getElementById('betsList');
-        const totalBetSpan = document.getElementById('totalBetSpan');
-        const numberGrid = document.querySelector('.number-grid');
-        const historyList = document.getElementById('historyList');
+  </section>
 
-        const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
-        const HISTORY_LOCAL_STORAGE_KEY = 'rouletteNumberHistory_v1';
-        const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1'; // <<< NUEVO: Clave de logros
-        const DEFAULT_BALANCE = 5000;
-        const MAX_HISTORY_LENGTH = 15;
+  <section id="tableWrap">
+    <div id="table"></div>
+  </section>
 
-        // <<< NUEVO: Definición de logros (COPIADA de index.html) >>>
-        const achievementsData = [
-            { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 }
-        ];
-        let unlockedAchievements = []; // <<< NUEVO: Array para IDs de logros desbloqueados
+  <footer id="bar">
+    <div id="chips"></div>
+    <div id="actions">
+      <button class="ax-btn ax-btn-ghost act" id="undoBtn" aria-label="Deshacer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span>Deshacer</span>
+      </button>
+      <button class="ax-btn ax-btn-ghost act" id="clearBtn" aria-label="Limpiar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg><span>Limpiar</span>
+      </button>
+      <button class="ax-btn ax-btn-ghost act" id="repeatBtn" aria-label="Repetir">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><span>Repetir</span>
+      </button>
+      <button class="ax-btn ax-btn-ghost act" id="doubleBtn" aria-label="Doblar"><b>x2</b><span>Doblar</span></button>
+      <button class="ax-btn ax-btn-gold" id="spinBtn"><span class="sp-main">GIRAR</span><span class="sp-sub" id="spinSub">Coloca tus fichas</span></button>
+    </div>
+  </footer>
+</div>
 
-        // Roulette segments order (European Roulette)
-        const segments = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
-        const segmentColors = {}; // Object to store colors for each segment number
-        const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
-        const blackNumbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
-        // Assign colors based on number
-        segments.forEach(num => {
-            if (num === 0) segmentColors[num] = '#2ecc71'; // Green for 0
-            else if (redNumbers.includes(num)) segmentColors[num] = '#c53030'; // Red
-            else segmentColors[num] = '#1A202C'; // Black
-        });
-        // Column definitions
-        const column1 = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34];
-        const column2 = [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35];
-        const column3 = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36];
-        const numSegments = segments.length;
-        const anglePerSegment = (2 * Math.PI) / numSegments; // Angle of each segment
+<div id="backdrop"></div>
+<canvas id="wheelCv"></canvas>
+<div id="spinInfo"><div class="si-bet" id="siBet"></div><div class="si-hint" id="siHint">Toca para acelerar</div></div>
+<div id="reveal"></div>
 
-        // Canvas and animation variables
-        let canvasSize = canvas.width; let centerX = canvasSize / 2; let centerY = canvasSize / 2; let radius = canvasSize / 2 - 10; let pointerHeight = 20; let borderWidth = 4; let currentAngle = 0; // Current rotation angle
-        let spinAngleStart = 0; // Starting angle for spin animation
-        let spinTime = 0; // Time elapsed during spin
-        let spinTimeTotal = 0; // Total duration of spin
-        let isSpinning = false; // Flag to indicate if the wheel is spinning
+<script src="../shared/arcade.js"></script>
+<script>
+(() => {
+  "use strict";
 
-        // Game state variables
-        let balance; // Player's balance
-        let currentBets = []; // Bets placed in the current round
-        let lastBets = []; // Bets placed in the previous round
-        let numberHistory = []; // History of winning numbers
+  /* =====================================================================
+     DATOS DE LA RULETA EUROPEA
+     ===================================================================== */
+  const TAU = Math.PI * 2;
+  const ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+  const IDX = {};
+  ORDER.forEach((n, i) => (IDX[n] = i));
+  const PA = TAU / 37; // ángulo de cada casilla
+  const REDS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+  const colorOf = (n) => (n === 0 ? "z" : REDS.has(n) ? "r" : "b");
 
-        // Cheat mode variables
-        let cheatModeActive = false;
-        let cheatTimeoutId = null;
+  const HISTORY_KEY = "rouletteNumberHistory_v1"; // misma clave que la versión anterior
+  const LASTBETS_KEY = "ruletaLastBets_v1";
+  const PENDING_KEY = "ruletaPendingSpin_v1";
+  const CHIP_KEY = "ruletaChip_v1";
+  const MAX_HISTORY = 50;
+  const CHIPS = [1, 5, 25, 100, 500, 1000, 5000];
 
-        // --- Funciones Saldo (localStorage) ---
-        function loadBalance() {
-            try {
-                const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
-                let balanceToUse = DEFAULT_BALANCE;
-                if (savedBalance !== null) {
-                    const parsedBalance = parseInt(savedBalance);
-                    if (!isNaN(parsedBalance)) {
-                        balanceToUse = parsedBalance;
-                    } else {
-                        console.warn('Invalid saved balance. Resetting to default.');
-                        localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_BALANCE.toString());
-                    }
-                } else {
-                    console.log('No balance found, starting with default.');
-                    localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, DEFAULT_BALANCE.toString());
-                }
-                balance = balanceToUse;
-            } catch (error) {
-                console.error("Error loading balance:", error);
-                balance = DEFAULT_BALANCE; // Fallback to default on error
-            }
-            updateBalanceDisplay();
+  /* Tipos de apuesta (mismos que la versión original) y multiplicador total
+     (incluye la apuesta devuelta): pleno 36 (35:1), docenas/columnas 3 (2:1),
+     sencillas 2 (1:1). Con el 0 solo gana el pleno al 0. */
+  const BETS = {};
+  for (let n = 0; n <= 36; n++) BETS["n" + n] = { type: "number", value: n, name: "Pleno al " + n, mult: 36, wins: (x) => x === n };
+  const def = (k, type, name, mult, fn) => (BETS[k] = { type, value: null, name, mult, wins: fn });
+  def("low", "low", "Falta (1-18)", 2, (x) => x >= 1 && x <= 18);
+  def("even", "even", "Par", 2, (x) => x !== 0 && x % 2 === 0);
+  def("red", "color-red", "Rojo", 2, (x) => REDS.has(x));
+  def("black", "color-black", "Negro", 2, (x) => x !== 0 && !REDS.has(x));
+  def("odd", "odd", "Impar", 2, (x) => x % 2 === 1);
+  def("high", "high", "Pasa (19-36)", 2, (x) => x >= 19 && x <= 36);
+  def("d1", "dozen-1", "1ª Docena (1-12)", 3, (x) => x >= 1 && x <= 12);
+  def("d2", "dozen-2", "2ª Docena (13-24)", 3, (x) => x >= 13 && x <= 24);
+  def("d3", "dozen-3", "3ª Docena (25-36)", 3, (x) => x >= 25 && x <= 36);
+  def("c1", "column-1", "Columna 1", 3, (x) => x !== 0 && x % 3 === 1);
+  def("c2", "column-2", "Columna 2", 3, (x) => x !== 0 && x % 3 === 2);
+  def("c3", "column-3", "Columna 3", 3, (x) => x !== 0 && x % 3 === 0);
+
+  const describe = (n) => {
+    if (n === 0) return ["Cero", "Verde"];
+    return [REDS.has(n) ? "Rojo" : "Negro", n % 2 ? "Impar" : "Par", n <= 18 ? "Falta" : "Pasa", Math.ceil(n / 12) + "ª Docena"];
+  };
+
+  /* =====================================================================
+     UTILIDADES
+     ===================================================================== */
+  const $ = (s) => document.querySelector(s);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const mod = (a, m) => ((a % m) + m) % m;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const rndi = (a, b) => Math.floor(rnd(a, b + 1));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const E = {
+    inOut: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+    out: (t) => 1 - Math.pow(1 - t, 3),
+    outQuad: (t) => 1 - (1 - t) * (1 - t),
+    inOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
+  };
+  const compact = (n) => {
+    if (n >= 1e6) return (Math.round(n / 1e5) / 10).toString().replace(".", ",") + "M";
+    if (n >= 1000) return (Math.round(n / 100) / 10).toString().replace(".", ",") + "K";
+    return String(n);
+  };
+  const chipLabel = (v) => (v >= 1000 ? v / 1000 + "K" : String(v));
+  const chipClass = (v) => "c" + v;
+  const breakdown = (amt) => {
+    const out = [];
+    for (let i = CHIPS.length - 1; i >= 0 && out.length < 6; i--) {
+      while (amt >= CHIPS[i] && out.length < 6) {
+        out.push(CHIPS[i]);
+        amt -= CHIPS[i];
+      }
+    }
+    return out;
+  };
+  function seeded(seed) {
+    return () => {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const store = {
+    get(k, d) {
+      try {
+        const v = JSON.parse(localStorage.getItem(k));
+        return v == null ? d : v;
+      } catch (e) {
+        return d;
+      }
+    },
+    set(k, v) {
+      try {
+        localStorage.setItem(k, JSON.stringify(v));
+      } catch (e) {}
+    },
+    del(k) {
+      try {
+        localStorage.removeItem(k);
+      } catch (e) {}
+    },
+  };
+
+  /* =====================================================================
+     ESTADO
+     ===================================================================== */
+  let state = "idle"; // idle | spin | result
+  let bets = {}; // clave -> importe
+  let undoStack = [];
+  let lastBets = sanitizeBets(store.get(LASTBETS_KEY, {}));
+  let history = loadHistory();
+  let chipValue = CHIPS.includes(store.get(CHIP_KEY, 25)) ? store.get(CHIP_KEY, 25) : 25;
+  let guided = false; // "Modo guiado" de la versión original (doble toque en el saldo)
+  let marksOn = false;
+
+  function sanitizeBets(o) {
+    const out = {};
+    if (o && typeof o === "object")
+      for (const k in o) if (BETS[k] && Number.isFinite(o[k]) && o[k] > 0) out[k] = Math.floor(o[k]);
+    return out;
+  }
+  function loadHistory() {
+    const a = store.get(HISTORY_KEY, []);
+    return Array.isArray(a) ? a.filter((n) => Number.isInteger(n) && n >= 0 && n <= 36).slice(0, MAX_HISTORY) : [];
+  }
+  function saveHistory() {
+    store.set(HISTORY_KEY, history.slice(0, MAX_HISTORY));
+  }
+  const totalOf = (b) => Object.values(b).reduce((a, v) => a + v, 0);
+  const payoutOf = (b, n) => Object.keys(b).reduce((a, k) => a + (BETS[k].wins(n) ? b[k] * BETS[k].mult : 0), 0);
+
+  /* =====================================================================
+     HUD
+     ===================================================================== */
+  const helpBtn = document.createElement("button");
+  helpBtn.className = "ax-icon-btn";
+  helpBtn.setAttribute("aria-label", "Ayuda");
+  helpBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9"/><path d="M12 17.3h.01"/></svg>`;
+  const hud = AX.hud({ title: "RULETA", back: "../index.html", right: helpBtn });
+
+  /* =====================================================================
+     SONIDO PERSONALIZADO (bola rodando, golpes en trastes, rombos)
+     ===================================================================== */
+  const S = AX.sfx;
+  let lastClack = 0;
+  function sClack(v = 1) {
+    const now = performance.now();
+    if (now - lastClack < 28) return;
+    lastClack = now;
+    S.noise(0.035, { freq: 2600 + Math.random() * 1600, q: 3, vol: 0.26 * v });
+    S.tone(1300 + Math.random() * 900, 0.035, { type: "triangle", vol: 0.07 * v });
+  }
+  function sTick(v = 1) {
+    const now = performance.now();
+    if (now - lastClack < 22) return;
+    lastClack = now;
+    S.tone(2400 + Math.random() * 500, 0.02, { type: "square", vol: 0.035 * v, filter: { freq: 3500 } });
+    S.noise(0.02, { freq: 5000, q: 5, vol: 0.12 * v });
+  }
+  function sDiamond() {
+    S.tone(2900, 0.16, { type: "sine", vol: 0.09 });
+    S.tone(4350, 0.1, { type: "sine", vol: 0.05 });
+    S.noise(0.04, { freq: 6000, q: 4, vol: 0.25 });
+  }
+  function sLaunch() {
+    S.noise(0.6, { freq: 400, to: 2600, q: 1.2, vol: 0.28, attack: 0.08 });
+    S.tone(180, 0.5, { type: "sawtooth", to: 520, vol: 0.04, filter: { freq: 1200 } });
+  }
+  function sSettle() {
+    S.tone(170, 0.25, { type: "sine", to: 70, vol: 0.4 });
+    S.noise(0.06, { freq: 2200, q: 2, vol: 0.3 });
+  }
+  const roll = {};
+  function rollStart() {
+    try {
+      const c = S.ctx();
+      if (!c || !S.master) return;
+      const len = c.sampleRate * 2;
+      const buf = c.createBuffer(1, len, c.sampleRate);
+      const d = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) {
+        last = (last + 0.04 * (Math.random() * 2 - 1)) / 1.04;
+        d[i] = last * 3;
+      }
+      roll.src = c.createBufferSource();
+      roll.src.buffer = buf;
+      roll.src.loop = true;
+      roll.bp = c.createBiquadFilter();
+      roll.bp.type = "bandpass";
+      roll.bp.frequency.value = 700;
+      roll.bp.Q.value = 0.8;
+      roll.am = c.createGain();
+      roll.am.gain.value = 0.7;
+      roll.lfo = c.createOscillator();
+      roll.lfo.frequency.value = 10;
+      const lg = c.createGain();
+      lg.gain.value = 0.3;
+      roll.lfo.connect(lg);
+      lg.connect(roll.am.gain);
+      roll.g = c.createGain();
+      roll.g.gain.value = 0.0001;
+      roll.src.connect(roll.bp);
+      roll.bp.connect(roll.am);
+      roll.am.connect(roll.g);
+      roll.g.connect(S.master);
+      roll.src.start();
+      roll.lfo.start();
+      roll.c = c;
+    } catch (e) {}
+  }
+  function rollSet(vol, freq, lfo) {
+    if (!roll.g) return;
+    const t = roll.c.currentTime;
+    roll.g.gain.setTargetAtTime(Math.max(0.0001, vol), t, 0.08);
+    roll.bp.frequency.setTargetAtTime(freq, t, 0.1);
+    roll.lfo.frequency.setTargetAtTime(lfo, t, 0.1);
+  }
+  function rollStop() {
+    if (!roll.g) return;
+    try {
+      const t = roll.c.currentTime;
+      roll.g.gain.setTargetAtTime(0.0001, t, 0.12);
+      roll.src.stop(t + 0.8);
+      roll.lfo.stop(t + 0.8);
+    } catch (e) {}
+    for (const k in roll) delete roll[k];
+  }
+
+  /* =====================================================================
+     RUEDA EN CANVAS (capas pre-renderizadas + bola animada)
+     ===================================================================== */
+  const cv = $("#wheelCv");
+  const ctx = cv.getContext("2d");
+  const slotEl = $("#wheelSlot");
+  const backdrop = $("#backdrop");
+  const M = 1.12; // margen de las capas (sombra exterior)
+  const ZMAX = 1.6; // zoom máximo de la "cámara"
+  // Radios relativos al radio exterior R
+  const R_TRACK = 0.866, R_POCKET = 0.61, R_BALL = 0.031;
+
+  let W = 0, H = 0, DPR = 1, hudBottom = 58;
+  let slotG = { x: 0, y: 0, R: 50 }, bigG = { x: 0, y: 0, R: 150 };
+  let layers = null, layerR = 0;
+
+  const scene = {
+    rot: -Math.PI / 2,
+    omega: 0.32,
+    ball: { psi: null, r: R_POCKET }, // ángulo relativo al rotor cuando reposa
+    ballWorld: null, // {phi, r} durante el giro
+    e: 0, // 0 = mesa, 1 = rueda a pantalla completa
+    cam: { k: 0, fx: 0, fy: 0 },
+    glowIdx: null,
+    glowAmt: 0,
+    trail: [],
+    speed: 0,
+  };
+
+  function goldLinear(g, r) {
+    const lg = g.createLinearGradient(-r, -r, r, r);
+    lg.addColorStop(0, "#fff6c4");
+    lg.addColorStop(0.22, "#ffd23f");
+    lg.addColorStop(0.45, "#a86a05");
+    lg.addColorStop(0.62, "#ffe48a");
+    lg.addColorStop(0.82, "#c27c00");
+    lg.addColorStop(1, "#5e3500");
+    return lg;
+  }
+  function ringPath(g, r1, r2) {
+    g.beginPath();
+    g.arc(0, 0, r2, 0, TAU);
+    g.arc(0, 0, r1, 0, TAU, true);
+  }
+  function sector(g, r1, r2, a0, a1) {
+    g.beginPath();
+    g.arc(0, 0, r2, a0, a1);
+    g.arc(0, 0, r1, a1, a0, true);
+    g.closePath();
+  }
+  function mkCanvas(s) {
+    const c = document.createElement("canvas");
+    c.width = c.height = s;
+    return c;
+  }
+
+  function drawBowl(g, C, r) {
+    const rand = seeded(11);
+    g.save();
+    g.translate(C, C);
+    // sombra exterior + halo
+    let gr = g.createRadialGradient(0, 0, r * 0.94, 0, 0, r * M);
+    gr.addColorStop(0, "rgba(0,0,0,0.8)");
+    gr.addColorStop(0.45, "rgba(0,0,0,0.35)");
+    gr.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(0, 0, r * M, 0, TAU);
+    g.fill();
+    // madera exterior
+    gr = g.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.2, 0, 0, r);
+    gr.addColorStop(0, "#9a4a1f");
+    gr.addColorStop(0.7, "#5c240c");
+    gr.addColorStop(0.92, "#3d1606");
+    gr.addColorStop(1, "#1c0902");
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(0, 0, r, 0, TAU);
+    g.fill();
+    // vetas de la madera
+    g.save();
+    ringPath(g, r * 0.93, r);
+    g.clip("evenodd");
+    for (let i = 0; i < 110; i++) {
+      const rr = r * (0.93 + rand() * 0.07);
+      const a0 = rand() * TAU;
+      g.strokeStyle = rand() < 0.5 ? `rgba(255,190,140,${0.03 + rand() * 0.06})` : `rgba(0,0,0,${0.06 + rand() * 0.12})`;
+      g.lineWidth = r * (0.0015 + rand() * 0.004);
+      g.beginPath();
+      g.arc(0, 0, rr, a0, a0 + 0.4 + rand() * 2.2);
+      g.stroke();
+    }
+    g.restore();
+    // bisel exterior
+    let lg = g.createLinearGradient(-r, -r, r, r);
+    lg.addColorStop(0, "rgba(255,225,190,0.6)");
+    lg.addColorStop(0.45, "rgba(255,225,190,0)");
+    lg.addColorStop(1, "rgba(0,0,0,0.6)");
+    g.strokeStyle = lg;
+    g.lineWidth = r * 0.014;
+    g.beginPath();
+    g.arc(0, 0, r * 0.99, 0, TAU);
+    g.stroke();
+    // aro dorado
+    g.fillStyle = goldLinear(g, r);
+    ringPath(g, r * 0.912, r * 0.935);
+    g.fill("evenodd");
+    g.strokeStyle = "rgba(60,30,0,0.7)";
+    g.lineWidth = r * 0.003;
+    g.beginPath();
+    g.arc(0, 0, r * 0.912, 0, TAU);
+    g.stroke();
+    // pista de la bola (inclinada)
+    gr = g.createRadialGradient(0, 0, r * 0.78, 0, 0, r * 0.912);
+    gr.addColorStop(0, "#080403");
+    gr.addColorStop(0.3, "#25140a");
+    gr.addColorStop(0.72, "#4f2d16");
+    gr.addColorStop(0.9, "#2e1709");
+    gr.addColorStop(1, "#0f0703");
+    g.fillStyle = gr;
+    ringPath(g, r * 0.78, r * 0.912);
+    g.fill("evenodd");
+    // brillo de la pista
+    g.save();
+    ringPath(g, r * 0.78, r * 0.912);
+    g.clip("evenodd");
+    lg = g.createLinearGradient(-r, -r, r * 0.5, r * 0.5);
+    lg.addColorStop(0, "rgba(255,230,200,0.22)");
+    lg.addColorStop(0.55, "rgba(255,230,200,0)");
+    g.fillStyle = lg;
+    g.fillRect(-r, -r, 2 * r, 2 * r);
+    g.strokeStyle = "rgba(255,220,180,0.08)";
+    g.lineWidth = r * 0.004;
+    g.beginPath();
+    g.arc(0, 0, r * 0.885, 0, TAU);
+    g.stroke();
+    // sombra del rotor sobre la pista
+    gr = g.createRadialGradient(0, 0, r * 0.775, 0, 0, r * 0.83);
+    gr.addColorStop(0, "rgba(0,0,0,0.75)");
+    gr.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gr;
+    g.fillRect(-r, -r, 2 * r, 2 * r);
+    g.restore();
+    // rombos deflectores
+    for (let k = 0; k < 8; k++) {
+      const a = (k * TAU) / 8 + TAU / 16;
+      const vert = k % 2 === 0;
+      g.save();
+      g.rotate(a);
+      g.translate(r * 0.828, 0);
+      if (!vert) g.rotate(Math.PI / 2);
+      const L = r * (vert ? 0.05 : 0.034), w = r * (vert ? 0.02 : 0.026);
+      const cg = g.createLinearGradient(-L, -w, L, w);
+      cg.addColorStop(0, "#ffffff");
+      cg.addColorStop(0.35, "#c9cfdd");
+      cg.addColorStop(0.55, "#666e82");
+      cg.addColorStop(0.8, "#eef1f7");
+      cg.addColorStop(1, "#8890a3");
+      g.shadowColor = "rgba(0,0,0,0.7)";
+      g.shadowBlur = r * 0.02;
+      g.shadowOffsetX = r * 0.006;
+      g.shadowOffsetY = r * 0.008;
+      g.fillStyle = cg;
+      g.beginPath();
+      g.moveTo(L, 0);
+      g.lineTo(0, w);
+      g.lineTo(-L, 0);
+      g.lineTo(0, -w);
+      g.closePath();
+      g.fill();
+      g.shadowColor = "transparent";
+      g.strokeStyle = "rgba(255,255,255,0.5)";
+      g.lineWidth = r * 0.002;
+      g.stroke();
+      g.restore();
+    }
+    // hueco del rotor
+    g.fillStyle = "#050302";
+    g.beginPath();
+    g.arc(0, 0, r * 0.782, 0, TAU);
+    g.fill();
+    g.restore();
+  }
+
+  function drawRotor(g, C, r) {
+    const rand = seeded(29);
+    g.save();
+    g.translate(C, C);
+    // aro dorado del rotor
+    g.fillStyle = goldLinear(g, r);
+    g.beginPath();
+    g.arc(0, 0, r * 0.78, 0, TAU);
+    g.fill();
+    // anillo de números
+    const numG = {}, pocG = {};
+    const mk = (r1, r2, stops) => {
+      const gg = g.createRadialGradient(0, 0, r1, 0, 0, r2);
+      stops.forEach(([o, c]) => gg.addColorStop(o, c));
+      return gg;
+    };
+    numG.r = mk(r * 0.665, r * 0.765, [[0, "#7a0a1c"], [0.45, "#dc2541"], [1, "#8d0c22"]]);
+    numG.b = mk(r * 0.665, r * 0.765, [[0, "#050507"], [0.45, "#2a2737"], [1, "#09080e"]]);
+    numG.z = mk(r * 0.665, r * 0.765, [[0, "#044d28"], [0.45, "#1cc271"], [1, "#076334"]]);
+    pocG.r = mk(r * 0.553, r * 0.665, [[0, "#3c040d"], [0.5, "#a6132d"], [0.85, "#6c0918"], [1, "#2a0207"]]);
+    pocG.b = mk(r * 0.553, r * 0.665, [[0, "#000"], [0.5, "#1e1b29"], [0.85, "#0a0910"], [1, "#000"]]);
+    pocG.z = mk(r * 0.553, r * 0.665, [[0, "#022b16"], [0.5, "#109a52"], [0.85, "#055c2e"], [1, "#011a0c"]]);
+    for (let i = 0; i < 37; i++) {
+      const a0 = i * PA - PA / 2, a1 = a0 + PA;
+      const c = colorOf(ORDER[i]);
+      g.fillStyle = numG[c];
+      sector(g, r * 0.665, r * 0.766, a0, a1 + 0.002);
+      g.fill();
+      g.fillStyle = pocG[c];
+      sector(g, r * 0.553, r * 0.665, a0, a1 + 0.002);
+      g.fill();
+      // sombra interna del bolsillo (lado de entrada)
+      const sg = g.createLinearGradient(Math.cos(a0) * r * 0.6, Math.sin(a0) * r * 0.6, Math.cos(a0 + PA * 0.5) * r * 0.6, Math.sin(a0 + PA * 0.5) * r * 0.6);
+      sg.addColorStop(0, "rgba(0,0,0,0.45)");
+      sg.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = sg;
+      sector(g, r * 0.553, r * 0.665, a0, a1);
+      g.fill();
+    }
+    // separadores dorados del anillo de números
+    g.strokeStyle = "rgba(255,214,110,0.85)";
+    g.lineWidth = r * 0.004;
+    for (let i = 0; i < 37; i++) {
+      const a = i * PA + PA / 2;
+      g.beginPath();
+      g.moveTo(Math.cos(a) * r * 0.665, Math.sin(a) * r * 0.665);
+      g.lineTo(Math.cos(a) * r * 0.766, Math.sin(a) * r * 0.766);
+      g.stroke();
+    }
+    // números
+    const fs = Math.round(r * 0.062);
+    g.font = `${fs}px Bungee, Outfit, "Arial Black", sans-serif`;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    for (let i = 0; i < 37; i++) {
+      g.save();
+      g.rotate(i * PA);
+      g.translate(r * 0.716, 0);
+      g.rotate(Math.PI / 2);
+      g.fillStyle = "rgba(0,0,0,0.55)";
+      g.fillText(ORDER[i], fs * 0.05, fs * 0.08);
+      g.fillStyle = "#fffaf0";
+      g.fillText(ORDER[i], 0, 0);
+      g.restore();
+    }
+    // anillo cromado entre números y bolsillos
+    g.strokeStyle = "#d7dce8";
+    g.lineWidth = r * 0.007;
+    g.beginPath();
+    g.arc(0, 0, r * 0.665, 0, TAU);
+    g.stroke();
+    // trastes metálicos
+    for (let i = 0; i < 37; i++) {
+      const a = i * PA + PA / 2;
+      const c = Math.cos(a), s = Math.sin(a);
+      g.lineCap = "round";
+      g.strokeStyle = "rgba(0,0,0,0.6)";
+      g.lineWidth = r * 0.02;
+      g.beginPath();
+      g.moveTo(c * r * 0.556 + r * 0.004, s * r * 0.556 + r * 0.006);
+      g.lineTo(c * r * 0.664 + r * 0.004, s * r * 0.664 + r * 0.006);
+      g.stroke();
+      g.strokeStyle = "#7d8496";
+      g.lineWidth = r * 0.015;
+      g.beginPath();
+      g.moveTo(c * r * 0.556, s * r * 0.556);
+      g.lineTo(c * r * 0.664, s * r * 0.664);
+      g.stroke();
+      g.strokeStyle = "#f7f9ff";
+      g.lineWidth = r * 0.006;
+      g.beginPath();
+      g.moveTo(c * r * 0.558 - r * 0.002, s * r * 0.558 - r * 0.002);
+      g.lineTo(c * r * 0.662 - r * 0.002, s * r * 0.662 - r * 0.002);
+      g.stroke();
+    }
+    // aro interior dorado
+    g.fillStyle = goldLinear(g, r);
+    ringPath(g, r * 0.532, r * 0.556);
+    g.fill("evenodd");
+    // cono de madera
+    let gr = g.createRadialGradient(-r * 0.1, -r * 0.12, r * 0.02, 0, 0, r * 0.534);
+    gr.addColorStop(0, "#b4632e");
+    gr.addColorStop(0.45, "#76331a");
+    gr.addColorStop(0.85, "#3f1707");
+    gr.addColorStop(1, "#1e0a02");
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(0, 0, r * 0.533, 0, TAU);
+    g.fill();
+    g.save();
+    g.beginPath();
+    g.arc(0, 0, r * 0.533, 0, TAU);
+    g.clip();
+    for (let i = 0; i < 70; i++) {
+      const rr = r * (0.12 + rand() * 0.41);
+      const a0 = rand() * TAU;
+      g.strokeStyle = rand() < 0.5 ? `rgba(255,190,140,${0.025 + rand() * 0.05})` : `rgba(0,0,0,${0.05 + rand() * 0.1})`;
+      g.lineWidth = r * (0.0015 + rand() * 0.003);
+      g.beginPath();
+      g.arc(0, 0, rr, a0, a0 + 0.3 + rand() * 1.8);
+      g.stroke();
+    }
+    g.restore();
+    // incrustaciones doradas en el cono
+    g.strokeStyle = "rgba(255,210,90,0.75)";
+    g.lineWidth = r * 0.006;
+    g.beginPath();
+    g.arc(0, 0, r * 0.45, 0, TAU);
+    g.stroke();
+    g.strokeStyle = "rgba(255,210,90,0.45)";
+    g.lineWidth = r * 0.003;
+    g.beginPath();
+    g.arc(0, 0, r * 0.43, 0, TAU);
+    g.stroke();
+    // torreta: 4 brazos
+    for (let k = 0; k < 4; k++) {
+      g.save();
+      g.rotate((k * Math.PI) / 2 + Math.PI / 4);
+      g.shadowColor = "rgba(0,0,0,0.6)";
+      g.shadowBlur = r * 0.02;
+      g.shadowOffsetX = r * 0.008;
+      g.shadowOffsetY = r * 0.012;
+      const lg = g.createLinearGradient(0, -r * 0.03, 0, r * 0.03);
+      lg.addColorStop(0, "#fff3b0");
+      lg.addColorStop(0.45, "#e0a92a");
+      lg.addColorStop(1, "#6e4200");
+      g.fillStyle = lg;
+      g.beginPath();
+      g.moveTo(r * 0.06, -r * 0.032);
+      g.quadraticCurveTo(r * 0.2, -r * 0.016, r * 0.3, -r * 0.012);
+      g.lineTo(r * 0.3, r * 0.012);
+      g.quadraticCurveTo(r * 0.2, r * 0.016, r * 0.06, r * 0.032);
+      g.closePath();
+      g.fill();
+      const kg = g.createRadialGradient(r * 0.305, -r * 0.012, r * 0.004, r * 0.315, 0, r * 0.03);
+      kg.addColorStop(0, "#fffbe0");
+      kg.addColorStop(0.5, "#ffc93a");
+      kg.addColorStop(1, "#7a4a00");
+      g.fillStyle = kg;
+      g.beginPath();
+      g.arc(r * 0.315, 0, r * 0.03, 0, TAU);
+      g.fill();
+      g.restore();
+    }
+    // cúpula central
+    gr = g.createRadialGradient(-r * 0.035, -r * 0.04, r * 0.01, 0, 0, r * 0.11);
+    gr.addColorStop(0, "#fffbe0");
+    gr.addColorStop(0.35, "#ffd23f");
+    gr.addColorStop(0.75, "#b8740a");
+    gr.addColorStop(1, "#5e3500");
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(0, 0, r * 0.11, 0, TAU);
+    g.fill();
+    g.strokeStyle = "rgba(60,30,0,0.6)";
+    g.lineWidth = r * 0.004;
+    g.beginPath();
+    g.arc(0, 0, r * 0.075, 0, TAU);
+    g.stroke();
+    gr = g.createRadialGradient(-r * 0.012, -r * 0.014, r * 0.003, 0, 0, r * 0.042);
+    gr.addColorStop(0, "#ffffff");
+    gr.addColorStop(0.5, "#ffe27a");
+    gr.addColorStop(1, "#a86a05");
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(0, 0, r * 0.042, 0, TAU);
+    g.fill();
+    g.restore();
+  }
+
+  function drawLight(g, C, r) {
+    g.save();
+    g.translate(C, C);
+    // profundidad del rotor
+    let gr = g.createRadialGradient(0, 0, r * 0.4, 0, 0, r * 0.785);
+    gr.addColorStop(0, "rgba(0,0,0,0)");
+    gr.addColorStop(0.75, "rgba(0,0,0,0.08)");
+    gr.addColorStop(1, "rgba(0,0,0,0.38)");
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(0, 0, r * 0.785, 0, TAU);
+    g.fill();
+    // luz direccional (arriba-izquierda)
+    const lg = g.createLinearGradient(-r * 0.75, -r * 0.75, r * 0.75, r * 0.75);
+    lg.addColorStop(0, "rgba(255,246,228,0.17)");
+    lg.addColorStop(0.42, "rgba(255,246,228,0)");
+    lg.addColorStop(0.58, "rgba(0,0,0,0)");
+    lg.addColorStop(1, "rgba(0,0,0,0.3)");
+    g.fillStyle = lg;
+    g.beginPath();
+    g.arc(0, 0, r * 0.935, 0, TAU);
+    g.fill();
+    // reflejo especular
+    g.save();
+    g.translate(-r * 0.3, -r * 0.42);
+    g.rotate(-0.62);
+    g.scale(1, 0.42);
+    gr = g.createRadialGradient(0, 0, 0, 0, 0, r * 0.45);
+    gr.addColorStop(0, "rgba(255,255,255,0.2)");
+    gr.addColorStop(0.6, "rgba(255,255,255,0.05)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(0, 0, r * 0.45, 0, TAU);
+    g.fill();
+    g.restore();
+    // brillo fijo en la cúpula
+    gr = g.createRadialGradient(-r * 0.035, -r * 0.045, 0, -r * 0.035, -r * 0.045, r * 0.05);
+    gr.addColorStop(0, "rgba(255,255,255,0.85)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(-r * 0.035, -r * 0.045, r * 0.05, 0, TAU);
+    g.fill();
+    // brillo del aro dorado
+    g.strokeStyle = "rgba(255,255,240,0.7)";
+    g.lineWidth = r * 0.006;
+    g.shadowColor = "#fff6c4";
+    g.shadowBlur = r * 0.03;
+    g.beginPath();
+    g.arc(0, 0, r * 0.924, Math.PI * 1.02, Math.PI * 1.48);
+    g.stroke();
+    g.beginPath();
+    g.arc(0, 0, r * 0.772, Math.PI * 1.08, Math.PI * 1.42);
+    g.stroke();
+    g.restore();
+  }
+
+  function prerender(Rd) {
+    const S2 = Math.ceil(2 * Rd * M);
+    const C = S2 / 2;
+    const bowl = mkCanvas(S2), rotor = mkCanvas(S2), light = mkCanvas(S2);
+    drawBowl(bowl.getContext("2d"), C, Rd);
+    drawRotor(rotor.getContext("2d"), C, Rd);
+    drawLight(light.getContext("2d"), C, Rd);
+    layers = { bowl, rotor, light };
+    layerR = Rd;
+  }
+  function wantedLayerR() {
+    return Math.min(900, Math.ceil(Math.max(bigG.R * ZMAX, slotG.R) * DPR));
+  }
+
+  function measure() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(W * DPR);
+    cv.height = Math.round(H * DPR);
+    cv.style.width = W + "px";
+    cv.style.height = H + "px";
+    hudBottom = hud.root.getBoundingClientRect().bottom || 58;
+    const r = slotEl.getBoundingClientRect();
+    slotG = { x: r.left + r.width / 2, y: r.top + r.height / 2, R: (r.width / 2) * 0.97 };
+    const avH = H - hudBottom;
+    bigG = { x: W / 2, y: hudBottom + avH * 0.47, R: Math.min(W * 0.46, avH * 0.4, 430) };
+    backdrop.style.setProperty("--by", bigG.y + "px");
+    const want = wantedLayerR();
+    if (!layers || want > layerR * 1.15 || want < layerR * 0.6) prerender(want);
+  }
+
+  function geom() {
+    const e = scene.e;
+    return { x: lerp(slotG.x, bigG.x, e), y: lerp(slotG.y, bigG.y, e), R: lerp(slotG.R, bigG.R, e) };
+  }
+  function ballScreen() {
+    const g = geom();
+    const bw = scene.ballWorld || (scene.ball.psi != null ? { phi: scene.rot + scene.ball.psi, r: scene.ball.r } : null);
+    if (!bw) return { x: g.x, y: g.y };
+    const p = { x: g.x + Math.cos(bw.phi) * bw.r * g.R, y: g.y + Math.sin(bw.phi) * bw.r * g.R };
+    // aplicar cámara
+    const c = camera(g);
+    return { x: (p.x - c.fx) * c.Z + c.sx, y: (p.y - c.fy) * c.Z + c.sy };
+  }
+  function camera(g) {
+    const k = scene.cam.k;
+    const Z = 1 + (ZMAX - 1) * k;
+    const fx = lerp(g.x, scene.cam.fx, k), fy = lerp(g.y, scene.cam.fy, k);
+    const sx = lerp(g.x, lerp(scene.cam.fx, g.x, 0.55), k), sy = lerp(g.y, lerp(scene.cam.fy, g.y, 0.55), k);
+    return { Z, fx, fy, sx, sy };
+  }
+
+  function drawLayer(img, x, y, R, rot, alpha) {
+    const s = R * M;
+    if (rot) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      if (alpha != null) ctx.globalAlpha = alpha;
+      ctx.drawImage(img, -s, -s, 2 * s, 2 * s);
+      ctx.restore();
+    } else ctx.drawImage(img, x - s, y - s, 2 * s, 2 * s);
+  }
+
+  function render(now) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    if (!layers) return;
+    const g = geom();
+    const c = camera(g);
+    ctx.setTransform(DPR * c.Z, 0, 0, DPR * c.Z, DPR * (c.sx - c.fx * c.Z), DPR * (c.sy - c.fy * c.Z));
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    drawLayer(layers.bowl, g.x, g.y, g.R, 0);
+    drawLayer(layers.rotor, g.x, g.y, g.R, scene.rot);
+    // desenfoque de movimiento del rotor a gran velocidad
+    const w = Math.abs(scene.omega);
+    if (w > 1.2) {
+      const a = Math.min(0.35, (w - 1.2) * 0.25);
+      drawLayer(layers.rotor, g.x, g.y, g.R, scene.rot - scene.omega * 0.016, a);
+      drawLayer(layers.rotor, g.x, g.y, g.R, scene.rot - scene.omega * 0.032, a * 0.6);
+    }
+    // casilla ganadora iluminada
+    if (scene.glowIdx != null && scene.glowAmt > 0.01) {
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      ctx.rotate(scene.rot);
+      ctx.globalCompositeOperation = "lighter";
+      const a = scene.glowIdx * PA;
+      const pulse = (0.42 + 0.22 * Math.sin(now / 160)) * scene.glowAmt;
+      ctx.fillStyle = `rgba(255,214,90,${pulse})`;
+      sector(ctx, g.R * 0.553, g.R * 0.766, a - PA / 2, a + PA / 2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255,250,220,${pulse * 1.4})`;
+      ctx.lineWidth = g.R * 0.008;
+      ctx.stroke();
+      ctx.restore();
+    }
+    drawLayer(layers.light, g.x, g.y, g.R, 0);
+
+    // bola
+    const bw = scene.ballWorld || (scene.ball.psi != null ? { phi: scene.rot + scene.ball.psi, r: scene.ball.r } : null);
+    if (bw) {
+      const br = R_BALL * g.R;
+      // estela
+      if (scene.speed > 3 && scene.trail.length > 1) {
+        ctx.save();
+        ctx.lineCap = "round";
+        for (let i = 1; i < scene.trail.length; i++) {
+          const p0 = scene.trail[i - 1], p1 = scene.trail[i];
+          const al = (i / scene.trail.length) * Math.min(0.35, (scene.speed - 3) * 0.05);
+          ctx.strokeStyle = `rgba(255,255,255,${al})`;
+          ctx.lineWidth = br * 2 * (0.4 + (0.6 * i) / scene.trail.length);
+          ctx.beginPath();
+          const rr = ((p0.r + p1.r) / 2) * g.R;
+          const a0 = p0.phi, a1 = p1.phi;
+          ctx.arc(g.x, g.y, rr, Math.min(a0, a1), Math.max(a0, a1));
+          ctx.stroke();
         }
-        function saveBalance() {
-            try {
-                // Asegúrate de que balance es un número antes de guardar
-                const balanceToSave = (typeof balance === 'number' && !isNaN(balance)) ? balance : DEFAULT_BALANCE;
-                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, balanceToSave.toString());
-                 console.log("Balance saved:", balanceToSave); // Debug log
-            } catch (error) {
-                console.error("Error saving balance:", error);
-            }
+        ctx.restore();
+      }
+      const bx = g.x + Math.cos(bw.phi) * bw.r * g.R;
+      const by = g.y + Math.sin(bw.phi) * bw.r * g.R;
+      const lift = Math.max(0, bw.r - R_POCKET) * (bw.r < 0.78 ? 1 : 0);
+      const so = br * 0.35 + lift * g.R * 0.45;
+      let gr = ctx.createRadialGradient(bx + so, by + so * 1.2, 0, bx + so, by + so * 1.2, br * 1.35);
+      gr.addColorStop(0, "rgba(0,0,0,0.6)");
+      gr.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.arc(bx + so, by + so * 1.2, br * 1.35, 0, TAU);
+      ctx.fill();
+      const sc = 1 + lift * 2.2;
+      gr = ctx.createRadialGradient(bx - br * 0.35, by - br * 0.4, br * 0.08, bx, by, br * sc);
+      gr.addColorStop(0, "#ffffff");
+      gr.addColorStop(0.35, "#f3f3f8");
+      gr.addColorStop(0.78, "#b7bacb");
+      gr.addColorStop(1, "#6f7388");
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.arc(bx, by, br * sc, 0, TAU);
+      ctx.fill();
+      if (state === "spin") {
+        ctx.globalCompositeOperation = "lighter";
+        gr = ctx.createRadialGradient(bx, by, 0, bx, by, br * 3);
+        gr.addColorStop(0, "rgba(255,255,255,0.22)");
+        gr.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = gr;
+        ctx.beginPath();
+        ctx.arc(bx, by, br * 3, 0, TAU);
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+      }
+    }
+  }
+
+  /* ---------------------------------------------------- TWEENS */
+  const tweens = new Set();
+  function tween(ms, fn, ease = E.inOut) {
+    return new Promise((res) => tweens.add({ t0: performance.now(), ms, fn, ease, res }));
+  }
+  function tweenVal(obj, key, to, ms, ease) {
+    const from = obj[key];
+    return tween(ms, (k) => (obj[key] = from + (to - from) * k), ease);
+  }
+
+  /* =====================================================================
+     FÍSICA DEL GIRO
+     El número ganador se decide ANTES por RNG; la animación se construye
+     para que la bola caiga exactamente en esa casilla.
+     ===================================================================== */
+  function buildSpin(n) {
+    const idx = IDX[n];
+    const alphaT = idx * PA; // ángulo de la casilla en el marco del rotor
+    const th0 = scene.rot, wi = scene.omega;
+    const wp = rnd(2.1, 2.6), td = 8.5, ta = 0.7;
+    const theta = (t) => th0 + wp * td * (1 - Math.exp(-t / td)) - (wp - wi) * ta * (1 - Math.exp(-t / ta));
+    const omega = (t) => wp * Math.exp(-t / td) - (wp - wi) * Math.exp(-t / ta);
+    const t2 = rnd(5.0, 5.6), t1 = t2 - 1.25;
+    // Rebotes entre casillas (en unidades de casilla; negativo = contra el rotor)
+    const hops = [{ s: -rndi(2, 4), d: rnd(0.34, 0.42), h: 0.055, first: true }];
+    const nh = rndi(1, 4);
+    for (let i = 0; i < nh; i++) {
+      const back = i > 0 && Math.random() < 0.3;
+      hops.push({ s: back ? 1 : -1, d: rnd(0.2, 0.27) * (1 + i * 0.18), h: 0.034 * Math.pow(0.68, i) });
+    }
+    const Ssum = hops.reduce((a, h) => a + h.s, 0) * PA;
+    const psiStart = alphaT - Ssum;
+    const resting = scene.ball.psi != null;
+    const phi0 = resting ? th0 + scene.ball.psi : th0 + Math.random() * TAU;
+    const r0 = resting ? scene.ball.r : R_TRACK;
+    const need = psiStart + theta(t2);
+    const Amin = rnd(36, 43);
+    let A = mod(phi0 - need, TAU);
+    while (A < Amin) A += TAU;
+    const c = 0.18;
+    const gfn = (u) => (1 - c) * (1 - (1 - u) * (1 - u)) + c * u;
+    let tt = t2, ps = psiStart;
+    hops.forEach((h) => {
+      h.t0 = tt;
+      h.p0 = ps;
+      tt += h.d;
+      ps += h.s * PA;
+    });
+    const tH = tt, tEnd = tH + 0.75;
+    const wob = 0.14 * PA * Math.sign(hops[hops.length - 1].s);
+    const tDiamond = t1 + 0.33 * (t2 - t1);
+
+    function ball(t) {
+      if (t <= t2) {
+        const u = t / t2;
+        const phi = phi0 - A * gfn(u);
+        let r;
+        if (t < 0.5) r = r0 + (R_TRACK - r0) * E.out(t / 0.5);
+        else if (t < t1) r = R_TRACK + 0.003 * Math.sin(t * 23);
+        else {
+          const v = (t - t1) / (t2 - t1);
+          r = R_TRACK + (R_POCKET - R_TRACK) * Math.pow(v, 1.5) + 0.03 * Math.exp(-Math.pow((v - 0.33) / 0.07, 2));
         }
-        function updateBalanceDisplay() {
-            if (balanceDisplay) {
-                const valueToShow = (typeof balance === 'number' && !isNaN(balance)) ? balance : DEFAULT_BALANCE;
-                balanceDisplay.textContent = valueToShow.toLocaleString('es-ES'); // Formatear con separadores
-            }
-        }
-
-        // --- Funciones Historial (localStorage) ---
-        function loadHistory() {
-            try {
-                const savedHistory = localStorage.getItem(HISTORY_LOCAL_STORAGE_KEY);
-                if (savedHistory) {
-                    const parsedHistory = JSON.parse(savedHistory);
-                    if (Array.isArray(parsedHistory) && parsedHistory.every(n => typeof n === 'number')) {
-                         numberHistory = parsedHistory.slice(0, MAX_HISTORY_LENGTH);
-                    } else {
-                        console.warn('Invalid saved history. Clearing.');
-                        numberHistory = [];
-                        localStorage.removeItem(HISTORY_LOCAL_STORAGE_KEY);
-                    }
-                } else {
-                    numberHistory = [];
-                }
-            } catch (error) {
-                console.error("Error loading history:", error);
-                numberHistory = [];
-            }
-            updateHistoryDisplay();
-        }
-        function saveHistory() {
-            try {
-                localStorage.setItem(HISTORY_LOCAL_STORAGE_KEY, JSON.stringify(numberHistory));
-            } catch (error) {
-                console.error("Error saving history:", error);
-            }
-        }
-        function updateHistoryDisplay() {
-            if (!historyList) return;
-            historyList.innerHTML = '';
-            numberHistory.forEach(num => {
-                const li = document.createElement('li');
-                li.textContent = num;
-                if (num === 0) { li.classList.add('history-green'); }
-                else if (redNumbers.includes(num)) { li.classList.add('history-red'); }
-                else if (blackNumbers.includes(num)) { li.classList.add('history-black'); }
-                li.title = `Número ${num}`;
-                historyList.appendChild(li);
-            });
-             if (window.innerWidth > 480) { historyList.scrollTop = 0; }
-             else { historyList.scrollLeft = 0; }
-        }
-
-        // --- <<< NUEVO: Funciones de Logros >>> ---
-        function loadUnlockedAchievements() {
-            try {
-                const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
-                if (savedAchievements) {
-                    const parsedAchievements = JSON.parse(savedAchievements);
-                    if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
-                        unlockedAchievements = parsedAchievements;
-                    } else {
-                        console.warn("Invalid achievement format in localStorage. Resetting.");
-                        unlockedAchievements = [];
-                        localStorage.removeItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
-                    }
-                } else {
-                    unlockedAchievements = [];
-                }
-            } catch (error) {
-                console.error("Error loading achievements:", error);
-                unlockedAchievements = [];
-            }
-             console.log("Loaded achievements:", unlockedAchievements); // Debug log
-        }
-
-        function saveUnlockedAchievements() {
-            try {
-                localStorage.setItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY, JSON.stringify(unlockedAchievements));
-                 console.log("Saved achievements:", unlockedAchievements); // Debug log
-            } catch (error) {
-                console.error("Error saving achievements:", error);
-            }
-        }
-
-        /**
-         * Checks if any achievements are unlocked based on the current balance
-         * and adds their rewards. Updates localStorage for balance and achievements.
-         * Returns an array of newly unlocked achievement objects.
-         */
-        function checkAndUnlockAchievements() {
-            const newlyUnlocked = [];
-            let totalRewardAdded = 0;
-            let balanceChanged = false;
-            let achievementsChanged = false;
-
-            // Carga la lista más reciente de desbloqueados por si acaso
-            loadUnlockedAchievements();
-            const currentBalance = balance; // Usa el balance global actual
-
-            achievementsData.forEach(ach => {
-                // Comprueba si se alcanza el objetivo y si NO está ya desbloqueado
-                if (currentBalance >= ach.target && !unlockedAchievements.includes(ach.id)) {
-                    console.log(`Unlocking achievement: ${ach.name} (Target: ${ach.target}, Reward: ${ach.reward})`);
-                    unlockedAchievements.push(ach.id); // Añade ID a la lista
-                    totalRewardAdded += ach.reward; // Suma la recompensa
-                    newlyUnlocked.push(ach); // Guarda el objeto del logro para mensajes, etc.
-                    achievementsChanged = true;
-                    balanceChanged = true;
-                }
-            });
-
-            // Si se desbloquearon logros, actualiza el balance y guarda todo
-            if (newlyUnlocked.length > 0) {
-                balance += totalRewardAdded; // Actualiza el balance global
-                console.log(`Total reward added: ${totalRewardAdded}. New balance: ${balance}`);
-
-                // Guarda el nuevo balance y la nueva lista de logros
-                saveUnlockedAchievements();
-                saveBalance(); // Guarda el balance actualizado con las recompensas
-            }
-
-            return {
-                newlyUnlocked, // Array de objetos de logros recién desbloqueados
-                balanceChanged,
-                achievementsChanged,
-                totalRewardAdded
-            };
-        }
-        // --- <<< FIN NUEVO: Funciones de Logros >>> ---
-
-        // --- Funciones Dibujo y Ajuste (SIN CAMBIOS) ---
-        function resizeCanvas() { /* ... código sin cambios ... */
-             const rouletteArea = document.querySelector('.roulette-area');
-             const availableWidth = document.getElementById('game-container').clientWidth * 0.95; // Use 95% of container width
-             const maxHeightFromViewport = window.innerHeight * 0.65; // Limit height based on viewport
-             let size = Math.min(availableWidth, maxHeightFromViewport); // Choose the smaller dimension
-             // Ensure minimum size based on CSS min-width
-             size = Math.max(size, parseFloat(getComputedStyle(rouletteArea).minWidth) || 200);
-             size = Math.min(size, 700); // Apply max size limit
-             canvasSize = size;
-
-             // Apply calculated size to the container and canvas
-             if (rouletteArea) {
-                 rouletteArea.style.width = `${canvasSize}px`;
-                 rouletteArea.style.height = `${canvasSize}px`;
-             }
-             // Adjust border and pointer size based on canvas size
-             if (canvasSize <= 350) { borderWidth = 3; pointerHeight = 18; }
-             else if (canvasSize <= 450) { borderWidth = 4; pointerHeight = 20; }
-             else { borderWidth = 5; pointerHeight = 25; }
-
-             canvas.width = canvasSize;
-             canvas.height = canvasSize;
-             canvas.style.borderWidth = `${borderWidth}px`;
-             centerX = canvas.width / 2;
-             centerY = canvas.height / 2;
-             radius = canvas.width / 2 - (borderWidth + 5); // Radius calculation considering border
-
-             // Position the pointer above the wheel
-             pointer.style.borderLeftWidth = `${pointerHeight * 0.6}px`;
-             pointer.style.borderRightWidth = `${pointerHeight * 0.6}px`;
-             pointer.style.borderTopWidth = `${pointerHeight}px`;
-             const pointerOffset = -(radius + pointerHeight / 2 + borderWidth + 2); // Calculate vertical offset
-             pointer.style.transform = `translate(-50%, -100%) translateY(${pointerOffset}px)`;
-
-             drawRoulette(currentAngle); // Redraw the roulette with new dimensions
-         }
-        function drawSegment(index, angleOffset) { /* ... código sin cambios ... */
-             const angle = anglePerSegment * index + angleOffset; // Calculate start angle for the segment
-             const number = segments[index];
-             const color = segmentColors[number];
-
-             // Draw the segment wedge
-             ctx.beginPath();
-             ctx.fillStyle = color;
-             ctx.moveTo(centerX, centerY);
-             ctx.arc(centerX, centerY, radius, angle, angle + anglePerSegment);
-             ctx.closePath();
-             ctx.fill();
-
-             // Draw segment border
-             ctx.strokeStyle = '#bdc3c7'; // Light gray border
-             ctx.lineWidth = 1;
-             ctx.stroke();
-
-             // Draw the number inside the segment
-             ctx.save(); // Save context state
-             ctx.fillStyle = '#ffffff'; // White text color
-             const fontSize = Math.max(9, Math.floor(radius * 0.08)); // Responsive font size
-             ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
-             ctx.textAlign = 'center';
-             ctx.textBaseline = 'middle';
-
-             // Calculate text position and rotation
-             const textAngle = angle + anglePerSegment / 2;
-             const textRadius = radius * 0.82; // Position text slightly inside the edge
-             const textX = centerX + textRadius * Math.cos(textAngle);
-             const textY = centerY + textRadius * Math.sin(textAngle);
-
-             ctx.translate(textX, textY); // Move origin to text position
-             ctx.rotate(textAngle + Math.PI / 2); // Rotate text to align with segment
-             ctx.fillText(number, 0, 0); // Draw the number
-             ctx.restore(); // Restore context state
-         }
-        function drawRoulette(angleOffset = 0) { /* ... código sin cambios ... */
-             ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-             // Draw all segments
-             for (let i = 0; i < numSegments; i++) {
-                 drawSegment(i, angleOffset);
-             }
-             // Draw the center circle
-             ctx.beginPath();
-             ctx.fillStyle = '#f4a261'; // Center circle color
-             ctx.arc(centerX, centerY, radius * 0.15, 0, 2 * Math.PI); // Small center circle
-             ctx.fill();
-         }
-
-        // --- Lógica de Animación ---
-        function rotateWheel() { /* ... código sin cambios ... */
-             spinTime += 1 / 60; // Increment time (assuming 60fps)
-             // Calculate rotation angle using ease-out function for smooth deceleration
-             const spinAmount = easeOut(spinTime, 0, spinAngleStart, spinTimeTotal);
-             currentAngle = spinAmount % (2 * Math.PI); // Keep angle within 0 to 2PI
-             drawRoulette(currentAngle); // Redraw the wheel at the new angle
-
-             // Stop animation when time is up
-             if (spinTime >= spinTimeTotal) {
-                 stopRotateWheel();
-                 return;
-             }
-             requestAnimationFrame(rotateWheel); // Request next frame
-         }
-        function stopRotateWheel() {
-            isSpinning = false;
-            // Re-enable betting buttons
-            clearBetsButton.disabled = false;
-            repeatBetButton.disabled = lastBets.length === 0; // Enable repeat only if last bets exist
-            betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = false);
-
-            // Calculate the winning segment based on the final angle
-            const finalAngle = currentAngle;
-            let effectiveAngle = ( (3 * Math.PI / 2) - finalAngle + (2*Math.PI) ) % (2 * Math.PI);
-            const winningIndex = Math.floor(effectiveAngle / anglePerSegment);
-            const safeWinningIndex = winningIndex % numSegments;
-            const winningNumber = segments[safeWinningIndex];
-            const winningColor = segmentColors[winningNumber] || '#ffffff';
-
-            console.log(`Final Angle: ${finalAngle.toFixed(2)}, Effective Angle: ${effectiveAngle.toFixed(2)}, Index: ${safeWinningIndex}, Number: ${winningNumber}`);
-
-            // Update history
-            numberHistory.unshift(winningNumber);
-            if (numberHistory.length > MAX_HISTORY_LENGTH) {
-                numberHistory = numberHistory.slice(0, MAX_HISTORY_LENGTH);
-            }
-            saveHistory();
-            updateHistoryDisplay();
-
-            // Determine winner and process payouts
-            determineWinner(winningNumber, winningColor); // <<< LLAMADA A determineWinner >>>
-        }
-        function easeOut(t, b, c, d) { /* ... código sin cambios ... */
-             t /= d;
-             t--;
-             return c * (t * t * t + 1) + b;
-         }
-
-        // --- Lógica del Juego ---
-        function handleBetPlacement(event) { /* ... código sin cambios ... */
-             if (isSpinning) return; // Don't allow betting while spinning
-
-             const button = event.target.closest('.bet-table-button');
-             if (!button || button.disabled) return; // Ignore clicks not on enabled buttons
-
-             const betType = button.dataset.betType;
-             let betValue = null; // For number bets
-             const betAmount = parseInt(betAmountInput.value);
-
-             // Validate bet amount
-             if (isNaN(betAmount) || betAmount <= 0) {
-                 showMessage("Introduce una cantidad válida para apostar.");
-                 betAmountInput.focus();
-                 return;
-             }
-             // Validate balance
-             if (balance < betAmount) {
-                 showMessage("Saldo insuficiente para añadir esta apuesta.");
-                 return;
-             }
-             // Get number if it's a number bet
-             if (betType === 'number') {
-                 betValue = parseInt(button.dataset.number);
-                 if (isNaN(betValue)) {
-                     console.error("Error: Number button missing valid data-number.");
-                     return;
-                 }
-             }
-
-             // Create and add the new bet object
-             const newBet = {
-                 amount: betAmount,
-                 type: betType,
-                 value: betValue, // Will be null for non-number bets
-             };
-             currentBets.push(newBet);
-
-             // Update UI
-             updateBetsList();
-             updateTotalBetAmountDisplay();
-             showMessage(`${getBetDescription(newBet)} (${betAmount}€) añadida. ¡Haz clic en la ruleta para girar!`);
-
-             // Visual feedback for the clicked button
-             button.classList.add('active-bet');
-             setTimeout(() => button.classList.remove('active-bet'), 300); // Remove highlight after 300ms
-         }
-        function clearBets() { /* ... código sin cambios ... */
-              if (isSpinning) return; // Don't clear while spinning
-             currentBets = [];
-             updateBetsList();
-             updateTotalBetAmountDisplay();
-             showMessage("Apuestas limpiadas. Haz clic en el tapete para apostar.");
-             // Disable repeat button when bets are cleared manually
-             repeatBetButton.disabled = true;
-         }
-        function repeatLastBet() { /* ... código sin cambios ... */
-              if (isSpinning) return;
-             if (lastBets.length === 0) {
-                 showMessage("No hay apuesta anterior para repetir.");
-                 return;
-             }
-
-             // Calculate total cost of last bets
-             const totalLastBetAmount = lastBets.reduce((sum, bet) => sum + bet.amount, 0);
-
-             // Check if balance is sufficient
-             if (balance < totalLastBetAmount) {
-                 showMessage(`Saldo insuficiente para repetir la apuesta anterior (${totalLastBetAmount}€).`);
-                 return;
-             }
-
-             // Clear current bets and apply last bets
-             currentBets = []; // Clear any existing bets first
-             lastBets.forEach(bet => {
-                 // Create a new bet object from the last bet data
-                 const repeatedBet = {
-                     amount: bet.amount,
-                     type: bet.type,
-                     value: bet.value
-                 };
-                 currentBets.push(repeatedBet);
-             });
-
-             // Update UI
-             updateBetsList();
-             updateTotalBetAmountDisplay();
-             showMessage(`Apuesta anterior repetida (${totalLastBetAmount}€). ¡Haz clic en la ruleta para girar!`);
-         }
-        function spin() { /* ... código sin cambios (excepto que ya no llama a determineWinner) ... */
-              if (isSpinning) return;
-             if (currentBets.length === 0) {
-                 showMessage("Añade una o más apuestas antes de girar.");
-                 return;
-             }
-
-             const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-             if (totalBetAmount > balance) {
-                 showMessage("Error: Saldo insuficiente para las apuestas realizadas.");
-                 return;
-             }
-
-             // Deduct bet amount from balance
-             balance -= totalBetAmount;
-             updateBalanceDisplay();
-             // NO guardar balance aquí, se guarda después de añadir ganancias/recompensas
-
-             showMessage("¡Girando!");
-             isSpinning = true;
-             // Disable betting buttons during spin
-             clearBetsButton.disabled = true;
-             repeatBetButton.disabled = true;
-             betOptionsContainer.querySelectorAll('.bet-table-button').forEach(btn => btn.disabled = true);
-
-             // --- Cheat Mode Logic ---
-             if (cheatModeActive && currentBets.length > 0) {
-                 // ... (lógica cheat sin cambios) ...
-                 console.warn("MODO GUIADO ACTIVADO!");
-                 const targetBet = currentBets[0]; // Target the first bet placed
-                 let targetWinningNumber = -1; // Default to invalid
-
-                 // Determine a winning number based on the target bet type
-                 switch (targetBet.type) {
-                     case 'number':      targetWinningNumber = targetBet.value; break;
-                     case 'color-red':   targetWinningNumber = redNumbers[Math.floor(Math.random() * redNumbers.length)]; break;
-                     case 'color-black': targetWinningNumber = blackNumbers[Math.floor(Math.random() * blackNumbers.length)]; break;
-                     case 'even':        targetWinningNumber = segments.filter(n => n !== 0 && n % 2 === 0)[Math.floor(Math.random() * 18)]; break;
-                     case 'odd':         targetWinningNumber = segments.filter(n => n % 2 !== 0)[Math.floor(Math.random() * 18)]; break;
-                     case 'low':         targetWinningNumber = segments.filter(n => n >= 1 && n <= 18)[Math.floor(Math.random() * 18)]; break;
-                     case 'high':        targetWinningNumber = segments.filter(n => n >= 19 && n <= 36)[Math.floor(Math.random() * 18)]; break;
-                     case 'dozen-1':     targetWinningNumber = segments.filter(n => n >= 1 && n <= 12)[Math.floor(Math.random() * 12)]; break;
-                     case 'dozen-2':     targetWinningNumber = segments.filter(n => n >= 13 && n <= 24)[Math.floor(Math.random() * 12)]; break;
-                     case 'dozen-3':     targetWinningNumber = segments.filter(n => n >= 25 && n <= 36)[Math.floor(Math.random() * 12)]; break;
-                     case 'column-1':    targetWinningNumber = column1[Math.floor(Math.random() * column1.length)]; break;
-                     case 'column-2':    targetWinningNumber = column2[Math.floor(Math.random() * column2.length)]; break;
-                     case 'column-3':    targetWinningNumber = column3[Math.floor(Math.random() * column3.length)]; break;
-                     default:            targetWinningNumber = Math.floor(Math.random() * 37); // Fallback to random if type unknown
-                 }
-                 // Avoid landing on 0 if the bet wasn't specifically on 0
-                 if (targetWinningNumber === 0 && targetBet.type !== 'number') {
-                      targetWinningNumber = segments.filter(n => n !== 0)[Math.floor(Math.random() * 36)];
-                 }
-                 console.log(`Cheat Target: Win bet on ${getBetDescription(targetBet)}. Forcing number: ${targetWinningNumber}`);
-
-                 // Calculate the angle needed to land on the target number
-                 const targetIndex = segments.findIndex(num => num === targetWinningNumber);
-                 if (targetIndex !== -1) {
-                     const targetSegmentCenterAngle = (targetIndex + 0.5) * anglePerSegment;
-                     const targetFinalAngle = ( (3 * Math.PI / 2) - targetSegmentCenterAngle + 4 * Math.PI) % (2 * Math.PI); // Add buffer rotations
-                     spinAngleStart = targetFinalAngle + (Math.floor(Math.random() * 4) + 6) * (2 * Math.PI); // 6-9 extra rotations
-                     console.log(`Calculated spin angle for cheat: ${spinAngleStart.toFixed(2)} (Target Angle: ${targetFinalAngle.toFixed(2)})`);
-                 } else {
-                     console.error(`Error: Could not find index for target number ${targetWinningNumber}. Using random spin.`);
-                     spinAngleStart = Math.random() * 5 * (2*Math.PI) + 5 * (2*Math.PI); // Random spin as fallback
-                 }
-                 // Deactivate cheat mode after use
-                 cheatModeActive = false;
-                 // Remove visual indicator
-                 const redBtn = document.querySelector('.bet-table-button-red');
-                 const blackBtn = document.querySelector('.bet-table-button-black');
-                 if (redBtn) redBtn.classList.remove('cheat-swap-red');
-                 if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
-                 if(cheatTimeoutId) clearTimeout(cheatTimeoutId);
-             } else {
-                 // --- Normal Spin Logic ---
-                 spinAngleStart = currentAngle + (Math.random() * 5 * (2*Math.PI)) + (5 * (2*Math.PI));
-             }
-
-             spinTimeTotal = Math.random() * 3 + 4;
-             spinTime = 0;
-             rotateWheel();
-         }
-
-        function determineWinner(winningNumber, winningColor) { // <<< MODIFICADO >>>
-            let totalPayout = 0;
-            let baseResultMessage = `El número ganador es ${winningNumber} (${getColorName(winningColor)})`;
-            let finalMessage = ""; // Mensaje que se mostrará al final
-            let messageType = 'info'; // Tipo de mensaje (info, win, lose)
-
-            lastBets = [...currentBets]; // Guardar apuestas para 'Repetir'
-
-            // 1. Calcular ganancias de las apuestas
-            currentBets.forEach(bet => {
-                let betWins = false;
-                let payoutMultiplier = 0;
-                const { amount, type, value } = bet;
-
-                if (winningNumber === 0) {
-                    if (type === 'number' && value === 0) { betWins = true; payoutMultiplier = 36; }
-                } else {
-                    switch (type) {
-                        case 'number':      if (value === winningNumber) { betWins = true; payoutMultiplier = 36; } break;
-                        case 'color-red':   if (redNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'color-black': if (blackNumbers.includes(winningNumber)) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'even':        if (winningNumber % 2 === 0) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'odd':         if (winningNumber % 2 !== 0) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'low':         if (winningNumber >= 1 && winningNumber <= 18) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'high':        if (winningNumber >= 19 && winningNumber <= 36) { betWins = true; payoutMultiplier = 2; } break;
-                        case 'dozen-1':     if (winningNumber >= 1 && winningNumber <= 12) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'dozen-2':     if (winningNumber >= 13 && winningNumber <= 24) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'dozen-3':     if (winningNumber >= 25 && winningNumber <= 36) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'column-1':    if (column1.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'column-2':    if (column2.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
-                        case 'column-3':    if (column3.includes(winningNumber)) { betWins = true; payoutMultiplier = 3; } break;
-                    }
-                }
-                if (betWins) {
-                    totalPayout += amount * payoutMultiplier; // Sumar ganancias (incluye apuesta devuelta)
-                }
-            });
-
-            const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-            const netWinnings = totalPayout - totalBetAmount; // Ganancia/pérdida neta
-
-            // 2. Actualizar balance CON las ganancias de la apuesta
-            balance += totalPayout; // Balance ahora incluye ganancias de la apuesta
-            console.log(`Balance after bet payout: ${balance}`);
-
-            // 3. Comprobar y desbloquear logros CON el balance actualizado
-            const achievementResult = checkAndUnlockAchievements(); // Esta función AÑADE recompensas al balance si desbloquea algo y GUARDA el nuevo balance y logros
-
-            // 4. Construir el mensaje final
-            let achievementMessage = "";
-            if (achievementResult.newlyUnlocked.length > 0) {
-                 achievementMessage = ` ¡Logro${achievementResult.newlyUnlocked.length > 1 ? 's' : ''} desbloqueado${achievementResult.newlyUnlocked.length > 1 ? 's' : ''}: ${achievementResult.newlyUnlocked.map(a => a.name).join(', ')} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
-                 messageType = 'win'; // Considerar mensaje como victoria si se desbloquea logro
-            }
-
-            if (totalPayout > 0 || achievementResult.totalRewardAdded > 0) { // Si hubo ganancias de apuestas O recompensas de logros
-                const totalEarned = netWinnings + achievementResult.totalRewardAdded; // Ganancia neta total
-                if (totalEarned > 0) {
-                     finalMessage = `${baseResultMessage}. ¡Ganaste ${totalEarned.toLocaleString('es-ES')}€ netos!${achievementMessage}`;
-                     messageType = 'win';
-                } else if (totalEarned < 0) { // Ganancias apuesta < Pérdida apuesta, pero hubo recompensa
-                     finalMessage = `${baseResultMessage}. Perdiste ${Math.abs(totalEarned).toLocaleString('es-ES')}€ en total.${achievementMessage}`;
-                     messageType = achievementResult.totalRewardAdded > 0 ? 'info' : 'lose'; // Si hubo recompensa, es info, si no, pérdida
-                } else { // Ganancias apuesta == Pérdida apuesta, solo recompensa
-                     finalMessage = `${baseResultMessage}. Ni ganas ni pierdes.${achievementMessage}`;
-                     messageType = 'win';
-                }
-            } else { // Sin ganancias de apuesta Y sin recompensa de logro
-                finalMessage = `${baseResultMessage}. Ninguna apuesta ganadora.`;
-                messageType = 'lose';
-            }
-
-            // 5. Actualizar UI y estado
-            updateBalanceDisplay(); // Mostrar el balance final (con posibles recompensas)
-
-            // FIX: Guardar siempre el balance después de calcular ganancias y comprobar logros
-            saveBalance(); // Asegura que el balance final se guarda en localStorage
-
-            showMessage(finalMessage, messageType);
-
-            currentBets = [];
-            updateBetsList();
-            updateTotalBetAmountDisplay();
-            repeatBetButton.disabled = lastBets.length === 0;
-        }
-
-        // --- Funciones auxiliares (SIN CAMBIOS) ---
-        function getColorName(colorCode) { /* ... código sin cambios ... */
-             if (colorCode === '#2ecc71') return 'Verde';
-             if (colorCode === '#c53030') return 'Rojo';
-             if (colorCode === '#1A202C') return 'Negro';
-             return 'Desconocido';
-         }
-        function showMessage(msg, type = 'info') { /* ... código sin cambios ... */
-             messageDisplay.textContent = msg;
-             // Change message color based on type (win/lose/info)
-             messageDisplay.style.color = type === 'win' ? '#2ecc71' : type === 'lose' ? '#e74c3c' : '#f0e68c';
-         }
-        function updateBetsList() { /* ... código sin cambios ... */
-              betsListDisplay.innerHTML = ''; // Clear previous list
-             if (currentBets.length === 0) {
-                 betsListDisplay.innerHTML = '<li>No hay apuestas añadidas</li>';
-             } else {
-                 currentBets.forEach((bet, index) => {
-                     const li = document.createElement('li');
-                     li.textContent = `(${index + 1}) ${bet.amount}€ a ${getBetDescription(bet)}`;
-                     betsListDisplay.appendChild(li);
-                 });
-             }
-             // Scroll to the bottom of the list
-             betsListDisplay.scrollTop = betsListDisplay.scrollHeight;
-         }
-        function getBetDescription(bet) { /* ... código sin cambios ... */
-             // Returns a user-friendly description of the bet type
-             switch (bet.type) {
-                 case 'number': return `Número ${bet.value}`;
-                 case 'color-red': return `Rojo`;
-                 case 'color-black': return `Negro`;
-                 case 'even': return `Par`;
-                 case 'odd': return `Impar`;
-                 case 'low': return `Falta (1-18)`;
-                 case 'high': return `Pasa (19-36)`;
-                 case 'dozen-1': return `1ª Docena (1-12)`;
-                 case 'dozen-2': return `2ª Docena (13-24)`;
-                 case 'dozen-3': return `3ª Docena (25-36)`;
-                 case 'column-1': return `Columna 1`;
-                 case 'column-2': return `Columna 2`;
-                 case 'column-3': return `Columna 3`;
-                 default: return `Desconocido`;
-             }
-         }
-        function updateTotalBetAmountDisplay() { /* ... código sin cambios ... */
-             const totalBetAmount = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-             totalBetSpan.textContent = totalBetAmount.toLocaleString('es-ES'); // Formatear
-         }
-
-        // --- Generar Cuadrícula de Números Dinámicamente (SIN CAMBIOS) ---
-        function generateNumberGrid() { /* ... código sin cambios ... */
-              if (!numberGrid) {
-                 console.error("Element .number-grid not found");
-                 return;
-             }
-             numberGrid.innerHTML = ''; // Clear existing grid
-             // Define the order numbers appear on the betting table grid
-             const gridOrder = [
-                  3,  6,  9, 12, 15, 18, 21, 24, 27, 30, 33, 36, // Top row
-                  2,  5,  8, 11, 14, 17, 20, 23, 26, 29, 32, 35, // Middle row
-                  1,  4,  7, 10, 13, 16, 19, 22, 25, 28, 31, 34  // Bottom row
-             ];
-             gridOrder.forEach((num) => {
-                 const button = document.createElement('button');
-                 button.classList.add('bet-table-button', 'number-button');
-                 button.dataset.betType = 'number';
-                 button.dataset.number = num;
-                 button.textContent = num;
-                 // Add color class for styling
-                 if (redNumbers.includes(num)) button.classList.add('red');
-                 else if (blackNumbers.includes(num)) button.classList.add('black');
-                 numberGrid.appendChild(button);
-             });
-         }
-
-        // --- Event Listeners ---
-        canvas.addEventListener('click', spin);
-        clearBetsButton.addEventListener('click', clearBets);
-        repeatBetButton.addEventListener('click', repeatLastBet);
-        betOptionsContainer.addEventListener('click', handleBetPlacement);
-        window.addEventListener('resize', resizeCanvas);
-
-        window.addEventListener('storage', (event) => {
-            if (event.key === BALANCE_LOCAL_STORAGE_KEY) {
-                console.log('Balance changed externally. Reloading.');
-                loadBalance();
-                loadUnlockedAchievements(); // <<< RECARGAR LOGROS TAMBIÉN >>>
-            }
-            if (event.key === HISTORY_LOCAL_STORAGE_KEY) {
-                console.log('History changed externally. Reloading.');
-                loadHistory();
-            }
-             // <<< NUEVO: Escuchar cambios en logros >>>
-              if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
-                 console.log('Achievements changed externally. Reloading.');
-                 loadUnlockedAchievements();
-              }
-        });
-        window.addEventListener('focus', () => {
-            console.log('Window focused, reloading balance, history, and achievements.');
-            loadBalance();
-            loadHistory();
-            loadUnlockedAchievements(); // <<< CARGAR LOGROS AL ENFOCAR >>>
-        });
-
-        // --- LISTENER MODO GUIADO (SIN CAMBIOS) ---
-        balanceDisplay.addEventListener('dblclick', () => { /* ... código sin cambios ... */
-             cheatModeActive = !cheatModeActive; // Toggle cheat mode
-             if (cheatTimeoutId) { clearTimeout(cheatTimeoutId); cheatTimeoutId = null; } // Clear any existing timeout
-
-             const redBtn = document.querySelector('.bet-table-button-red');
-             const blackBtn = document.querySelector('.bet-table-button-black');
-             // Remove any existing cheat indicators
-             if (redBtn) redBtn.classList.remove('cheat-swap-red');
-             if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
-
-             if (cheatModeActive) {
-                 console.warn("MODO GUIADO ACTIVADO (Próximo giro será forzado a la primera apuesta)");
-                 showMessage("Modo Guiado ACTIVADO", "win");
-                 // Add visual indicator (flashing colors on red/black buttons)
-                 if (redBtn) redBtn.classList.add('cheat-swap-red');
-                 if (blackBtn) blackBtn.classList.add('cheat-swap-black');
-                 // Automatically disable visual indicator after 2 seconds
-                 cheatTimeoutId = setTimeout(() => {
-                     if (redBtn) redBtn.classList.remove('cheat-swap-red');
-                     if (blackBtn) blackBtn.classList.remove('cheat-swap-black');
-                     cheatTimeoutId = null;
-                 }, 2000);
-             } else {
-                 console.log("MODO GUIADO DESACTIVADO");
-                 showMessage("Modo Guiado DESACTIVADO");
-             }
-         });
-
-        // --- Inicialización al cargar la página ---
-        window.onload = () => {
-            loadBalance(); // Carga saldo
-            loadHistory(); // Carga historial
-            loadUnlockedAchievements(); // <<< NUEVO: Carga logros desbloqueados >>>
-            generateNumberGrid(); // Genera tapete
-            resizeCanvas(); // Ajusta tamaño
-            updateBetsList(); // Actualiza lista apuestas
-            updateTotalBetAmountDisplay(); // Actualiza total apostado
-            showMessage("Haz clic en el tapete para apostar y en la ruleta para girar!");
-            clearBetsButton.disabled = false;
-            repeatBetButton.disabled = true;
-        };
-
-    </script>
+        return { phi, psi: phi - theta(t), r, phase: t < t1 ? 0 : 1 };
+      }
+      if (t < tH) {
+        let i = 0;
+        while (i < hops.length - 1 && t >= hops[i].t0 + hops[i].d) i++;
+        const h = hops[i];
+        const u = clamp((t - h.t0) / h.d, 0, 1);
+        const e = h.first ? E.outQuad(u) : E.inOutSine(u);
+        const psi = h.p0 + h.s * PA * e;
+        return { psi, phi: psi + theta(t), r: R_POCKET + h.h * Math.sin(Math.PI * u), phase: 2, hop: i };
+      }
+      const tau = t - tH;
+      const psi = alphaT + wob * Math.exp(-7 * tau) * Math.sin(17 * tau);
+      return { psi, phi: psi + theta(t), r: R_POCKET, phase: 3 };
+    }
+    return { n, idx, alphaT, theta, omega, ball, t1, t2, tH, tEnd, hops, tDiamond };
+  }
+
+  let run = null; // giro en curso
+  function startRun(n) {
+    return new Promise((resolve) => {
+      run = { b: buildSpin(n), t: 0, scale: 1, turbo: 1, resolve, fired: {}, fret: null, hop: -1, lastPhi: null };
+      scene.trail = [];
+    });
+  }
+  function updateRun(dt) {
+    const R = run, b = R.b;
+    const slowZone = R.t > b.t1 - 0.5 && R.t < b.tH + 0.15;
+    const target = slowZone ? 0.62 : 1;
+    R.scale += (target - R.scale) * Math.min(1, dt * 4);
+    const sdt = dt * R.scale * R.turbo;
+    R.t = Math.min(b.tEnd, R.t + sdt);
+    const t = R.t;
+    scene.rot = b.theta(t);
+    scene.omega = b.omega(t);
+    const st = b.ball(t);
+    scene.ballWorld = { phi: st.phi, r: st.r };
+    // velocidad angular de la bola (mundo)
+    if (R.lastPhi != null && sdt > 0) scene.speed = scene.speed * 0.7 + 0.3 * Math.abs(mod(st.phi - R.lastPhi + Math.PI, TAU) - Math.PI) / sdt;
+    R.lastPhi = st.phi;
+    scene.trail.push({ phi: st.phi, r: st.r });
+    if (scene.trail.length > 7) scene.trail.shift();
+    if (st.phase > 0) scene.trail.length = Math.min(scene.trail.length, st.phase === 1 ? 4 : 0);
+
+    // sonido de rodadura
+    if (st.phase === 0) rollSet(Math.min(0.55, 0.05 + scene.speed * 0.035), 380 + scene.speed * 85, 4 + scene.speed * 1.6);
+    else if (st.phase === 1) rollSet(0.18, 1400, 18);
+    else rollSet(0.0001, 800, 8);
+
+    // ticks al cruzar trastes cuando la bola está abajo
+    const fi = Math.floor(st.psi / PA + 0.5);
+    if (R.fret != null && fi !== R.fret && Math.abs(fi - R.fret) < 4 && st.r < 0.74) {
+      sTick(st.phase === 1 ? 0.7 : 1);
+    }
+    R.fret = fi;
+
+    // eventos
+    const once = (k, cond, fn) => {
+      if (!R.fired[k] && cond) {
+        R.fired[k] = true;
+        fn();
+      }
+    };
+    once("zoom", t > b.t1 - 0.35, () => {
+      const p = ballWorldXY();
+      scene.cam.fx = p.x;
+      scene.cam.fy = p.y;
+      tweenVal(scene.cam, "k", 1, 1100, E.inOut);
+      AX.fx.slowmo(2600);
+      S.play("riser");
+    });
+    once("drop", t > b.t1, () => {
+      S.noise(0.25, { freq: 1800, to: 600, q: 1, vol: 0.15 });
+    });
+    once("diamond", t > b.tDiamond, () => {
+      sDiamond();
+      AX.haptic("light");
+      const p = ballScreen();
+      AX.fx.sparks(p.x, p.y, { count: 14, speed: 380, colors: "ice", size: 2 });
+    });
+    once("land", t > b.t2, () => {
+      sClack(1.2);
+      AX.haptic("tap");
+    });
+    if (st.phase === 2 && st.hop !== R.hop) {
+      if (R.hop >= 0) {
+        sClack(0.9 - R.hop * 0.08);
+        AX.haptic("light");
+      }
+      R.hop = st.hop;
+    }
+    once("settle", t > b.tH, () => {
+      sClack(0.7);
+      sSettle();
+      AX.haptic("medium");
+    });
+    if (t >= b.tEnd) {
+      scene.ball.psi = mod(b.alphaT, TAU);
+      scene.ball.r = R_POCKET;
+      scene.ballWorld = null;
+      scene.speed = 0;
+      const res = R.resolve;
+      run = null;
+      res(b);
+    }
+  }
+  function ballWorldXY() {
+    const g = geom();
+    const bw = scene.ballWorld || (scene.ball.psi != null ? { phi: scene.rot + scene.ball.psi, r: scene.ball.r } : { phi: 0, r: 0 });
+    return { x: g.x + Math.cos(bw.phi) * bw.r * g.R, y: g.y + Math.sin(bw.phi) * bw.r * g.R };
+  }
+
+  /* ---------------------------------------------------- BUCLE */
+  let lastT = performance.now(), frameSkip = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    for (const tw of tweens) {
+      const k = Math.min(1, (now - tw.t0) / tw.ms);
+      tw.fn(tw.ease(k));
+      if (k >= 1) {
+        tweens.delete(tw);
+        tw.res();
+      }
+    }
+    if (run) updateRun(dt);
+    else {
+      // rotor en reposo: gira lentamente
+      scene.omega += (0.32 - scene.omega) * (1 - Math.exp(-dt / 2.2));
+      scene.rot += scene.omega * dt;
+    }
+    // la cámara sigue a la bola con suavidad
+    if (scene.cam.k > 0) {
+      const p = ballWorldXY();
+      const f = 1 - Math.exp(-dt * 4.5);
+      scene.cam.fx += (p.x - scene.cam.fx) * f;
+      scene.cam.fy += (p.y - scene.cam.fy) * f;
+    }
+    // en reposo basta con ~30 fps
+    const busy = run || tweens.size || scene.e > 0;
+    if (!busy && ++frameSkip % 2) return;
+    render(now);
+  }
+
+  /* =====================================================================
+     MESA DE APUESTAS (vertical, 3 columnas x 12 filas)
+     ===================================================================== */
+  const table = $("#table");
+  const cells = {};
+  function addCell(key, cls, html, area) {
+    const b = document.createElement("button");
+    b.className = "cell " + cls;
+    b.dataset.k = key;
+    b.innerHTML = html + '<div class="stk"></div>';
+    b.style.gridArea = area;
+    b.setAttribute("aria-label", BETS[key].name);
+    table.appendChild(b);
+    cells[key] = b;
+  }
+  function buildTable() {
+    const deco1 = document.createElement("div");
+    deco1.className = "deco";
+    deco1.style.gridArea = "1 / 1 / 2 / 3";
+    deco1.innerHTML = `En mesa<b id="tblTotal">0 €</b>`;
+    table.appendChild(deco1);
+    addCell("n0", "zero z", "0", "1 / 3 / 2 / 6");
+    for (let r = 0; r < 12; r++)
+      for (let c = 0; c < 3; c++) {
+        const n = r * 3 + c + 1;
+        addCell("n" + n, "n " + colorOf(n), String(n), `${r + 2} / ${c + 3} / ${r + 3} / ${c + 4}`);
+      }
+    const dz = ["1ª Docena", "2ª Docena", "3ª Docena"];
+    for (let d = 0; d < 3; d++) addCell("d" + (d + 1), "doz", `<span>${dz[d]}</span>`, `${2 + d * 4} / 2 / ${6 + d * 4} / 3`);
+    const outs = [
+      ["low", "1-18<small>FALTA</small>"],
+      ["even", "PAR"],
+      ["red", '<div class="diamond r"></div><small>ROJO</small>'],
+      ["black", '<div class="diamond b"></div><small>NEGRO</small>'],
+      ["odd", "IMPAR"],
+      ["high", "19-36<small>PASA</small>"],
+    ];
+    outs.forEach(([k, h], i) => addCell(k, "out", h, `${2 + i * 2} / 1 / ${4 + i * 2} / 2`));
+    for (let c = 0; c < 3; c++) addCell("c" + (c + 1), "col", "2:1", `14 / ${c + 3} / 15 / ${c + 4}`);
+    const deco2 = document.createElement("div");
+    deco2.className = "deco";
+    deco2.style.gridArea = "14 / 1 / 15 / 3";
+    deco2.innerHTML = "Pleno 35:1";
+    table.appendChild(deco2);
+  }
+
+  function renderStack(key, pop) {
+    const stk = cells[key].querySelector(".stk");
+    const amt = bets[key] || 0;
+    cells[key].classList.toggle("has", amt > 0);
+    if (!amt) {
+      stk.innerHTML = "";
+      return;
+    }
+    const parts = breakdown(amt).slice(0, 4).reverse(); // abajo la menor, arriba la mayor
+    stk.innerHTML = parts
+      .map((v, i) => `<div class="chip ${chipClass(v)}" style="bottom:${i * 3}px">${i === parts.length - 1 ? compact(amt) : ""}</div>`)
+      .join("");
+    if (pop) {
+      stk.classList.remove("pop");
+      void stk.offsetWidth;
+      stk.classList.add("pop");
+    }
+  }
+  function renderAllStacks() {
+    for (const k in cells) renderStack(k);
+  }
+
+  /* ---------------------------------------------------- SELECTOR DE FICHAS */
+  const chipsEl = $("#chips");
+  const chipBtns = {};
+  CHIPS.forEach((v) => {
+    const b = document.createElement("button");
+    b.className = "chipBtn";
+    b.setAttribute("aria-label", "Ficha de " + v);
+    b.innerHTML = `<div class="chip ${chipClass(v)}">${chipLabel(v)}</div>`;
+    b.addEventListener("click", () => {
+      if (chipValue !== v) {
+        chipValue = v;
+        store.set(CHIP_KEY, v);
+        S.play("chip");
+        AX.haptic("light");
+      }
+      refreshChips();
+    });
+    chipsEl.appendChild(b);
+    chipBtns[v] = b;
+  });
+  function refreshChips() {
+    const avail = AX.getBalance() - totalOf(bets);
+    CHIPS.forEach((v) => {
+      chipBtns[v].classList.toggle("sel", v === chipValue);
+      chipBtns[v].disabled = state !== "idle";
+      chipBtns[v].style.opacity = v > avail && state === "idle" ? 0.45 : "";
+    });
+  }
+
+  /* ---------------------------------------------------- UI GENERAL */
+  const undoBtn = $("#undoBtn"), clearBtn = $("#clearBtn"), repeatBtn = $("#repeatBtn"), doubleBtn = $("#doubleBtn"), spinBtn = $("#spinBtn");
+  function refreshUI(animateHud) {
+    const total = totalOf(bets);
+    const bal = AX.getBalance();
+    $("#tblTotal").textContent = AX.money(total);
+    $("#spinSub").textContent = total ? "Apuesta " + AX.money(total) : "Coloca tus fichas";
+    document.body.classList.toggle("has-bets", total > 0);
+    const idle = state === "idle";
+    undoBtn.disabled = !idle || !undoStack.length;
+    clearBtn.disabled = !idle || !total;
+    repeatBtn.disabled = !idle || !Object.keys(lastBets).length;
+    doubleBtn.disabled = !idle || !total;
+    spinBtn.disabled = !idle;
+    hud.setBalance(Math.max(0, bal - (idle ? total : 0)), !!animateHud);
+    refreshChips();
+  }
+
+  function clearMarks() {
+    if (!marksOn) return;
+    marksOn = false;
+    table.classList.remove("result");
+    table.querySelectorAll(".lit,.won,.hit").forEach((c) => c.classList.remove("lit", "won", "hit"));
+    table.querySelectorAll(".dolly").forEach((d) => d.remove());
+  }
+
+  function snapshot() {
+    undoStack.push(Object.assign({}, bets));
+    if (undoStack.length > 60) undoStack.shift();
+  }
+
+  function flash(keys) {
+    keys.forEach((k) => cells[k] && cells[k].classList.add("cover"));
+    setTimeout(() => keys.forEach((k) => cells[k] && cells[k].classList.remove("cover")), 260);
+  }
+  function coveredNumbers(key) {
+    const out = [];
+    for (let n = 0; n <= 36; n++) if (BETS[key].wins(n)) out.push("n" + n);
+    return out;
+  }
+
+  function placeBet(key, fromEl) {
+    if (state !== "idle") return;
+    clearMarks();
+    const avail = AX.getBalance() - totalOf(bets);
+    let amount = chipValue;
+    if (amount > avail) {
+      S.play("error");
+      AX.haptic("error");
+      AX.toast(avail > 0 ? `Saldo insuficiente para una ficha de ${AX.money(amount)}` : "No te queda saldo disponible", "error");
+      return;
+    }
+    snapshot();
+    bets[key] = (bets[key] || 0) + amount;
+    if (BETS[key].type !== "number") flash(coveredNumbers(key));
+    flyChip(fromEl || chipBtns[chipValue], cells[key], amount, () => {
+      renderStack(key, true);
+      S.play("chip");
+      AX.haptic("light");
+    });
+    refreshUI(true);
+  }
+
+  function removeBet(key) {
+    if (state !== "idle" || !bets[key]) return;
+    snapshot();
+    delete bets[key];
+    renderStack(key);
+    S.play("swoosh");
+    AX.haptic("medium");
+    const c = AX.center(cells[key]);
+    AX.fx.burst(c.x, c.y, { count: 14, speed: 220, colors: "gold", gravity: 300 });
+    refreshUI(true);
+  }
+
+  /* Ficha volando del selector a la mesa (curva de Bézier) */
+  function flyChip(fromEl, toCell, val, done) {
+    const a = AX.center(fromEl);
+    const b = AX.center(toCell.querySelector(".stk"));
+    const f = document.createElement("div");
+    f.className = "chip fly " + chipClass(val);
+    f.textContent = chipLabel(val);
+    document.body.appendChild(f);
+    const mx = (a.x + b.x) / 2 + (b.x - a.x) * 0.1, my = Math.min(a.y, b.y) - 70;
+    const t0 = performance.now(), dur = 300;
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / dur);
+      const e = E.out(t);
+      const x = (1 - e) * (1 - e) * a.x + 2 * (1 - e) * e * mx + e * e * b.x;
+      const y = (1 - e) * (1 - e) * a.y + 2 * (1 - e) * e * my + e * e * b.y;
+      const s = 1.15 - 0.35 * t;
+      f.style.transform = `translate(${x - 15}px,${y - 15}px) scale(${s}) rotate(${t * 220}deg)`;
+      if (t < 1) requestAnimationFrame(step);
+      else {
+        f.remove();
+        done && done();
+      }
+    };
+    requestAnimationFrame(step);
+  }
+
+  /* Eventos de la mesa: toque = ficha; pulsación larga = retirar */
+  let lp = null, suppressClick = false;
+  table.addEventListener("pointerdown", (e) => {
+    const c = e.target.closest(".cell");
+    if (!c) return;
+    lp = { c, x: e.clientX, y: e.clientY, t: setTimeout(() => {
+      if (bets[c.dataset.k]) {
+        removeBet(c.dataset.k);
+        suppressClick = true;
+      }
+      lp = null;
+    }, 520) };
+  });
+  const cancelLp = (e) => {
+    if (!lp) return;
+    if (e && e.type === "pointermove" && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) < 10) return;
+    clearTimeout(lp.t);
+    lp = null;
+  };
+  table.addEventListener("pointermove", cancelLp);
+  table.addEventListener("pointerup", cancelLp);
+  table.addEventListener("pointercancel", cancelLp);
+  table.addEventListener("contextmenu", (e) => e.preventDefault());
+  table.addEventListener("click", (e) => {
+    const c = e.target.closest(".cell");
+    if (!c) return;
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
+    placeBet(c.dataset.k);
+  });
+
+  undoBtn.addEventListener("click", () => {
+    if (state !== "idle" || !undoStack.length) return;
+    bets = undoStack.pop();
+    renderAllStacks();
+    S.play("swoosh");
+    AX.haptic("light");
+    refreshUI(true);
+  });
+  clearBtn.addEventListener("click", () => {
+    if (state !== "idle" || !totalOf(bets)) return;
+    snapshot();
+    Object.keys(bets).forEach((k, i) => sweepStack(k, i * 25, slotG));
+    bets = {};
+    S.play("swoosh");
+    AX.haptic("medium");
+    refreshUI(true);
+  });
+  repeatBtn.addEventListener("click", () => {
+    if (state !== "idle") return;
+    const t = totalOf(lastBets);
+    if (!t) return;
+    if (t > AX.getBalance()) {
+      S.play("error");
+      AX.toast(`Saldo insuficiente para repetir (${AX.money(t)})`, "error");
+      return;
+    }
+    clearMarks();
+    snapshot();
+    bets = Object.assign({}, lastBets);
+    Object.keys(bets).forEach((k, i) =>
+      setTimeout(() => flyChip(chipBtns[chipValue], cells[k], breakdown(bets[k] || 1)[0] || chipValue, () => {
+        renderStack(k, true);
+        S.play("chip");
+      }), i * 60)
+    );
+    renderAllStacks();
+    AX.haptic("tap");
+    refreshUI(true);
+  });
+  doubleBtn.addEventListener("click", () => {
+    if (state !== "idle") return;
+    const t = totalOf(bets);
+    if (!t) return;
+    if (t * 2 > AX.getBalance()) {
+      S.play("error");
+      AX.toast("Saldo insuficiente para doblar", "error");
+      return;
+    }
+    snapshot();
+    for (const k in bets) {
+      bets[k] *= 2;
+      renderStack(k, true);
+    }
+    S.play("powerup");
+    AX.haptic("tap");
+    const c = AX.center(table);
+    AX.fx.floatText(c.x, c.y, "x2", { color: "#ffcc33", size: 44 });
+    refreshUI(true);
+  });
+
+  /* Fichas que se recogen (hacia la rueda) */
+  function sweepStack(key, delay, to) {
+    const stk = cells[key].querySelector(".stk");
+    if (!stk.innerHTML) return;
+    const clone = stk.cloneNode(true);
+    const r = stk.getBoundingClientRect();
+    clone.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;margin:0;right:auto;bottom:auto;z-index:850;`;
+    document.body.appendChild(clone);
+    stk.innerHTML = "";
+    cells[key].classList.remove("has");
+    const dx = to.x - (r.left + r.width / 2), dy = to.y - (r.top + r.height / 2);
+    clone.animate(
+      [{ transform: "none", opacity: 1 }, { transform: `translate(${dx * 0.3}px,${dy * 0.3 - 20}px) scale(1.1)`, opacity: 1, offset: 0.3 }, { transform: `translate(${dx}px,${dy}px) scale(.3)`, opacity: 0 }],
+      { duration: 560, delay, easing: "cubic-bezier(.5,0,.6,1)", fill: "both" }
+    ).onfinish = () => clone.remove();
+  }
+
+  /* =====================================================================
+     PANEL DE HISTORIAL / CALIENTES Y FRÍOS
+     ===================================================================== */
+  const badge = (n, extra = "") => `<span class="badge ${colorOf(n)} ${extra}">${n}</span>`;
+  function hotCold() {
+    const counts = new Array(37).fill(0), lastSeen = new Array(37).fill(Infinity);
+    history.forEach((n, i) => {
+      counts[n]++;
+      if (lastSeen[n] === Infinity) lastSeen[n] = i;
+    });
+    const nums = [...Array(37).keys()];
+    const hot = nums.filter((n) => counts[n] > 0).sort((a, b) => counts[b] - counts[a] || lastSeen[a] - lastSeen[b]);
+    const cold = nums.slice().sort((a, b) => counts[a] - counts[b] || lastSeen[b] - lastSeen[a] || a - b);
+    return { counts, lastSeen, hot, cold };
+  }
+  function renderInfo(fresh) {
+    const lb = $("#lastBadge");
+    if (history.length) {
+      const n = history[0];
+      lb.className = "badge big " + colorOf(n) + (fresh ? " fresh" : "");
+      lb.textContent = n;
+      $("#lastDesc").textContent = describe(n).slice(0, 3).join(" · ");
+    } else {
+      lb.className = "badge big none";
+      lb.textContent = "–";
+      $("#lastDesc").textContent = "¡Hagan juego!";
+    }
+    const strip = $("#histStrip");
+    const rest = history.slice(1, 12);
+    strip.innerHTML = rest.length ? rest.map((n, i) => badge(n, fresh && i === 0 ? "fresh" : "")).join("") : '<span class="empty">Sin tiradas todavía</span>';
+    const hc = hotCold();
+    const enough = history.length >= 5;
+    $("#hot").innerHTML = enough ? hc.hot.slice(0, 3).map((n) => badge(n, "hot")).join("") : '<span class="empty" style="font-size:10px;color:var(--ax-muted)">—</span>';
+    $("#cold").innerHTML = enough ? hc.cold.slice(0, 3).map((n) => badge(n, "cold")).join("") : '<span class="empty" style="font-size:10px;color:var(--ax-muted)">—</span>';
+    const tot = history.length || 1;
+    const nr = history.filter((n) => colorOf(n) === "r").length, nz = history.filter((n) => n === 0).length, nb = history.length - nr - nz;
+    const pr = history.length ? (nr / tot) * 100 : 48.6, pz = history.length ? (nz / tot) * 100 : 2.8, pb = history.length ? (nb / tot) * 100 : 48.6;
+    $("#rbR").style.width = pr + "%";
+    $("#rbZ").style.width = pz + "%";
+    $("#rbB").style.width = pb + "%";
+    $("#lgR").textContent = "Rojo " + Math.round(history.length ? pr : 0) + "%";
+    $("#lgZ").textContent = "0 · " + Math.round(history.length ? pz : 0) + "%";
+    $("#lgB").textContent = "Negro " + Math.round(history.length ? pb : 0) + "%";
+  }
+
+  function openStats() {
+    if (state !== "idle") return;
+    S.play("tap");
+    const hc = hotCold();
+    const h = history;
+    const cnt = (f) => h.filter(f).length;
+    const pct = (v) => (h.length ? Math.round((v / h.length) * 100) : 0);
+    const rows = [
+      ["Rojo", cnt((n) => colorOf(n) === "r")],
+      ["Negro", cnt((n) => colorOf(n) === "b")],
+      ["Cero", cnt((n) => n === 0)],
+      ["Par", cnt((n) => n && n % 2 === 0)],
+      ["Impar", cnt((n) => n % 2 === 1)],
+      ["Falta 1-18", cnt((n) => n >= 1 && n <= 18)],
+      ["Pasa 19-36", cnt((n) => n >= 19)],
+    ];
+    AX.modal({
+      title: "Estadísticas",
+      html: h.length
+        ? `<div class="stats-row"><span class="k">Últimas ${h.length}</span></div>
+           <div class="stats-grid">${h.map((n) => badge(n)).join("")}</div>
+           <div class="stats-row"><span class="k">🔥 Calientes</span>${hc.hot.slice(0, 5).map((n) => badge(n, "hot") + `<small style="color:var(--ax-muted);margin-right:6px">×${hc.counts[n]}</small>`).join("")}</div>
+           <div class="stats-row"><span class="k">❄️ Fríos</span>${hc.cold.slice(0, 5).map((n) => badge(n, "cold")).join("")}</div>
+           <div class="stats-bars" style="margin-top:12px">${rows.map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${pct(v)}%"></i></div><span>${pct(v)}%</span>`).join("")}</div>`
+        : "<p>Todavía no hay tiradas. ¡Haz tu primera apuesta!</p>",
+      buttons: [{ label: "Cerrar", kind: "gold", value: true }],
+    });
+  }
+  $("#info").addEventListener("click", openStats);
+
+  helpBtn.addEventListener("click", () => {
+    S.play("tap");
+    AX.modal({
+      title: "Ruleta europea",
+      html: `<table class="pay-table">
+          <tr><td>Pleno (un número, 0-36)</td><td>35 a 1</td></tr>
+          <tr><td>Docena (1-12, 13-24, 25-36)</td><td>2 a 1</td></tr>
+          <tr><td>Columna (2:1)</td><td>2 a 1</td></tr>
+          <tr><td>Rojo / Negro</td><td>1 a 1</td></tr>
+          <tr><td>Par / Impar</td><td>1 a 1</td></tr>
+          <tr><td>Falta (1-18) / Pasa (19-36)</td><td>1 a 1</td></tr>
+        </table>
+        <ul class="help-list">
+          <li>Elige una ficha abajo y <b>toca la mesa</b> para apostar.</li>
+          <li><b>Mantén pulsada</b> una casilla para retirar sus fichas.</li>
+          <li>Con el <b>0</b> solo gana el pleno al 0.</li>
+          <li>Durante el giro, <b>toca la pantalla</b> para acelerar.</li>
+          <li>Toca el panel de historial para ver las estadísticas.</li>
+        </ul>`,
+      buttons: [{ label: "¡A jugar!", kind: "gold", value: true }],
+    });
+  });
+
+  /* =====================================================================
+     GIRO COMPLETO: cinemática
+     ===================================================================== */
+  function drawNumber() {
+    const keys = Object.keys(bets);
+    if (guided && keys.length) {
+      guided = false;
+      const k = keys[0];
+      let cand = [];
+      for (let n = 0; n <= 36; n++) if (BETS[k].wins(n) && (n !== 0 || k === "n0")) cand.push(n);
+      if (cand.length) return cand[Math.floor(Math.random() * cand.length)];
+    }
+    return Math.floor(Math.random() * 37) % 37;
+  }
+
+  const spinInfo = { bet: $("#siBet"), hint: $("#siHint") };
+  backdrop.addEventListener("pointerdown", () => {
+    if (run && run.turbo === 1) {
+      run.turbo = 2.6;
+      document.body.classList.add("turbo");
+      spinInfo.hint.textContent = "⏩ Acelerando";
+      S.play("whoosh");
+    }
+  });
+
+  async function spin() {
+    if (state !== "idle") return;
+    const total = totalOf(bets);
+    if (!total) {
+      S.play("error");
+      AX.haptic("error");
+      AX.toast("Coloca tus fichas en la mesa primero", "info");
+      const bar = $("#bar");
+      bar.classList.remove("nudge");
+      void bar.offsetWidth;
+      bar.classList.add("nudge");
+      return;
+    }
+    const preBal = AX.getBalance();
+    if (!AX.spend(total)) {
+      S.play("error");
+      AX.toast("Saldo insuficiente para estas apuestas", "error");
+      return;
+    }
+    clearMarks();
+    state = "spin";
+    const n = drawNumber();
+    const roundBets = Object.assign({}, bets);
+    const payout = payoutOf(roundBets, n);
+    lastBets = Object.assign({}, roundBets);
+    store.set(LASTBETS_KEY, lastBets);
+    store.set(PENDING_KEY, { n, payout, total, hist: false, t: Date.now() });
+    undoStack = [];
+    refreshUI(false);
+    document.body.classList.add("spinning");
+    document.body.classList.remove("turbo");
+    spinInfo.bet.textContent = "En juego: " + AX.money(total);
+    spinInfo.hint.textContent = "Toca para acelerar";
+
+    // ¡Lanzamiento!
+    measure();
+    S.play("whoosh");
+    sLaunch();
+    AX.haptic("medium");
+    rollStart();
+    backdrop.classList.add("on");
+    scene.glowAmt = 0;
+    tweenVal(scene, "e", 1, 800, E.inOut);
+    const done = startRun(n);
+    const bannerT = setTimeout(() => AX.cine.banner("¡NO VA MÁS!", { sub: "Las apuestas están cerradas", color: "rgba(200, 16, 46, 0.92)", sound: "swoosh" }), 1300);
+    const b = await done;
+    clearTimeout(bannerT);
+    rollStop();
+    document.body.classList.remove("turbo");
+
+    // La bola se detiene: impacto y casilla iluminada
+    scene.glowIdx = b.idx;
+    tweenVal(scene, "glowAmt", 1, 300, E.out);
+    const bp = ballScreen();
+    S.play("impact");
+    AX.haptic("heavy");
+    AX.fx.glow(bp.x, bp.y, { size: 90, color: "rgba(255,240,180,0.9)", life: 0.5 });
+    AX.fx.sparks(bp.x, bp.y, { count: 26, speed: 500, colors: "gold" });
+    await sleep(500);
+
+    // Historial
+    history.unshift(n);
+    history = history.slice(0, MAX_HISTORY);
+    saveHistory();
+    store.set(PENDING_KEY, { n, payout, total, hist: true, t: Date.now() });
+
+    // Revelación del número
+    const rvP = showReveal(n);
+    tweenVal(scene.cam, "k", 0, 900, E.inOut);
+    await rvP;
+    document.body.classList.remove("spinning");
+    backdrop.classList.remove("on");
+    await tweenVal(scene, "e", 0, 700, E.inOut);
+    renderInfo(true);
+    state = "result";
+    await resolveTable(n, roundBets, payout, total, preBal);
+    state = "idle";
+    refreshUI(false);
+    setTimeout(() => {
+      if (!marksOn) return;
+      table.classList.remove("result");
+      table.querySelectorAll(".lit,.won").forEach((c) => c.classList.remove("lit", "won"));
+    }, 2500);
+  }
+
+  function showReveal(n) {
+    const rv = $("#reveal");
+    const c = colorOf(n);
+    rv.innerHTML = `<div class="rv-rays"></div><div class="rv-disc">${n}</div><div class="rv-tags">${describe(n)
+      .map((t, i) => `<span style="animation-delay:${0.35 + i * 0.08}s">${t}</span>`)
+      .join("")}</div>`;
+    rv.className = "show " + c;
+    const col = c === "r" ? "#ff3b5c" : c === "z" ? "#2bff88" : "#b9a8ff";
+    S.play("boom");
+    S.play("shimmer");
+    AX.haptic("medium");
+    setTimeout(() => {
+      const p = AX.center(rv.querySelector(".rv-disc"));
+      AX.fx.shockwave(p.x, p.y, { color: col, radius: Math.max(W, H) * 0.7, rings: 2, width: 12 });
+      AX.fx.sparks(p.x, p.y, { count: 50, speed: 800, colors: c === "r" ? "fire" : c === "z" ? "green" : "ice" });
+    }, 300);
+    return sleep(1700).then(() => {
+      rv.classList.add("out");
+      return sleep(380);
+    }).then(() => {
+      rv.className = "";
+      rv.innerHTML = "";
+    });
+  }
+
+  async function resolveTable(n, roundBets, payout, total, preBal) {
+    marksOn = true;
+    table.classList.add("result");
+    for (const k in cells) if (BETS[k].wins(n)) cells[k].classList.add("lit");
+    const hitCell = cells["n" + n];
+    hitCell.classList.add("hit");
+    const dolly = document.createElement("span");
+    dolly.className = "dolly";
+    hitCell.appendChild(dolly);
+    // asegurar que la casilla ganadora sea visible
+    const wrap = $("#tableWrap");
+    const hr = hitCell.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    if (hr.top < wr.top || hr.bottom > wr.bottom) wrap.scrollBy({ top: hr.top - wr.top - wr.height / 2 + hr.height / 2, behavior: "smooth" });
+    await sleep(250);
+    const hc = AX.center(hitCell);
+    AX.fx.shockwave(hc.x, hc.y, { color: "#fff3b0", radius: 120, width: 6 });
+    S.play("shimmer");
+
+    const winners = Object.keys(roundBets).filter((k) => BETS[k].wins(n));
+    const losers = Object.keys(roundBets).filter((k) => !BETS[k].wins(n));
+    await sleep(350);
+    if (losers.length) {
+      S.play("swoosh");
+      losers.forEach((k, i) => {
+        delete bets[k];
+        sweepStack(k, i * 40, slotG);
+      });
+      await sleep(winners.length ? 450 : 650);
+    }
+
+    if (!winners.length) {
+      store.del(PENDING_KEY);
+      bets = {};
+      const after = AX.getBalance();
+      if (after <= 0) {
+        await AX.cine.defeat({ title: "¡Sin fichas!", subtitle: "La banca gana esta vez…" });
+        AX.toast("Te has quedado sin saldo. ¡Prueba suerte en otros juegos del menú!", "info", 4000);
+      } else if (total >= preBal * 0.4) {
+        await AX.cine.defeat({ title: "¡La banca gana!", subtitle: "Pierdes " + AX.money(total) });
+      } else {
+        S.play("lose");
+        AX.haptic("error");
+        table.classList.remove("lose");
+        void table.offsetWidth;
+        table.classList.add("lose");
+        const c = AX.center($("#tableWrap"));
+        AX.fx.floatText(c.x, c.y, "SIN PREMIO", { color: "#ff3b5c", size: 30, duration: 1500 });
+      }
+      return;
+    }
+
+    // Ganadoras: la pila crece con el premio
+    let pleno = false;
+    S.play("coin");
+    winners.forEach((k, i) => {
+      const win = roundBets[k] * BETS[k].mult;
+      if (BETS[k].type === "number") pleno = true;
+      bets[k] = win;
+      cells[k].classList.add("won");
+      setTimeout(() => {
+        renderStack(k, true);
+        const c = AX.center(cells[k]);
+        AX.fx.floatText(c.x, c.y - 10, "+" + AX.fmt(win), { color: "#ffcc33", size: 22 });
+        AX.fx.sparks(c.x, c.y, { count: 22, speed: 420 });
+        S.play("chip");
+      }, i * 140);
+    });
+    AX.haptic("win");
+    await sleep(700 + winners.length * 140);
+
+    const ratio = payout / total;
+    const profit = payout - total;
+    if (pleno) {
+      // ¡PLENO! momento épico
+      const c = AX.center(hitCell);
+      AX.fx.flash("#ffffff", 450, 0.75);
+      AX.fx.shockwave(c.x, c.y, { color: "#ffcc33", radius: Math.max(W, H), rings: 3, width: 18 });
+      AX.fx.sparks(c.x, c.y, { count: 80, speed: 1100 });
+      S.play("boom");
+      AX.haptic("bigwin");
+      await sleep(350);
+      await AX.cine.bigWin(payout, { bet: total, tier: ratio >= 20 ? "epic" : "mega", title: "¡PLENO!", label: `Número ${n} · paga 35 a 1` });
+    } else if (ratio >= 3) {
+      await AX.cine.bigWin(payout, { bet: total, label: winners.map((k) => BETS[k].name).join(" + ") });
+    } else if (profit > 0) {
+      S.play("win");
+      AX.fx.confetti({ count: 70, duration: 500 });
+    }
+
+    // Las fichas ganadoras vuelan al saldo
+    const to = hud.center();
+    winners.forEach((k, i) => {
+      setTimeout(() => {
+        const c = AX.center(cells[k]);
+        sweepStack(k, 0, to);
+        AX.fx.coinsTo(c, to, { count: clamp(Math.round(4 + BETS[k].mult / 2.5), 5, 18) });
+      }, i * 120);
+    });
+    await sleep(650);
+    store.del(PENDING_KEY);
+    AX.addBalance(payout);
+    S.play("cash");
+    bets = {};
+    if (profit < 0) AX.toast(`Recuperas ${AX.money(payout)} de ${AX.money(total)}`, "info");
+    else if (profit === 0) AX.toast("Ni ganas ni pierdes", "info");
+    await sleep(500);
+  }
+
+  /* Cobro de una jugada interrumpida (p.ej. se cerró la página durante el giro) */
+  function settlePending() {
+    const p = store.get(PENDING_KEY, null);
+    if (!p || !Number.isInteger(p.n)) return;
+    store.del(PENDING_KEY);
+    if (!p.hist) {
+      history.unshift(p.n);
+      history = history.slice(0, MAX_HISTORY);
+      saveHistory();
+    }
+    if (p.payout > 0) {
+      AX.addBalance(p.payout);
+      setTimeout(() => AX.toast(`Jugada anterior (${p.n}) cobrada: +${AX.money(p.payout)}`, "gold", 4000), 600);
+    }
+  }
+
+  /* =====================================================================
+     ARRANQUE
+     ===================================================================== */
+  slotEl.addEventListener("click", () => spin());
+  spinBtn.addEventListener("click", () => spin());
+  hud.balanceEl.addEventListener("dblclick", () => {
+    if (state !== "idle") return;
+    guided = !guided;
+    AX.toast(guided ? "Modo guiado ACTIVADO" : "Modo guiado DESACTIVADO", guided ? "gold" : "info", 1800);
+    S.play(guided ? "powerup" : "tap");
+  });
+  window.addEventListener("keydown", (e) => {
+    if (e.target.closest && e.target.closest(".ax-modal")) return;
+    if (e.code === "Space" || e.code === "Enter") {
+      e.preventDefault();
+      if (run && run.turbo === 1) backdrop.dispatchEvent(new Event("pointerdown"));
+      else spin();
+    } else if ((e.key === "z" || e.key === "Backspace") && state === "idle") undoBtn.click();
+  });
+  window.addEventListener("storage", (e) => {
+    if (e.key === AX.KEYS.BALANCE && state === "idle") refreshUI(false);
+    if (e.key === HISTORY_KEY && state === "idle") {
+      history = loadHistory();
+      renderInfo(false);
+    }
+  });
+  window.addEventListener("focus", () => state === "idle" && refreshUI(false));
+  let rsT = 0;
+  const onResize = () => {
+    clearTimeout(rsT);
+    rsT = setTimeout(measure, 60);
+  };
+  window.addEventListener("resize", onResize);
+  window.addEventListener("orientationchange", onResize);
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(slotEl);
+  $("#tableWrap").addEventListener("scroll", () => {}, { passive: true });
+
+  buildTable();
+  settlePending();
+  if (history.length) {
+    scene.ball.psi = IDX[history[0]] * PA;
+    scene.glowIdx = IDX[history[0]];
+    scene.glowAmt = 0.45;
+  }
+  renderInfo(false);
+  measure();
+  refreshUI(false);
+  requestAnimationFrame(frame);
+
+  // Re-renderizar la rueda cuando cargue la fuente Bungee
+  if (document.fonts && document.fonts.load) {
+    Promise.race([document.fonts.load("40px Bungee"), sleep(3000)]).then(() => {
+      if (document.fonts.check && document.fonts.check("40px Bungee")) prerender(wantedLayerR());
+    });
+  }
+
+  // Cinemática de entrada con una miniatura real de la rueda
+  let iconHtml = "🎡";
+  try {
+    const sz = 300, tc = mkCanvas(sz), tg = tc.getContext("2d");
+    const s = sz / (2 * M);
+    tg.drawImage(layers.bowl, 0, 0, sz, sz);
+    tg.save();
+    tg.translate(sz / 2, sz / 2);
+    tg.rotate(-0.3);
+    tg.drawImage(layers.rotor, -sz / 2, -sz / 2, sz, sz);
+    tg.restore();
+    tg.drawImage(layers.light, 0, 0, sz, sz);
+    tg.fillStyle = "#fff";
+    tg.beginPath();
+    tg.arc(sz / 2 + s * R_POCKET * Math.cos(-1.1), sz / 2 + s * R_POCKET * Math.sin(-1.1), s * R_BALL, 0, TAU);
+    tg.fill();
+    iconHtml = `<img class="intro-wheel" alt="" src="${tc.toDataURL("image/png")}">`;
+  } catch (e) {}
+  AX.cine.intro({ title: "Ruleta", subtitle: "Europea · Pleno 35 a 1", icon: iconHtml, color: "#c8102e", once: true });
+
+  // Gancho de depuración/pruebas (solo lectura salvo `place`)
+  window.__ruleta = {
+    get state() { return state; },
+    get bets() { return Object.assign({}, bets); },
+    get history() { return history.slice(); },
+    ballNumber() {
+      if (scene.ball.psi == null) return null;
+      return ORDER[Math.round(mod(scene.ball.psi, TAU) / PA) % 37];
+    },
+    place(key, chip) {
+      if (chip) chipValue = chip;
+      placeBet(key);
+    },
+    spin,
+  };
+})();
+</script>
 </body>
 </html>

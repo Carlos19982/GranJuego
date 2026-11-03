@@ -1,1061 +1,1624 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego de Cartas - Logros Integrados</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <style>
-        /* --- Styles (mostly unchanged, ensure consistency) --- */
-        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#2d3748 0%,#1a202c 100%);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;color:#2d374d; position: relative;}
-        h1{font-family:'Playfair Display',serif}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#07060f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Adivina la Carta</title>
+<link rel="stylesheet" href="../shared/arcade.css">
+<script src="../shared/arcade.js"></script>
+<style>
+/* =====================================================================
+   ADIVINA LA CARTA · mesa de neón (mobile-first, retrato)
+   ===================================================================== */
+@property --rim {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+:root {
+  --cw: 70px;          /* ancho de carta (lo calcula JS) */
+  --gap: 8px;
+  --felt1: #138066;
+  --felt2: #0a4a3d;
+  --felt3: #041f1b;
+}
+html, body { height: 100%; }
+body { overflow: hidden; }
 
-        /* Exit button style */
-        #exit-button {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            z-index: 50;
-        }
+/* ------------------------------------------------ fondo ambiental */
+#bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+#bg .orb {
+  position: absolute; width: 80vmax; height: 80vmax; border-radius: 50%;
+  opacity: .55; mix-blend-mode: screen;
+}
+#bg .o1 { left: -40vmax; top: -30vmax; background: radial-gradient(closest-side, rgba(139,92,255,.55), transparent); animation: orb1 18s ease-in-out infinite alternate; }
+#bg .o2 { right: -45vmax; bottom: -35vmax; background: radial-gradient(closest-side, rgba(255,47,179,.38), transparent); animation: orb2 22s ease-in-out infinite alternate; }
+#bg .o3 { left: -20vmax; bottom: -50vmax; background: radial-gradient(closest-side, rgba(34,228,255,.25), transparent); animation: orb1 26s ease-in-out infinite alternate-reverse; }
+@keyframes orb1 { to { transform: translate(18vmax, 14vmax) scale(1.15); } }
+@keyframes orb2 { to { transform: translate(-16vmax, -12vmax) scale(1.2); } }
+#bg .beams {
+  position: absolute; left: 50%; top: -30%; width: 160vmax; height: 160vmax; margin-left: -80vmax;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.035) 0 6deg, transparent 6deg 24deg);
+  -webkit-mask: radial-gradient(circle at 50% 50%, #000 0, transparent 60%);
+  mask: radial-gradient(circle at 50% 50%, #000 0, transparent 60%);
+  animation: ax-spin 90s linear infinite;
+}
+#bg .suit {
+  position: absolute; bottom: -60px; font-size: 26px; line-height: 1;
+  color: rgba(255,255,255,.07); text-shadow: 0 0 18px rgba(139,92,255,.35);
+  animation: drift linear infinite;
+}
+#bg .suit.r { color: rgba(255,59,92,.10); text-shadow: 0 0 18px rgba(255,47,179,.35); }
+@keyframes drift {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate(var(--dx, 30px), -115vh) rotate(var(--rot, 180deg)); opacity: 0; }
+}
 
-        /* --- Card Structure & Styles (Restored for Flip) --- */
-        .card-container {
-            display: inline-block;
-            perspective: 1000px;
-            margin: 8px;
-            width: 100px;
-            height: 150px;
-            vertical-align: top;
-            position: relative;
-            opacity: 0; /* Initially invisible for entrance animation */
-        }
-        /* Entrance animation (slide) */
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-80px) scale(0.9); /* Comes from top */
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        .card-container.card-enter-active {
-            animation: slideIn 0.5s ease-out forwards;
-        }
+/* ------------------------------------------------ estructura */
+#app {
+  position: fixed; top: 0; bottom: 0; left: 0; right: 0; z-index: 1;
+  width: 100%; max-width: 520px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: calc(var(--ax-safe-top) + 62px) calc(var(--ax-safe-right) + 12px) calc(var(--ax-safe-bottom) + 10px) calc(var(--ax-safe-left) + 12px);
+}
 
-        .card-container:hover .card-flipper { /* Hover effect */
-             transform: translateY(-6px) scale(1.03) rotateY(var(--flipper-rotation, 0deg));
-             box-shadow: 0 12px 24px rgba(0,0,0,.25),0 6px 12px rgba(0,0,0,.2);
-        }
-        .card-flipper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.6s, box-shadow 0.25s ease-out; /* Flip and hover duration */
-            transform-style: preserve-3d;
-            transform: rotateY(var(--flipper-rotation, 0deg)); /* Variable to control flip */
-            box-shadow: 0 8px 16px rgba(0,0,0,.2),0 4px 8px rgba(0,0,0,.15);
-        }
-        .card-flipper.is-flipped {
-            --flipper-rotation: 180deg; /* Activates the flip */
-        }
-        .card-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            border-radius: 12px;
-            border:1px solid rgba(0,0,0,.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 700;
-            -webkit-user-select: none;
-            user-select: none;
-            overflow: hidden;
-        }
-        .card-front { /* Front face */
-            background-color: #fff;
-            transform: rotateY(180deg); /* Initially hidden */
-            padding: 12px 8px;
-        }
-        .card-front.red { color: #e53e3e; }
-        .card-front.black { color: #1a202c; }
-        .card-back-display { /* Back face */
-            background: linear-gradient(135deg, #4a5568, #2d3748);
-            border: 3px solid #a0aec0;
-            color: #a0aec0;
-            transform: rotateY(0deg); /* Initially visible */
-        }
-        .card-front .card-rank{font-size:2.25rem;line-height:1;align-self:flex-start;padding-left:6px; font-family:'Playfair Display',serif}
-        .card-front .card-suit{font-size:3rem;line-height:1}
-        .card-front .card-suit-bottom{font-size:1.75rem;align-self:flex-end;transform:rotate(180deg);padding-right:6px}
+/* ------------------------------------------------ escalera de multiplicadores */
+.ladder { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; position: relative; }
+.step {
+  position: relative; height: 44px; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  border: 1px solid var(--ax-stroke);
+  color: var(--ax-muted); transition: background .35s, border-color .35s, color .35s, box-shadow .35s, transform .35s;
+  overflow: hidden;
+}
+.step b { font-family: var(--ax-display); font-weight: 400; font-size: 16px; line-height: 1; color: #fff; opacity: .7; }
+.step span { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-top: 3px; }
+.step.final { border-color: rgba(255,47,179,.45); }
+.step.final b { color: #ffc2ec; text-shadow: 0 0 10px rgba(255,47,179,.8); opacity: 1; }
+.step.active {
+  border-color: var(--ax-cyan); color: #d9fbff;
+  background: linear-gradient(180deg, rgba(34,228,255,.28), rgba(34,228,255,.06));
+  box-shadow: 0 0 16px rgba(34,228,255,.45), inset 0 0 12px rgba(34,228,255,.25);
+  animation: stepPulse 1.4s ease-in-out infinite;
+}
+.step.active b { opacity: 1; text-shadow: 0 0 10px var(--ax-cyan); }
+.step.final.active {
+  border-color: var(--ax-magenta); color: #ffe0f4;
+  background: linear-gradient(180deg, rgba(255,47,179,.35), rgba(139,92,255,.12));
+  box-shadow: 0 0 20px rgba(255,47,179,.6), inset 0 0 12px rgba(255,47,179,.3);
+}
+.step.done {
+  border-color: rgba(255,204,51,.75); color: #3a1d00;
+  background: linear-gradient(180deg, #ffe07a, #f0a000);
+  box-shadow: 0 0 14px rgba(255,190,40,.45);
+}
+.step.done b { color: #3a1d00; opacity: 1; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+.step.done::after {
+  content: "✓"; position: absolute; top: 1px; right: 4px; font-size: 10px; font-weight: 900; color: #5a2e00;
+}
+.step.fail {
+  border-color: rgba(255,59,92,.8); color: #ffd6dd;
+  background: linear-gradient(180deg, rgba(255,59,92,.45), rgba(120,0,25,.4));
+}
+.step.fail b { opacity: 1; }
+.step.fail::after { content: "✕"; position: absolute; top: 1px; right: 4px; font-size: 10px; font-weight: 900; }
+@keyframes stepPulse { 50% { transform: translateY(-2px); } }
+.step.pop { animation: stepPop .6s cubic-bezier(.2,1.6,.4,1); }
+@keyframes stepPop { 0% { transform: scale(1); } 35% { transform: scale(1.22); } 100% { transform: scale(1); } }
 
-        /* Card label style */
-        .card-label {
-            position: absolute;
-            bottom: -24px; /* Adjusted: Position 24px below container */
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #e2e8f0;
-            text-shadow: 1px 1px 1px #1a202c;
-            width: 100%;
-            pointer-events: none;
-        }
-        /* --- END Card Styles --- */
+/* ------------------------------------------------ mesa */
+.table {
+  position: relative; flex: 1 1 auto; min-height: 0; isolation: isolate;
+  display: flex; flex-direction: column;
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 70% at 50% 30%, rgba(255,255,255,.10), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,.05) 0 2px, transparent 2px 5px),
+    radial-gradient(130% 100% at 50% 35%, var(--felt1) 0%, var(--felt2) 52%, var(--felt3) 100%);
+  box-shadow:
+    0 0 0 2px rgba(255,204,51,.55),
+    0 0 0 6px rgba(40,20,0,.85),
+    0 0 0 7px rgba(255,204,51,.35),
+    0 0 34px rgba(255,190,40,.25),
+    0 24px 50px rgba(0,0,0,.6),
+    inset 0 0 50px rgba(0,0,0,.65);
+  margin: 7px 7px 2px;
+}
+.table::before {
+  /* luz que recorre el borde */
+  content: ""; position: absolute; inset: -7px; border-radius: 30px; padding: 3px; pointer-events: none; z-index: 0;
+  background: conic-gradient(from var(--rim), transparent 0 62%, rgba(34,228,255,.0) 64%, rgba(34,228,255,.9) 76%, #fff 80%, rgba(255,204,51,.9) 84%, transparent 92%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: rim 5.5s linear infinite;
+}
+@keyframes rim { to { --rim: 360deg; } }
+.table .watermark {
+  position: absolute; left: 0; right: 0; top: 50%; text-align: center; transform: translateY(-50%);
+  font-family: var(--ax-display); font-size: clamp(18px, 6vw, 28px); letter-spacing: .08em;
+  color: rgba(255,255,255,.055); pointer-events: none; white-space: nowrap; z-index: 0;
+}
+.table .dim {
+  position: absolute; inset: 0; border-radius: inherit; z-index: 5; pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(0,0,0,.25), rgba(0,0,0,.72));
+  opacity: 0; transition: opacity .35s ease;
+}
+.table.focus .dim { opacity: 1; }
 
-        button{transition:all .2s ease-in-out;cursor:pointer}
-        button:disabled{opacity:.5;cursor:not-allowed}
-        .game-container{width:750px;max-width:95%;margin:1rem auto;padding:1.5rem 2rem;padding-top:4rem;background-color:rgba(255,255,255,.98);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);position:relative}
-        #message{min-height:60px;padding:1rem 1.5rem;border-radius:8px;margin-top:1.5rem;font-weight:500;border-width:1px;border-style:solid;display:flex;align-items:center;justify-content:center;text-align:center;font-size:1.05rem;box-shadow:inset 0 1px 3px rgba(0,0,0,.05); opacity: 0; transition: opacity 0.3s ease-in-out;}
-        #message.visible { opacity: 1; }
-        .message-info { background-color: #ebf8ff; color: #2c5282; border-color: #bee3f8; }
-        .message-success { background-color: #f0fff4; color: #276749; border-color: #c6f6d5; }
-        .message-error { background-color: #fff5f5; color: #c53030; border-color: #fed7d7; }
+.slots { flex: none; display: flex; justify-content: center; gap: var(--gap); padding: 12px 10px 0; }
+.slot {
+  position: relative; width: var(--cw); height: calc(var(--cw) * 1.45); flex: none;
+  border-radius: calc(var(--cw) * .1);
+  border: 1.5px dashed rgba(255,255,255,.2);
+  background: rgba(0,0,0,.14);
+}
+.slot.lift { z-index: 10; }
+.slot-lbl {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.35); text-align: center; gap: 2px; pointer-events: none;
+}
+.slot-lbl b { font-family: var(--ax-display); font-weight: 400; font-size: calc(var(--cw) * .3); line-height: 1; }
+.slot-lbl span { font-size: calc(var(--cw) * .13); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.slot.next { border-color: rgba(34,228,255,.75); box-shadow: 0 0 14px rgba(34,228,255,.35), inset 0 0 12px rgba(34,228,255,.2); animation: slotNext 1.2s ease-in-out infinite; }
+.slot.next .slot-lbl { color: #bff6ff; }
+@keyframes slotNext { 50% { box-shadow: 0 0 22px rgba(34,228,255,.6), inset 0 0 18px rgba(34,228,255,.3); } }
 
-        #cards-area{
-            height: 280px; /* Fixed height */
-            width: 520px; /* Fixed width */
-            margin-left: auto;
-            margin-right: auto;
-            background-color:#2f855a;
-            border:5px solid #c05621;
-            box-shadow:inset 0 0 20px rgba(0,0,0,.4);
-            border-radius:12px;
-            display:flex;
-            justify-content: center;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            padding: 1rem;
-            padding-top: 4.5rem;
-            position: relative;
-            overflow-y: hidden; /* Hides vertical overflow */
-        }
+.center { position: relative; flex: 1 1 auto; min-height: 0; }
 
-        #ingame-stats {
-            position: absolute; top: 0; left: 0; right: 0; padding: 0.5rem 1rem;
-            background-color: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex; justify-content: space-around; align-items: center;
-            color: #e2e8f0; font-size: 0.9rem; font-weight: 500;
-            border-top-left-radius: 7px; border-top-right-radius: 7px; z-index: 10;
-        }
-        #ingame-stats p { margin: 0 0.5rem; } #ingame-stats strong { color: #fff; }
-        #ingame-stats span { font-weight: 600; color: #facc15; }
+/* mazo */
+.deck {
+  position: absolute; right: 10px; top: 46%;
+  width: calc(var(--cw) * .82); height: calc(var(--cw) * 1.19);
+  transform: translateY(-50%); transition: opacity .4s ease;
+  z-index: 1;
+}
+.deck-card { position: absolute; inset: 0; border-radius: calc(var(--cw) * .09); box-shadow: 0 2px 4px rgba(0,0,0,.5); }
+.deck-card .face { border-radius: inherit; }
+.deck-count {
+  position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 8px;
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; color: rgba(255,255,255,.55); white-space: nowrap;
+}
+.table.deck-hidden .deck { opacity: 0; }
+.table.mode-play .deck { right: calc(50% - var(--cw) * .41); }
+.deck { transition: opacity .4s ease, right .55s cubic-bezier(.3,1.2,.4,1); }
+.center::before {
+  content: ""; position: absolute; left: 50%; top: 46%; width: 78%; height: 62%; transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgba(255,255,255,.13), rgba(255,255,255,.04) 60%, transparent);
+  border-radius: 50%; pointer-events: none; animation: spot 4s ease-in-out infinite;
+}
+@keyframes spot { 50% { opacity: .55; } }
+.stage {
+  position: absolute; left: 50%; top: 46%; width: var(--sw, 120px); height: calc(var(--sw, 120px) * 1.45); --cw: var(--sw, 120px);
+  transform: translate(-50%, -50%); z-index: 10; pointer-events: none;
+}
+.tbtn {
+  position: absolute; left: 10px; bottom: 10px; z-index: 1; width: 44px; height: 44px; border-radius: 14px;
+  background: rgba(5,4,14,.55); border-color: rgba(255,255,255,.18);
+}
+.tbtn svg { width: 20px; height: 20px; }
 
-        #player-balance-display{background-color:#e6fffa;color:#2c7a7b;border:1px solid #b2f5ea;padding:.75rem 1.25rem;border-radius:8px;font-size:1.1rem;font-weight:600;margin-bottom:0.5rem; display:inline-block;box-shadow:0 2px 4px rgba(0,0,0,.05); }
-        #round-controls{padding:1rem 0; min-height: 80px;}
-        .controls-container{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:.75rem;margin-top:1rem}
-        #stats-section{background-color:#edf2f7;border:1px solid #e2e8f0;color:#4a5568;padding:1rem 1.5rem;border-radius:10px;margin-top:1.5rem;text-align:left}
-        #stats-section h3{text-align:center;font-weight:700;margin-bottom:.75rem;font-size:1.2rem;color:#2d3748}
-        #stats-list li{margin-bottom:.3rem} #stats-list strong{color:#2c5282}
-        @keyframes shake{0%,to{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
-        .animate-shake{animation:shake .3s ease-in-out}
+/* bote */
+.pot {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 1;
+  display: flex; align-items: stretch; border-radius: 16px; overflow: hidden;
+  background: rgba(5,4,14,.62); border: 1px solid rgba(255,204,51,.4);
+  box-shadow: 0 8px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+  white-space: nowrap;
+}
+.pot > div { padding: 6px 14px 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.pot small { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; color: var(--ax-muted); text-transform: uppercase; }
+.pot b { font-family: var(--ax-display); font-weight: 400; font-size: 19px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pot .pot-main b { background: var(--ax-gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 8px rgba(255,190,40,.45)); }
+.pot .pot-next { border-left: 1px solid rgba(255,255,255,.1); }
+.pot .pot-next b { color: #d9fbff; text-shadow: 0 0 10px rgba(34,228,255,.75); font-size: 16px; }
+.pot.bump { animation: ax-pop .45s ease; }
+.pot.hot { border-color: rgba(255,47,179,.7); box-shadow: 0 0 22px rgba(255,47,179,.4), 0 8px 24px rgba(0,0,0,.45); }
 
-        /* Highlight Animations (applied to .card-front) */
-        @keyframes glowSuccessInternal { 0%, 100% { box-shadow: inset 0 0 0 0 rgba(74, 222, 128, 0); } 50% { box-shadow: inset 0 0 10px 3px rgba(74, 222, 128, 0.6); } }
-        @keyframes glowErrorInternal { 0%, 100% { box-shadow: inset 0 0 0 0 rgba(248, 113, 113, 0); } 50% { box-shadow: inset 0 0 10px 3px rgba(248, 113, 113, 0.6); } }
-        .card-front.card-highlight-success { animation: glowSuccessInternal 0.8s ease-in-out; }
-        .card-front.card-highlight-error { animation: glowErrorInternal 0.8s ease-in-out; }
+/* abanico de ases (pantalla de apuesta) */
+.fan {
+  position: absolute; left: 50%; top: 44%;
+  width: var(--fw, 70px); height: calc(var(--fw, 70px) * 1.45);
+  margin: calc(var(--fw, 70px) * -.725) 0 0 calc(var(--fw, 70px) * -.5);
+  transition: opacity .4s ease, transform .4s ease;
+  animation: fanFloat 4s ease-in-out infinite;
+  z-index: 1;
+}
+.fan .card { --cw: var(--fw, 70px); transform-origin: 50% 115%; }
+.fan .card:nth-child(1) { animation: fan1 .9s .1s cubic-bezier(.2,1.3,.4,1) both; }
+.fan .card:nth-child(2) { animation: fan2 .9s .18s cubic-bezier(.2,1.3,.4,1) both; }
+.fan .card:nth-child(3) { animation: fan3 .9s .26s cubic-bezier(.2,1.3,.4,1) both; }
+.fan .card:nth-child(4) { animation: fan4 .9s .34s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes fan1 { from { transform: rotate(0) translateY(30px); opacity: 0; } to { transform: rotate(-27deg); } }
+@keyframes fan2 { from { transform: rotate(0) translateY(30px); opacity: 0; } to { transform: rotate(-9deg) translateY(-4px); } }
+@keyframes fan3 { from { transform: rotate(0) translateY(30px); opacity: 0; } to { transform: rotate(9deg) translateY(-4px); } }
+@keyframes fan4 { from { transform: rotate(0) translateY(30px); opacity: 0; } to { transform: rotate(27deg); } }
+@keyframes fanFloat { 50% { translate: 0 -7px; } }
+.fan-cap {
+  position: absolute; left: 0; right: 0; top: calc(44% + var(--fw, 70px) * .95);
+  text-align: center; font-size: 11px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(255,255,255,.7); text-shadow: 0 0 10px rgba(34,228,255,.6); z-index: 1;
+  transition: opacity .4s ease;
+}
+.table:not(.mode-bet) .fan, .table:not(.mode-bet) .fan-cap { opacity: 0; pointer-events: none; }
+.table:not(.mode-bet) .fan .card { animation: none; }
+.table.mode-bet .slot-lbl { opacity: .7; }
 
-        /* Exit animation (applied to .card-container) */
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px) scale(0.95); } }
-        .card-container.card-exit { animation-name: fadeOut; animation-duration: 0.4s; animation-timing-function: ease-in; animation-fill-mode: forwards; opacity: 1; /* Start visible */ }
+/* duelo */
+.duel {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center; gap: 12px;
+  padding: 26px 10px 64px;
+}
+.table.mode-duel .duel { display: flex; }
+.table.mode-duel .slots { display: none; }
+.dcol { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.dcol h4 {
+  margin: 0; font-family: var(--ax-display); font-weight: 400; font-size: 14px; letter-spacing: .14em;
+}
+.dcol.you h4 { color: #d9fbff; text-shadow: 0 0 10px var(--ax-cyan); }
+.dcol.bank h4 { color: #ffe0f4; text-shadow: 0 0 10px var(--ax-magenta); }
+.dslot {
+  position: relative; width: var(--dw, 110px); height: calc(var(--dw, 110px) * 1.45); --cw: var(--dw, 110px);
+  border-radius: calc(var(--dw, 110px) * .1); border: 1.5px dashed rgba(255,255,255,.22); background: rgba(0,0,0,.15);
+}
+.dslot.lift { z-index: 10; }
+.vs {
+  position: relative; z-index: 6; font-family: var(--ax-display); font-size: 30px; color: #fff;
+  text-shadow: 0 0 12px var(--ax-magenta), 0 0 30px var(--ax-violet), 0 3px 0 #4a003a;
+  animation: vsPulse 1.1s ease-in-out infinite; align-self: center; margin-top: 24px;
+}
+@keyframes vsPulse { 50% { transform: scale(1.18) rotate(-4deg); text-shadow: 0 0 20px var(--ax-magenta), 0 0 44px var(--ax-cyan), 0 3px 0 #4a003a; } }
 
-        /* Range slider styles */
-        input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #cbd5e0; border-radius: 5px; cursor: pointer; outline: none; transition: background 0.15s ease-in-out; }
-        input[type=range]:hover { background: #a0aec0; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #4299e1; border-radius: 50%; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: background 0.15s ease-in-out; }
-        input[type=range]:hover::-webkit-slider-thumb { background: #2b6cb0; }
-        input[type=range]::-moz-range-thumb { width: 20px; height: 20px; background: #4299e1; border-radius: 50%; cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: background 0.15s ease-in-out; }
-        input[type=range]:hover::-moz-range-thumb { background: #2b6cb0; }
+/* ------------------------------------------------ carta (3D) */
+.card { position: absolute; inset: 0; z-index: 2; }
+.card .tilt { position: absolute; inset: 0; }
+.card .inner {
+  position: absolute; inset: 0; transform-style: preserve-3d;
+  transform: perspective(900px) rotateY(0deg);
+}
+.card .face {
+  position: absolute; inset: 0; border-radius: calc(var(--cw) * .1); overflow: hidden;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  box-shadow: 0 6px 14px rgba(0,0,0,.45);
+}
+.face.back, .deck-card .face {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,214,90,.0) 0 28%, transparent 29%),
+    repeating-linear-gradient(45deg, rgba(255,214,90,.16) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(-45deg, rgba(255,214,90,.16) 0 2px, transparent 2px 9px),
+    linear-gradient(160deg, #6a35e8 0%, #3a168f 55%, #1b0b4d 100%);
+  box-shadow: inset 0 0 0 calc(var(--cw) * .045) #160939, inset 0 0 0 calc(var(--cw) * .07) #ffcc33, 0 6px 14px rgba(0,0,0,.45);
+}
+.face.back::after, .deck-card .face::after {
+  content: "★"; position: absolute; left: 50%; top: 50%; width: calc(var(--cw) * .46); height: calc(var(--cw) * .46);
+  transform: translate(-50%, -50%) rotate(45deg); border-radius: calc(var(--cw) * .08);
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 35% 30%, #fff3b0, #ffcc33 45%, #b86b00);
+  color: #3a1d00; font-size: calc(var(--cw) * .22); line-height: 1;
+  box-shadow: 0 0 calc(var(--cw) * .15) rgba(255,204,51,.6);
+}
+.face.back::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.28) 48%, transparent 62%);
+  transform: translateX(-100%); animation: backShine 3.5s ease-in-out infinite;
+}
+@keyframes backShine { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.face.front {
+  transform: rotateY(180deg);
+  background: linear-gradient(155deg, #ffffff 0%, #f7f2e7 60%, #e8dfcb 100%);
+  color: #17142a;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.12), inset 0 0 0 calc(var(--cw) * .035) #fff, 0 6px 14px rgba(0,0,0,.45);
+  font-family: var(--ax-font);
+}
+.face.front.red { color: #e0123f; }
+.corner {
+  position: absolute; top: 5%; left: 7%; display: flex; flex-direction: column; align-items: center;
+  font-weight: 900; line-height: .92; font-size: calc(var(--cw) * .25); letter-spacing: -.04em;
+}
+.corner i { font-style: normal; font-size: calc(var(--cw) * .2); margin-top: 1px; }
+.corner.br { top: auto; left: auto; bottom: 5%; right: 7%; transform: rotate(180deg); }
+.pip {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: calc(var(--cw) * .6); line-height: 1;
+}
+.face.front.ace .pip { font-size: calc(var(--cw) * .82); filter: drop-shadow(0 calc(var(--cw) * .03) 0 rgba(0,0,0,.15)); }
+.face.front.court .pip {
+  inset: 18% 19%; border-radius: calc(var(--cw) * .06);
+  background: linear-gradient(160deg, #fff7d6, #f1d98f);
+  box-shadow: inset 0 0 0 calc(var(--cw) * .02) #c99316, inset 0 0 0 calc(var(--cw) * .045) #fff7d6, inset 0 0 0 calc(var(--cw) * .06) #c99316;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+}
+.face.front.court .pip em {
+  font-style: normal; font-family: var(--ax-display); font-size: calc(var(--cw) * .38); line-height: 1;
+  text-shadow: 0 calc(var(--cw) * .02) 0 rgba(0,0,0,.15);
+}
+.face.front.court .pip i { font-style: normal; font-size: calc(var(--cw) * .24); line-height: 1; }
+.face.front.court .pip .crown { font-size: calc(var(--cw) * .16); color: #c99316; line-height: 1; }
+.face.front::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(125deg, rgba(255,255,255,.65) 0%, transparent 35%, transparent 70%, rgba(255,255,255,.25) 100%);
+  mix-blend-mode: soft-light;
+}
 
-        /* --- Shuffle Animation Styles --- */
-        #shuffle-animation {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0s linear 0.3s;
-            overflow: hidden;
-        }
-        #shuffle-animation.visible {
-            opacity: 1;
-            visibility: visible;
-            transition: opacity 0.3s ease-in-out;
-        }
-        .card-back { /* Back for shuffle animation */
-            width: 80px;
-            height: 120px;
-            background: linear-gradient(135deg, #4a5568, #2d3748);
-            border: 3px solid #a0aec0;
-            border-radius: 8px;
-            position: absolute;
-            box-shadow: 0 4px 8px rgba(0,0,0,.3);
-            transform-origin: center center;
-            opacity: 1;
-            visibility: visible;
-        }
-        @keyframes shuffle {
-            0%, 100% { transform: translate(var(--tx-start), var(--ty-start)) rotate(var(--r-start)); opacity: 1; }
-            50% { transform: translate(var(--tx-mid), var(--ty-mid)) rotate(var(--r-mid)); opacity: 1; }
-        }
-        #shuffle-animation.visible .card-back {
-            animation-name: shuffle;
-            animation-duration: 0.7s;
-            animation-iteration-count: 2;
-            animation-timing-function: cubic-bezier(0.68, -0.55, 0.27, 1.55);
-        }
-        #shuffle-animation .card-back:nth-child(1) { --tx-start: -120px; --ty-start: -30px; --r-start: -15deg; --tx-mid: 60px;    --ty-mid: 40px;   --r-mid: 20deg; animation-delay: 0s; }
-        #shuffle-animation .card-back:nth-child(2) { --tx-start: -60px;  --ty-start: 20px;  --r-start: -5deg; --tx-mid: -30px;   --ty-mid: -50px;  --r-mid: -10deg; animation-delay: 0.05s; }
-        #shuffle-animation .card-back:nth-child(3) { --tx-start: 0px;    --ty-start: 40px;  --r-start: 0deg; --tx-mid: -80px;   --ty-mid: 20px;   --r-mid: 15deg; animation-delay: 0.1s; }
-        #shuffle-animation .card-back:nth-child(4) { --tx-start: 60px;   --ty-start: 20px;  --r-start: 5deg; --tx-mid: 90px;    --ty-mid: -30px;  --r-mid: -20deg; animation-delay: 0.15s; }
-        #shuffle-animation .card-back:nth-child(5) { --tx-start: 120px;  --ty-start: -30px; --r-start: 15deg; --tx-mid: -100px;  --ty-mid: 0px;    --r-mid: 25deg; animation-delay: 0.2s; }
+.card .glow {
+  position: absolute; inset: -22%; border-radius: 50%; pointer-events: none; z-index: -1; opacity: 0;
+  background: radial-gradient(closest-side, var(--gc, rgba(255,204,51,.95)), transparent);
+}
+.card.charging .glow { animation: glowCharge .5s ease-in-out infinite alternate; }
+@keyframes glowCharge { from { opacity: .35; transform: scale(.92); } to { opacity: 1; transform: scale(1.12); } }
+.card .ring {
+  position: absolute; inset: -2px; border-radius: calc(var(--cw) * .11); pointer-events: none; opacity: 0;
+  transition: opacity .3s ease;
+}
+.card.win .ring { opacity: 1; box-shadow: 0 0 0 2.5px var(--ax-green), 0 0 18px rgba(43,255,136,.75), inset 0 0 14px rgba(43,255,136,.4); }
+.card.lose .ring { opacity: 1; box-shadow: 0 0 0 2.5px var(--ax-red), 0 0 22px rgba(255,59,92,.85), inset 0 0 18px rgba(255,59,92,.5); }
+.card .badge {
+  position: absolute; top: calc(var(--cw) * -.12); right: calc(var(--cw) * -.12);
+  width: calc(var(--cw) * .34); height: calc(var(--cw) * .34); min-width: 20px; min-height: 20px;
+  border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: calc(var(--cw) * .2);
+  transform: scale(0); pointer-events: none; z-index: 3;
+}
+.card.win .badge { background: var(--ax-green); color: #00321a; box-shadow: 0 0 12px var(--ax-green); transform: scale(1); transition: transform .4s cubic-bezier(.2,1.8,.4,1); }
+.card.win .badge::before { content: "✓"; }
+.card.lose .badge { background: var(--ax-red); color: #fff; box-shadow: 0 0 12px var(--ax-red); transform: scale(1); transition: transform .4s cubic-bezier(.2,1.8,.4,1); }
+.card.lose .badge::before { content: "✕"; }
+.card .stamp {
+  position: absolute; left: 50%; top: 50%; z-index: 4; pointer-events: none;
+  font-family: var(--ax-display); font-size: calc(var(--cw) * .2); padding: 2px 7px; border-radius: 8px;
+  color: #fff; border: 3px solid currentColor; white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(-14deg) scale(3); opacity: 0;
+}
+.card .stamp.show { animation: stamp .45s cubic-bezier(.2,1.4,.4,1) forwards; }
+.card .stamp.lose { color: #ff5470; background: rgba(60,0,10,.75); text-shadow: 0 0 10px #ff3b5c; box-shadow: 0 0 20px rgba(255,59,92,.6); }
+.card .stamp.win { color: #2bff88; background: rgba(0,40,20,.75); text-shadow: 0 0 10px #2bff88; box-shadow: 0 0 20px rgba(43,255,136,.6); }
+@keyframes stamp { to { transform: translate(-50%, -50%) rotate(-14deg) scale(1); opacity: 1; } }
 
+.shuffle { position: absolute; z-index: 3; pointer-events: none; }
+.shuffle .deck-card { will-change: transform; }
 
-        /* Media Query for Mobiles */
-        @media (max-width: 767px) {
-            /* Adjust exit button on mobile */
-            #exit-button {
-                top: 0.5rem;
-                right: 0.5rem;
-                padding: 0.4rem 0.6rem; /* Make it slightly smaller */
-                font-size: 0.8rem; /* Smaller font */
-            }
+/* ------------------------------------------------ dock (zona del pulgar) */
+.dock {
+  flex: none; position: relative; z-index: 2;
+  padding: 12px 12px 12px; border-radius: 22px;
+  background: linear-gradient(180deg, rgba(34,24,72,.92), rgba(14,10,32,.96));
+  border: 1px solid var(--ax-stroke-strong);
+  box-shadow: 0 -10px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.1);
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 10px;
+  min-height: 210px;
+}
+.dock.enter > * { animation: dockIn .42s cubic-bezier(.2,1.2,.3,1) both; }
+.dock.enter > *:nth-child(2) { animation-delay: .05s; }
+.dock.enter > *:nth-child(3) { animation-delay: .1s; }
+.dock.enter > *:nth-child(4) { animation-delay: .15s; }
+@keyframes dockIn { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+.dock.locked button { pointer-events: none; }
 
-            .game-container { width: auto; max-width: 95%; padding: 1rem; padding-top: 3.5rem; }
-            #cards-area {
-                padding-top: 5rem;
-                height: auto; /* Auto height to fit content */
-                width: 100%; /* Full mobile width */
-                margin-left: 0;
-                margin-right: 0;
-                justify-content: center;
-                min-height: 260px; /* Maintain minimum height for aesthetics */
-            }
-            #ingame-stats { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
-            #round-controls .controls-container button { font-size: 0.9rem; padding: 0.4rem 0.8rem; }
-            #round-controls .controls-container button[data-guess="♥"],
-            #round-controls .controls-container button[data-guess="♦"],
-            #round-controls .controls-container button[data-guess="♣"],
-            #round-controls .controls-container button[data-guess="♠"] { width: 3rem; height: 3rem; font-size: 1.75rem; padding: 0; }
-            /* Adjust card size on mobile */
-            .card-container { width: 85px; height: 128px; margin: 6px; }
-            .card-front .card-rank { font-size: 1.8rem; }
-            .card-front .card-suit { font-size: 2.5rem; }
-            .card-front .card-suit-bottom { font-size: 1.4rem; }
-            .card-back-display { /* Back styles if needed */ }
-            .card-label {
-                 bottom: -22px; /* Adjust label position on mobile too */
-                 font-size: 0.8rem;
-            }
-            /* Adjust shuffle animation size on mobile */
-            .card-back { width: 60px; height: 90px; }
-             /* Adjust animation variables for mobile if needed */
-            #shuffle-animation .card-back:nth-child(1) { --tx-start: -80px; --ty-start: -20px; --tx-mid: 40px; --ty-mid: 30px; }
-            #shuffle-animation .card-back:nth-child(2) { --tx-start: -40px; --ty-start: 15px; --tx-mid: -20px; --ty-mid: -35px; }
-            #shuffle-animation .card-back:nth-child(3) { --tx-start: 0px; --ty-start: 30px; --tx-mid: -50px; --ty-mid: 15px; }
-            #shuffle-animation .card-back:nth-child(4) { --tx-start: 40px; --ty-start: 15px; --tx-mid: 60px; --ty-mid: -20px; }
-            #shuffle-animation .card-back:nth-child(5) { --tx-start: 80px; --ty-start: -20px; --tx-mid: -70px; --ty-mid: 0px; }
-        }
-    </style>
+.q { text-align: center; }
+.q h3 { margin: 0; font-family: var(--ax-display); font-weight: 400; font-size: clamp(17px, 5.2vw, 22px); line-height: 1.1; color: #fff; text-shadow: 0 0 14px rgba(139,92,255,.9); }
+.q p { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--ax-muted); }
+.q p b { color: #ffe9a6; }
+
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.choices.four { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cbtn { min-height: 66px; padding: 6px 6px; border-radius: 16px; flex-direction: column; gap: 3px; }
+.cbtn .row { display: flex; align-items: center; gap: 6px; }
+.cbtn .ico { font-size: 18px; line-height: 1; }
+.cbtn .lbl { font-family: var(--ax-display); font-weight: 400; font-size: clamp(16px, 4.8vw, 19px); line-height: 1; letter-spacing: .02em; }
+.cbtn .pr { font-size: 11.5px; font-weight: 800; opacity: .85; letter-spacing: .04em; }
+.cbtn.red { --b1: #ff5070; --b2: #b30030; border-color: rgba(255,180,195,.7); box-shadow: inset 0 2px 0 rgba(255,255,255,.35), 0 6px 0 #5e0018, 0 10px 24px rgba(255,59,92,.3); }
+.cbtn.black { --b1: #45406a; --b2: #17142c; border-color: rgba(200,190,255,.35); box-shadow: inset 0 2px 0 rgba(255,255,255,.2), 0 6px 0 #07060f, 0 10px 24px rgba(0,0,0,.4); }
+.cbtn.up { --b1: #4ef0ff; --b2: #0a8fb8; color: #00222e; border-color: rgba(200,250,255,.7); box-shadow: inset 0 2px 0 rgba(255,255,255,.5), 0 6px 0 #04506a, 0 10px 26px rgba(34,228,255,.3); }
+.cbtn.down { --b1: #ff5cc6; --b2: #b0127a; border-color: rgba(255,200,240,.6); box-shadow: inset 0 2px 0 rgba(255,255,255,.35), 0 6px 0 #5c003f, 0 10px 26px rgba(255,47,179,.3); }
+.cbtn.in { --b1: #a57dff; --b2: #5a2ed6; border-color: rgba(220,205,255,.6); box-shadow: inset 0 2px 0 rgba(255,255,255,.35), 0 6px 0 #2a1170, 0 10px 26px rgba(139,92,255,.3); }
+.cbtn.out { --b1: #ffd84a; --b2: #f08a00; color: #3a1d00; border-color: rgba(255,240,170,.8); box-shadow: inset 0 2px 0 rgba(255,255,255,.55), 0 6px 0 #8a4b00, 0 10px 28px rgba(255,160,0,.3); }
+.cbtn.suit { --b1: #fffdf6; --b2: #ddd2b8; color: #17142a; border-color: rgba(255,255,255,.9); box-shadow: inset 0 2px 0 #fff, 0 6px 0 #6d6250, 0 10px 22px rgba(0,0,0,.35); padding: 4px 2px; }
+.cbtn.suit .ico { font-size: 32px; }
+.cbtn.suit.rs .ico { color: #e0123f; }
+.cbtn.suit .pr { color: #4a4460; }
+.cbtn:active:not(:disabled) { transform: translateY(4px) scale(.98); }
+.cbtn.picked { animation: picked .5s ease forwards; }
+@keyframes picked { 30% { transform: scale(1.06); filter: brightness(1.3); } 100% { transform: scale(1); filter: brightness(1.15); } }
+.dock.locked .cbtn:not(.picked), .dock.locked .retire { opacity: .45; filter: grayscale(.4); }
+
+.retire { min-height: 48px; font-size: 15px; border-color: rgba(43,255,136,.45); color: #c9ffe1; }
+.retire b { color: var(--ax-green); text-shadow: 0 0 10px rgba(43,255,136,.6); }
+
+.offer { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; }
+.offer .ax-btn { min-height: 70px; flex-direction: column; gap: 2px; padding: 6px 8px; }
+.offer small { font-size: 11px; font-weight: 800; letter-spacing: .08em; opacity: .85; }
+.offer .big { font-family: var(--ax-display); font-weight: 400; font-size: clamp(15px, 4.6vw, 19px); line-height: 1.05; }
+.gamble { --b1: #ff4fc4; --b2: #7a1fd6; border-color: rgba(255,200,240,.7); box-shadow: inset 0 2px 0 rgba(255,255,255,.35), 0 6px 0 #3a0a6b, 0 0 26px rgba(255,47,179,.45); animation: gamblePulse 1.3s ease-in-out infinite; }
+@keyframes gamblePulse { 50% { box-shadow: inset 0 2px 0 rgba(255,255,255,.35), 0 6px 0 #3a0a6b, 0 0 40px rgba(255,47,179,.8); } }
+
+.hold { min-height: 68px; font-family: var(--ax-display); font-weight: 400; font-size: clamp(16px, 4.8vw, 20px); touch-action: none; }
+.hold .fill { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(var(--p, 0)); background: linear-gradient(90deg, rgba(255,47,179,.85), rgba(255,255,255,.9)); mix-blend-mode: overlay; pointer-events: none; }
+.hold .txt { position: relative; z-index: 1; }
+.hold.holding { animation: holdShake .12s linear infinite; }
+@keyframes holdShake { 0% { transform: translate(1px, 3px); } 50% { transform: translate(-1px, 4px); } 100% { transform: translate(1px, 3px); } }
+
+/* apuesta */
+.bet-row { display: grid; grid-template-columns: 52px 1fr 52px; gap: 8px; align-items: stretch; }
+.sq { min-height: 56px; padding: 0; font-size: 28px; font-weight: 900; border-radius: 16px; }
+.bet-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; cursor: text;
+  background: rgba(0,0,0,.35); border: 1px solid rgba(255,204,51,.45); box-shadow: inset 0 2px 10px rgba(0,0,0,.5), 0 0 16px rgba(255,190,40,.12);
+  padding: 3px 8px; min-width: 0;
+}
+.bet-box > span { font-size: 9.5px; font-weight: 800; letter-spacing: .2em; color: var(--ax-muted); }
+.bet-box > div { display: flex; align-items: baseline; justify-content: center; gap: 4px; width: 100%; }
+.bet-box input {
+  width: 100%; min-width: 0; text-align: center; background: transparent; border: 0; outline: 0; padding: 0;
+  font-family: var(--ax-display); font-size: 24px; color: #ffe9a6; letter-spacing: .02em;
+  text-shadow: 0 0 12px rgba(255,190,40,.5); font-variant-numeric: tabular-nums;
+}
+.bet-box.bad { animation: badShake .35s ease; border-color: var(--ax-red); }
+@keyframes badShake { 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
+.chips { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.bchip {
+  position: relative; height: 46px; border-radius: 50%; aspect-ratio: 1; justify-self: center; width: 46px; max-width: 100%;
+  border: 0; cursor: pointer; padding: 0; font-weight: 900; font-size: 12.5px; color: #fff;
+  background:
+    radial-gradient(circle, var(--c1) 0 52%, transparent 53%),
+    repeating-conic-gradient(var(--c2) 0 22.5deg, #fff 22.5deg 30deg, var(--c2) 30deg 45deg);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.25), 0 3px 0 rgba(0,0,0,.45), 0 6px 14px rgba(0,0,0,.35);
+  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  transition: transform .1s ease;
+}
+.bchip:active { transform: translateY(3px) scale(.94); }
+.bchip:disabled { opacity: .4; }
+.bchip[data-c="half"] { --c1: #3d3566; --c2: #6b5fae; }
+.bchip[data-c="double"] { --c1: #6a2bd6; --c2: #9a6bff; }
+.bchip[data-c="10"] { --c1: #0b8fb3; --c2: #22c9ee; }
+.bchip[data-c="100"] { --c1: #11905a; --c2: #2bd98a; }
+.bchip[data-c="1000"] { --c1: #c4123a; --c2: #ff4d6d; }
+.bchip[data-c="max"] { --c1: #c27400; --c2: #ffc23a; color: #2a1400; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+.deal { min-height: 60px; font-family: var(--ax-display); font-weight: 400; font-size: 20px; letter-spacing: .04em; }
+.deal small { font-family: var(--ax-font); font-weight: 800; font-size: 12px; opacity: .75; letter-spacing: .04em; }
+
+/* fin de partida */
+.over { text-align: center; }
+.over .res { font-family: var(--ax-display); font-size: clamp(26px, 8vw, 34px); line-height: 1.05; }
+.over .res.win { color: #c9ffe1; text-shadow: 0 0 14px var(--ax-green), 0 0 30px rgba(43,255,136,.4); }
+.over .res.lose { color: #ffd6dd; text-shadow: 0 0 14px var(--ax-red), 0 0 30px rgba(255,59,92,.4); }
+.over .res.even { color: #fff; text-shadow: 0 0 14px var(--ax-violet); }
+.over p { margin: 3px 0 0; font-size: 13px; font-weight: 600; color: var(--ax-muted); }
+.row2 { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.row2 .ax-btn { min-height: 56px; padding: 0 10px; }
+.again { font-family: var(--ax-display); font-weight: 400; font-size: 17px; flex-direction: column; gap: 0; line-height: 1.1; }
+.again small { font-family: var(--ax-font); font-weight: 800; font-size: 12px; opacity: .8; }
+
+/* estadísticas */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.stat { padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid var(--ax-stroke); }
+.stat small { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ax-muted); }
+.stat b { display: block; font-family: var(--ax-display); font-weight: 400; font-size: 18px; color: #ffe9a6; margin-top: 2px; }
+.rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.rules li { display: flex; gap: 10px; align-items: flex-start; }
+.rules li > b { flex: none; min-width: 46px; text-align: center; padding: 3px 0; border-radius: 9px; font-family: var(--ax-display); font-weight: 400; font-size: 13px; background: rgba(255,204,51,.15); color: #ffcc33; border: 1px solid rgba(255,204,51,.4); }
+.rules li > b.m { background: rgba(255,47,179,.15); color: #ffc2ec; border-color: rgba(255,47,179,.5); }
+.modal-h { font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--ax-cyan); margin: 4px 0 8px; }
+
+/* ------------------------------------------------ ajustes de altura */
+@media (max-height: 700px) {
+  #app { gap: 6px; padding-top: calc(var(--ax-safe-top) + 60px); }
+  .step { height: 38px; }
+  .step b { font-size: 14px; }
+  .step span { font-size: 8.5px; margin-top: 2px; }
+  .dock { padding: 10px; gap: 8px; border-radius: 20px; min-height: 186px; }
+  .cbtn { min-height: 60px; }
+  .q p { font-size: 12px; margin-top: 2px; }
+  .sq { min-height: 50px; }
+  .deal { min-height: 54px; }
+  .hold { min-height: 60px; }
+  .offer .ax-btn { min-height: 62px; }
+  .row2 .ax-btn { min-height: 52px; }
+  .pot b { font-size: 16px; }
+  .pot .pot-next b { font-size: 14px; }
+  .pot > div { padding: 4px 12px 5px; }
+  .bchip { width: 44px; height: 44px; }
+}
+@media (min-width: 700px) {
+  .step span { font-size: 10.5px; }
+}
+/* intro: "ADIVINA" / "LA CARTA" en dos líneas */
+.ax-cine-title { line-height: 1.08; }
+.ax-cine-title span:nth-child(8) { display: block; height: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  #bg .suit, #bg .beams, .table::before, .fan, .step.active { animation: none !important; }
+}
+</style>
 </head>
-<body>
+<body class="ax-fullscreen">
 
-    <a href="../index.html" id="exit-button" class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out text-sm no-underline">
-        ← Menú
-    </a>
+<div id="bg" aria-hidden="true">
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="beams"></div>
+</div>
 
-    <div class="game-container text-center">
+<main id="app">
+  <div class="ladder" id="ladder" aria-label="Multiplicadores">
+    <div class="step" data-r="1"><b>x2</b><span>Color</span></div>
+    <div class="step" data-r="2"><b>x3</b><span>Mayor</span></div>
+    <div class="step" data-r="3"><b>x4</b><span>Rango</span></div>
+    <div class="step" data-r="4"><b>x24</b><span>Palo</span></div>
+    <div class="step final" data-r="5"><b>x50</b><span>Duelo</span></div>
+  </div>
 
-        <button id="toggle-stats-btn" title="Mostrar/Ocultar Estadísticas" class="absolute top-4 left-4 w-10 h-10 flex items-center justify-center rounded-lg font-semibold shadow transition duration-150 ease-in-out bg-gray-500 hover:bg-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-gray-400 text-xl z-10">
-            ⚙️
-        </button>
-
-        <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-900">Juego de Cartas</h1>
-
-        <div class="mb-6">
-            <div id="player-balance-display">
-                Saldo: <span id="player-balance" class="font-bold">5000</span> €
-            </div>
-        </div>
-
-        <div id="betting-section" class="mb-6 p-4 md:p-6 bg-gray-100/80 rounded-lg border border-gray-200 shadow-sm">
-             <label for="bet-amount" class="block text-lg md:text-xl font-semibold text-gray-700 mb-3">Realiza tu Apuesta</label>
-            <input type="number" id="bet-amount" class="w-full max-w-xs mx-auto border-2 border-gray-300 rounded-lg px-4 py-2 text-center text-lg shadow-inner focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition duration-150 ease-in-out mb-3">
-            <div class="w-full max-w-xs mx-auto flex items-center space-x-3">
-                 <input type="range" id="bet-slider" min="1" max="5000" step="1" value="10" class="flex-grow">
-                 <span id="bet-slider-value" class="font-semibold text-lg text-gray-700 w-20 text-right tabular-nums">10 €</span>
-            </div>
-            <div class="mt-4 flex flex-col sm:flex-row justify-center items-center gap-2">
-                <button id="start-game-btn" class="w-full sm:w-auto px-6 py-3 rounded-lg font-bold text-white shadow-md hover:shadow-lg transition duration-200 ease-in-out bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50">
-                    Empezar Juego
-                </button>
-            </div>
-        </div>
-
-        <div id="game-section" class="hidden">
-             <div id="cards-area" class="mb-4 rounded-lg shadow-inner">
-                <div id="ingame-stats">
-                     <p><strong>Ronda:</strong> <span id="current-round" class="font-semibold text-lg">1</span>/4</p>
-                     <p><strong>Apuesta Inicial:</strong> <span id="initial-bet" class="font-semibold text-lg">0</span> €</p>
-                </div>
-                 </div>
-            <div id="round-controls" class="mb-4 space-y-4"></div>
-            <button id="new-game-btn" class="hidden mt-4 px-6 py-3 rounded-lg font-bold text-white shadow-md hover:shadow-lg transition duration-200 ease-in-out bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50">
-                Nueva Partida
-            </button>
-        </div>
-
-        <div id="message" class="text-center font-medium"></div>
-
-        <div id="stats-section" class="hidden">
-            <h3>Estadísticas del Jugador</h3>
-            <ul id="stats-list">
-                <li>Partidas Jugadas: <strong id="stat-played">0</strong></li>
-                <li>Partidas Ganadas: <strong id="stat-won">0</strong></li>
-                <li>Mayor Ganancia (1 partida): <strong id="stat-max-win">0</strong> €</li>
-                <li>Racha Máx. Aciertos (1 partida): <strong id="stat-max-streak">0</strong></li>
-                <li>Saldo Máximo Alcanzado: <strong id="stat-max-balance">0</strong> €</li>
-            </ul>
-        </div>
-
-        <div id="shuffle-animation" class="hidden">
-            <div class="card-back"></div>
-            <div class="card-back"></div>
-            <div class="card-back"></div>
-            <div class="card-back"></div>
-            <div class="card-back"></div>
-        </div>
-
+  <section class="table mode-bet" id="table">
+    <div class="slots" id="slots">
+      <div class="slot" data-i="0"><div class="slot-lbl"><b>1</b><span>Color</span></div></div>
+      <div class="slot" data-i="1"><div class="slot-lbl"><b>2</b><span>± Valor</span></div></div>
+      <div class="slot" data-i="2"><div class="slot-lbl"><b>3</b><span>Rango</span></div></div>
+      <div class="slot" data-i="3"><div class="slot-lbl"><b>4</b><span>Palo</span></div></div>
     </div>
+    <div class="center" id="center">
+      <div class="watermark">♠ ADIVINA ♥</div>
+      <div class="fan" id="fan"></div>
+      <div class="fan-cap" id="fanCap">5 rondas · hasta x50</div>
+      <div class="duel" id="duel">
+        <div class="dcol you"><h4>TÚ</h4><div class="dslot" id="dslotP"></div></div>
+        <div class="vs">VS</div>
+        <div class="dcol bank"><h4>BANCA</h4><div class="dslot" id="dslotD"></div></div>
+      </div>
+      <div class="deck" id="deck">
+        <div class="deck-count" id="deckCount">52 cartas</div>
+      </div>
+      <div class="stage" id="stage"></div>
+      <button class="ax-icon-btn tbtn" id="statsBtn" aria-label="Estadísticas y reglas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
+      <div class="pot" id="pot">
+        <div class="pot-main"><small id="potLbl">Apuesta</small><b id="potAmt">0 €</b></div>
+        <div class="pot-next"><small id="nextLbl">Premio máx.</small><b id="nextAmt">0 €</b></div>
+      </div>
+    </div>
+    <div class="dim"></div>
+  </section>
 
-    <script>
-        // --- DOM Elements ---
-        const bettingSection = document.getElementById('betting-section');
-        const gameSection = document.getElementById('game-section');
-        const betAmountInput = document.getElementById('bet-amount');
-        const startGameBtn = document.getElementById('start-game-btn');
-        const currentRoundDisplay = document.getElementById('current-round');
-        const initialBetDisplay = document.getElementById('initial-bet');
-        const cardsArea = document.getElementById('cards-area');
-        const roundControls = document.getElementById('round-controls');
-        const messageDiv = document.getElementById('message');
-        const newGameBtn = document.getElementById('new-game-btn');
-        const playerBalanceDisplaySpan = document.getElementById('player-balance');
-        const playerBalanceDisplayContainer = document.getElementById('player-balance-display');
-        const toggleStatsBtn = document.getElementById('toggle-stats-btn');
-        const statsSection = document.getElementById('stats-section');
-        const statPlayed = document.getElementById('stat-played');
-        const statWon = document.getElementById('stat-won');
-        const statMaxWin = document.getElementById('stat-max-win');
-        const statMaxStreak = document.getElementById('stat-max-streak');
-        const statMaxBalance = document.getElementById('stat-max-balance');
-        const betSlider = document.getElementById('bet-slider');
-        const betSliderValue = document.getElementById('bet-slider-value');
-        const shuffleAnimationOverlay = document.getElementById('shuffle-animation');
+  <section class="dock" id="dock"></section>
+</main>
 
-        // --- Game State ---
-        let deck = [];
-        let currentBet = 0;
-        let potentialWinnings = 0;
-        let currentRound = 0;
-        let cardsOnTable = []; // Stores { suit, rank, value, color } objects
-        let cardElementsOnTable = []; // Stores references to card DOM elements
-        let gameOver = false;
-        const STARTING_BALANCE = 5000;
-        let playerBalance = STARTING_BALANCE;
-        let lastBetAmount = 10;
-        let currentGameStreak = 0;
-        let inRound5ChoicePhase = false;
-        let nextGameIsGuided = false;
-        let guidedGameInProgress = false;
+<script>
+(() => {
+  "use strict";
 
-        // --- Stats ---
-        let stats = { gamesPlayed: 0, gamesWon: 0, highestWin: 0, longestStreak: 0, maxBalance: STARTING_BALANCE };
+  /* Salvaguarda local: en el primer fotograma del motor de partículas el `dt` puede ser
+     negativo y una onda expansiva grande genera un radio < 0; `arc` lanzaría una excepción
+     que detiene el bucle de partículas para siempre. Se recorta el radio a 0. */
+  (function guardCanvas() {
+    const P = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+    if (!P || P.__acGuard) return;
+    const arc = P.arc, rg = P.createRadialGradient;
+    P.arc = function (x, y, r, a, b, ccw) { return arc.call(this, x, y, r > 0 ? r : 0, a, b, ccw); };
+    P.createRadialGradient = function (x0, y0, r0, x1, y1, r1) { return rg.call(this, x0, y0, r0 > 0 ? r0 : 0, x1, y1, r1 > 0 ? r1 : 0); };
+    P.__acGuard = true;
+  })();
 
-        // --- Game Constants ---
-        const SUITS = ["♥", "♦", "♣", "♠"];
-        const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
-        const MIN_BET = 1;
-        const CUMULATIVE_ROUND_MULTIPLIERS = { 1: 2, 2: 3, 3: 4, 4: 24 };
-        const ROUND_5_MULTIPLIER = 50;
-        const BALANCE_LOCAL_STORAGE_KEY = 'cardGamePlayerBalance_v3';
-        const STATS_LOCAL_STORAGE_KEY = 'cardGamePlayerStats_v3';
-        // <<< NEW: Achievement Key (must match Roulette's key) >>>
-        const ACHIEVEMENTS_LOCAL_STORAGE_KEY = 'rouletteAchievements_v1';
-        const SHUFFLE_ANIMATION_DURATION = 1400;
-        const SLIDE_ANIMATION_DURATION = 500;
-        const FLIP_ANIMATION_DURATION = 600;
-        const HIGHLIGHT_DURATION = 800;
-        const EXIT_ANIMATION_DURATION = 400;
+  /* ================================================================ CONSTANTES */
+  const SUITS = ["♥", "♦", "♣", "♠"];
+  const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+  const MULT = { 1: 2, 2: 3, 3: 4, 4: 24 };          // multiplicadores acumulados (originales)
+  const R5_MULT = 50;                                  // duelo final (original)
+  const MIN_BET = 1;
+  const STATS_KEY = "cardGamePlayerStats_v3";          // clave original de estadísticas
+  const LASTBET_KEY = "adivinaCartas_lastBet_v1";
+  const SESSION_KEY = "adivinaCartas_partida_v1";      // partida en curso (se reanuda al volver)
+  const ROUND_INFO = {
+    1: { title: "RONDA 1", sub: "¿Roja o negra?", color: "rgba(139, 92, 255, 0.92)" },
+    2: { title: "RONDA 2", sub: "¿Mayor o menor?", color: "rgba(10, 143, 184, 0.92)" },
+    3: { title: "RONDA 3", sub: "¿Dentro o fuera?", color: "rgba(150, 40, 190, 0.92)" },
+    4: { title: "RONDA 4", sub: "¿Qué palo saldrá?", color: "rgba(214, 112, 0, 0.92)" },
+  };
+  const RM = AX.reducedMotion;
 
-        // <<< NEW: Achievement Data (copied from Roulette) >>>
-        const achievementsData = [
-            { id: 'bal1', name: 'Primeros Pasos', target: 5500, reward: 100 }, { id: 'bal2', name: 'Racha Creciente', target: 7500, reward: 150 }, { id: 'bal3', name: 'Diez Mil', target: 10000, reward: 250 }, { id: 'bal4', name: 'Buen Ritmo', target: 15000, reward: 400 }, { id: 'bal5', name: 'Veinticinco Mil', target: 25000, reward: 600 }, { id: 'bal6', name: 'Cincuenta Mil', target: 50000, reward: 1250 }, { id: 'bal7', name: 'Setenta y Cinco Mil', target: 75000, reward: 2000 }, { id: 'bal8', name: 'Cien Mil!', target: 100000, reward: 3000 }, { id: 'bal9', name: 'Cuarto de Millón', target: 250000, reward: 7500 }, { id: 'bal10', name: 'Medio Millón', target: 500000, reward: 15000 }, { id: 'bal11', name: 'Millonario!', target: 1000000, reward: 30000 }, { id: 'bal12', name: 'Dos Millones y Medio', target: 2500000, reward: 75000 }, { id: 'bal13', name: 'Cinco Millones', target: 5000000, reward: 150000 }, { id: 'bal14', name: 'Decamillonario!', target: 10000000, reward: 300000 }, { id: 'bal15', name: 'Veinticinco Millones', target: 25000000, reward: 750000 }, { id: 'bal16', name: 'Cincuenta Millones', target: 50000000, reward: 1500000 }, { id: 'bal17', name: 'Centimillonario!', target: 100000000, reward: 3000000 }, { id: 'bal18', name: 'Doscientos Cincuenta Millones', target: 250000000, reward: 7500000 }, { id: 'bal19', name: 'Quinientos Millones', target: 500000000, reward: 15000000 }, { id: 'bal20', name: 'Billonario!!!', target: 1000000000, reward: 50000000 }
-        ];
-        let unlockedAchievements = []; // <<< NEW: Array for unlocked achievement IDs
+  /* ================================================================ UTILIDADES */
+  const $ = (id) => document.getElementById(id);
+  const T = (s) => s + "︎"; // fuerza presentación de texto (no emoji) en iOS
+  const isRed = (s) => s === "♥" || s === "♦";
+  const valueOf = (r) => ({ A: 14, K: 13, Q: 12, J: 11 })[r] || parseInt(r, 10) || 0;
+  const mk = (rank, suit) => ({ rank, suit, value: valueOf(rank), color: isRed(suit) ? "Red" : "Black" });
+  const enc = (c) => c.rank + "|" + c.suit;
+  const dec = (s) => { const [r, su] = String(s).split("|"); return mk(r, su); };
+  const validCard = (c) => c && RANKS.includes(c.rank) && SUITS.includes(c.suit);
+  const money = AX.money;
+  const sleep = AX.sleep;
+  const clamp = AX.clamp;
+  const rankName = (v) => RANKS[v - 2] || "?";
 
-        // --- Utility Functions ---
-        function getCardValue(rank) { if (rank === 'A') return 14; if (rank === 'K') return 13; if (rank === 'Q') return 12; if (rank === 'J') return 11; return parseInt(rank) || 0; }
-        function getCardColor(suit) { return (suit === "♥" || suit === "♦") ? 'Red' : 'Black'; }
-        function createDeck() { const newDeck = []; SUITS.forEach(suit => { RANKS.forEach(rank => { newDeck.push({ suit, rank, value: getCardValue(rank), color: getCardColor(suit) }); }); }); return newDeck; }
-        function shuffleDeck(deckToShuffle) { for (let i = deckToShuffle.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deckToShuffle[i], deckToShuffle[j]] = [deckToShuffle[j], deckToShuffle[i]]; } }
-        function drawCard() { if (deck.length > 0) { return deck.pop(); } console.warn("Baraja vacía."); return null; }
-        function forceNextCard(conditionFn) { for (let i = deck.length - 1; i >= 0; i--) { if (conditionFn(deck[i])) { const forcedCard = deck.splice(i, 1)[0]; console.log(`Modo Guiado: Forzando carta ${forcedCard.rank}${forcedCard.suit}`); return forcedCard; } } console.warn("Modo Guiado: No se encontró carta forzada, sacando al azar."); return drawCard(); }
+  function createDeck() { const d = []; SUITS.forEach((s) => RANKS.forEach((r) => d.push(mk(r, s)))); return d; }
+  function shuffle(d) { for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; } return d; }
 
-        // --- LocalStorage Functions ---
-        function loadGameData() {
-            // Load Balance
-            const savedBalance = localStorage.getItem(BALANCE_LOCAL_STORAGE_KEY);
-            playerBalance = parseInt(savedBalance);
-            if (isNaN(playerBalance) || playerBalance < 0) {
-                playerBalance = STARTING_BALANCE;
-            }
-            // Load Stats
-            const savedStats = localStorage.getItem(STATS_LOCAL_STORAGE_KEY);
-            if (savedStats) {
-                try {
-                    stats = JSON.parse(savedStats);
-                    stats.gamesPlayed = stats.gamesPlayed || 0;
-                    stats.gamesWon = stats.gamesWon || 0;
-                    stats.highestWin = stats.highestWin || 0;
-                    stats.longestStreak = stats.longestStreak || 0;
-                    stats.maxBalance = Math.max(stats.maxBalance || STARTING_BALANCE, playerBalance);
-                } catch (e) {
-                    console.error("Error parsing stats", e);
-                    stats = { gamesPlayed: 0, gamesWon: 0, highestWin: 0, longestStreak: 0, maxBalance: playerBalance };
-                }
-            } else {
-                stats.maxBalance = playerBalance;
-            }
-            // <<< NEW: Load Achievements >>>
-            loadUnlockedAchievements();
-            // Reset guided mode flags
-            nextGameIsGuided = false;
-            guidedGameInProgress = false;
+  /** Anima con WAAPI y deja fijado el estado final como estilo en línea. */
+  function anim(node, frames, opts) {
+    if (!node || !node.animate) return Promise.resolve();
+    const o = Object.assign({ fill: "forwards" }, typeof opts === "number" ? { duration: opts } : opts);
+    if (RM && o.duration > 250) o.duration = Math.round(o.duration * 0.6);
+    const a = node.animate(frames, o);
+    return a.finished.then(() => {
+      try { a.commitStyles(); } catch (e) {
+        const last = frames[frames.length - 1];
+        Object.keys(last).forEach((k) => { if (k !== "offset" && k !== "easing") node.style[k] = last[k]; });
+      }
+      a.cancel();
+    }).catch(() => {});
+  }
+
+  /* ================================================================ SONIDOS PROPIOS */
+  const sfx = AX.sfx;
+  function drumroll(ms) {
+    const n = Math.max(6, Math.floor(ms / 42));
+    for (let i = 0; i < n; i++) {
+      const k = i / n;
+      sfx.noise(0.045, { type: "bandpass", freq: 1500 + k * 900, q: 0.9, vol: 0.05 + 0.2 * k, delay: i * 0.042 });
+    }
+    sfx.tone(85, ms / 1000, { type: "triangle", to: 150, vol: 0.07, attack: (ms / 1000) * 0.85 });
+  }
+  function crash() {
+    sfx.noise(0.9, { type: "highpass", freq: 5200, vol: 0.18 });
+    sfx.noise(0.25, { type: "lowpass", freq: 800, vol: 0.3 });
+  }
+  function heartbeat() {
+    sfx.tone(58, 0.14, { type: "sine", vol: 0.55, to: 40 });
+    sfx.tone(52, 0.16, { type: "sine", vol: 0.42, to: 36, delay: 0.2 });
+    AX.haptic([18, 160, 14]);
+  }
+  function riffle() { for (let j = 0; j < 12; j++) sfx.noise(0.03, { type: "highpass", freq: 3200 + Math.random() * 1500, vol: 0.13, delay: j * 0.032 }); }
+  function holdTick(p) { sfx.tone(300 + p * 900, 0.06, { type: "square", vol: 0.04 + p * 0.05, filter: { freq: 2600 } }); }
+
+  /* ================================================================ ESTADÍSTICAS */
+  let stats = loadStats();
+  function loadStats() {
+    let s = {};
+    try { s = JSON.parse(localStorage.getItem(STATS_KEY) || "{}") || {}; } catch (e) { s = {}; }
+    if (typeof s !== "object") s = {};
+    ["gamesPlayed", "gamesWon", "highestWin", "longestStreak", "duelsPlayed", "duelsWon", "cashouts"].forEach((k) => (s[k] = Math.max(0, +s[k] || 0)));
+    s.maxBalance = Math.max(+s.maxBalance || 0, AX.getBalance());
+    return s;
+  }
+  function saveStats() { try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) {} }
+  function bumpMaxBalance() { stats.maxBalance = Math.max(stats.maxBalance || 0, AX.getBalance()); }
+  function endStats(winAmount, won) {
+    stats.gamesPlayed++;
+    stats.longestStreak = Math.max(stats.longestStreak, S.streak);
+    if (winAmount > stats.highestWin) stats.highestWin = winAmount;
+    if (won) stats.gamesWon++;
+    bumpMaxBalance();
+    saveStats();
+  }
+
+  /* ================================================================ ESTADO */
+  const S = {
+    phase: "bet",       // bet | play | choice | r5 | over
+    bet: 0, round: 0, cards: [], deck: [], streak: 0,
+    guided: false, nextGuided: false, duel: null,
+    busy: false, last: null, lostAt: 0,
+    betInput: loadLastBet(),
+  };
+  function loadLastBet() { try { const v = parseInt(localStorage.getItem(LASTBET_KEY), 10); if (v >= MIN_BET) return v; } catch (e) {} return 10; }
+  function saveLastBet(v) { try { localStorage.setItem(LASTBET_KEY, String(v)); } catch (e) {} }
+
+  function saveSession() {
+    if (!["play", "choice", "r5"].includes(S.phase)) return clearSession();
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        v: 1, phase: S.phase, bet: S.bet, round: S.round, streak: S.streak, guided: S.guided,
+        cards: S.cards.map(enc), deck: S.deck.map(enc),
+        duel: S.duel ? { p: enc(S.duel.p), d: enc(S.duel.d) } : null,
+      }));
+    } catch (e) {}
+  }
+  function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+  function readSession() {
+    try {
+      const o = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+      if (!o || o.v !== 1 || !["play", "choice", "r5"].includes(o.phase)) return null;
+      if (!(o.bet >= MIN_BET) || !Array.isArray(o.deck) || !Array.isArray(o.cards)) return null;
+      const cards = o.cards.map(dec), deck = o.deck.map(dec);
+      if (!cards.every(validCard) || !deck.every(validCard)) return null;
+      if (cards.length + deck.length + (o.duel ? 2 : 0) !== 52) return null;
+      const round = o.phase === "play" ? cards.length + 1 : 5;
+      if (round < 1 || round > 5 || (o.phase !== "play" && cards.length !== 4)) return null;
+      const duel = o.duel ? { p: dec(o.duel.p), d: dec(o.duel.d) } : null;
+      if (o.phase === "r5" && (!duel || !validCard(duel.p) || !validCard(duel.d))) return null;
+      return { phase: o.phase, bet: Math.floor(o.bet), round, streak: +o.streak || cards.length, guided: !!o.guided, cards, deck, duel };
+    } catch (e) { return null; }
+  }
+
+  /* ================================================================ REGLAS */
+  function isCorrect(round, guess, c, prev, last) {
+    switch (round) {
+      case 1: return c.color === guess;
+      case 2: {
+        const pv = last ? last.value : 0;
+        if (c.value === pv) return false; // empate pierde
+        return guess === "Higher" ? c.value > pv : c.value < pv;
+      }
+      case 3: {
+        const v1 = prev ? prev.value : 0, v2 = last ? last.value : 0;
+        const mn = Math.min(v1, v2), mx = Math.max(v1, v2);
+        if (v1 === v2 || !v1 || !v2) return guess === "Out"; // regla original: iguales => "Fuera" gana
+        return guess === "In" ? c.value > mn && c.value < mx : c.value < mn || c.value > mx;
+      }
+      case 4: return c.suit === guess;
+    }
+    return false;
+  }
+  function prob(round, guess) {
+    const pool = S.deck; if (!pool.length) return 0;
+    const last = S.cards[S.cards.length - 1], prev = S.cards[S.cards.length - 2];
+    let k = 0; for (const c of pool) if (isCorrect(round, guess, c, prev, last)) k++;
+    return k / pool.length;
+  }
+  function duelProb(pool) {
+    const n = {}; pool.forEach((c) => (n[c.value] = (n[c.value] || 0) + 1));
+    const N = pool.length; if (N < 2) return 0;
+    let fav = 0;
+    for (const a in n) for (const b in n) if (+a > +b) fav += n[a] * n[b];
+    return fav / (N * (N - 1));
+  }
+  const pct = (p) => Math.round(p * 100) + "%";
+
+  function drawCard() { return S.deck.length ? S.deck.pop() : null; }
+  function forceNextCard(fn) {
+    for (let i = S.deck.length - 1; i >= 0; i--) if (fn(S.deck[i])) return S.deck.splice(i, 1)[0];
+    return drawCard();
+  }
+  /** Modo guiado (secreto original): fuerza Roja, Menor, Dentro y Corazones. */
+  function drawFor(round) {
+    if (!S.guided) return drawCard();
+    try {
+      switch (round) {
+        case 1: return forceNextCard((c) => c.color === "Red");
+        case 2: { const pv = S.cards[0] && S.cards[0].value; return pv && pv > 2 ? forceNextCard((c) => c.value < pv) : drawCard(); }
+        case 3: {
+          const a = S.cards[0] && S.cards[0].value, b = S.cards[1] && S.cards[1].value;
+          if (a && b && a !== b) { const mn = Math.min(a, b), mx = Math.max(a, b); return mx - mn > 1 ? forceNextCard((c) => c.value > mn && c.value < mx) : drawCard(); }
+          return drawCard();
         }
-
-        function saveGameData() {
-            try {
-                localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerBalance.toString());
-                localStorage.setItem(STATS_LOCAL_STORAGE_KEY, JSON.stringify(stats));
-                // Achievements are saved separately by saveUnlockedAchievements()
-                 console.log("Game Data Saved - Balance:", playerBalance, "Stats:", stats); // Debug log
-            } catch (e) {
-                console.error("Error saving data", e);
-                showMessage("Error: No se pudo guardar el progreso.", "error");
-            }
-        }
-
-        // --- <<< NEW: Achievement Functions (copied from Roulette) >>> ---
-        function loadUnlockedAchievements() {
-            try {
-                const savedAchievements = localStorage.getItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
-                if (savedAchievements) {
-                    const parsedAchievements = JSON.parse(savedAchievements);
-                    if (Array.isArray(parsedAchievements) && parsedAchievements.every(id => typeof id === 'string')) {
-                        unlockedAchievements = parsedAchievements;
-                    } else {
-                        console.warn("Invalid achievement format in localStorage. Resetting.");
-                        unlockedAchievements = [];
-                        localStorage.removeItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY);
-                    }
-                } else {
-                    unlockedAchievements = [];
-                }
-            } catch (error) {
-                console.error("Error loading achievements:", error);
-                unlockedAchievements = [];
-            }
-             console.log("Loaded achievements:", unlockedAchievements); // Debug log
-        }
-
-        function saveUnlockedAchievements() {
-            try {
-                localStorage.setItem(ACHIEVEMENTS_LOCAL_STORAGE_KEY, JSON.stringify(unlockedAchievements));
-                 console.log("Saved achievements:", unlockedAchievements); // Debug log
-            } catch (error) {
-                console.error("Error saving achievements:", error);
-            }
-        }
-
-        /**
-         * Checks if any achievements are unlocked based on the current balance
-         * and adds their rewards. Updates localStorage for achievements ONLY.
-         * Returns an object with details about newly unlocked achievements and rewards.
-         * IMPORTANT: This function now ONLY updates the playerBalance variable,
-         * it DOES NOT save the balance to localStorage itself.
-         */
-        function checkAndUnlockAchievements() {
-            const newlyUnlocked = [];
-            let totalRewardAdded = 0;
-            let balanceChanged = false;
-            let achievementsChanged = false;
-
-            // Ensure the latest list is loaded
-            loadUnlockedAchievements();
-            const currentBalance = playerBalance; // Use the current global balance
-
-            achievementsData.forEach(ach => {
-                // Check if target is met and NOT already unlocked
-                if (currentBalance >= ach.target && !unlockedAchievements.includes(ach.id)) {
-                    console.log(`Unlocking achievement: ${ach.name} (Target: ${ach.target}, Reward: ${ach.reward})`);
-                    unlockedAchievements.push(ach.id); // Add ID to the list
-                    totalRewardAdded += ach.reward; // Sum the reward
-                    newlyUnlocked.push(ach); // Store the achievement object for messages, etc.
-                    achievementsChanged = true;
-                    balanceChanged = true;
-                }
-            });
-
-            // If achievements were unlocked, update balance variable and save ONLY achievements
-            if (newlyUnlocked.length > 0) {
-                playerBalance += totalRewardAdded; // Update the global balance variable
-                console.log(`Total reward added: ${totalRewardAdded}. New balance VARIABLE: ${playerBalance}`);
-
-                // Save the new list of achievements
-                saveUnlockedAchievements();
-
-                // FIX: REMOVED balance saving from here. It will be handled by saveGameData() later.
-                // try {
-                //     localStorage.setItem(BALANCE_LOCAL_STORAGE_KEY, playerBalance.toString());
-                //     console.log("Balance saved after achievement rewards:", playerBalance);
-                // } catch (error) {
-                //     console.error("Error saving balance after achievement rewards:", error);
-                // }
-            }
-
-            return {
-                newlyUnlocked, // Array of newly unlocked achievement objects
-                balanceChanged,
-                achievementsChanged,
-                totalRewardAdded
-            };
-        }
-        // --- <<< END NEW: Achievement Functions >>> ---
-
-
-        // --- Stat Update Functions ---
-        function updateMaxBalance() { if (playerBalance > stats.maxBalance) { stats.maxBalance = playerBalance; } }
-        function updateLongestStreak() { if (currentGameStreak > stats.longestStreak) { stats.longestStreak = currentGameStreak; } }
-        function endGameStatsUpdate(winAmount = 0, gameActuallyWon = false) { stats.gamesPlayed++; updateLongestStreak(); if (winAmount > stats.highestWin) { stats.highestWin = winAmount; } if (gameActuallyWon) { stats.gamesWon++; } currentGameStreak = 0; guidedGameInProgress = false; }
-
-        // --- UI Functions ---
-         function showMessage(text, type = 'info') {
-             messageDiv.textContent = text;
-             let baseClasses = "font-medium min-h-[60px] flex items-center justify-center p-4 rounded-lg border shadow-sm transition-opacity duration-300 ease-in-out ";
-             let typeClasses = "";
-             switch (type) { case 'success': typeClasses = "bg-green-50 border-green-300 text-green-700"; break; case 'error': typeClasses = "bg-red-50 border-red-300 text-red-700"; break; case 'info': default: typeClasses = "bg-blue-50 border-blue-300 text-blue-700"; break; }
-             messageDiv.style.opacity = 0;
-             requestAnimationFrame(() => {
-                  messageDiv.className = baseClasses + typeClasses + ' visible';
-                  messageDiv.style.opacity = 1;
-             });
-         }
-
-        // --- createCardElement Function (Restored for Flip) ---
-        function createCardElement(card, label = null) {
-            const containerDiv = document.createElement('div');
-            containerDiv.classList.add('card-container');
-
-            const flipperDiv = document.createElement('div');
-            flipperDiv.classList.add('card-flipper');
-
-            const cardFrontDiv = document.createElement('div');
-            cardFrontDiv.classList.add('card-face', 'card-front', card.color.toLowerCase());
-            cardFrontDiv.innerHTML = `<span class="card-rank">${card.rank}</span><span class="card-suit">${card.suit}</span><span class="card-suit-bottom">${card.suit}</span>`;
-
-            const cardBackDiv = document.createElement('div');
-            cardBackDiv.classList.add('card-face', 'card-back-display');
-
-            flipperDiv.appendChild(cardFrontDiv);
-            flipperDiv.appendChild(cardBackDiv);
-            containerDiv.appendChild(flipperDiv);
-
-            if (label) {
-                const labelDiv = document.createElement('div');
-                labelDiv.classList.add('card-label');
-                labelDiv.textContent = label;
-                containerDiv.appendChild(labelDiv); // Add label to main container
-            }
-
-            containerDiv.flipper = flipperDiv;
-            containerDiv.cardFront = cardFrontDiv;
-
-            return containerDiv;
-        }
-
-
-        function createRoundButton(text, dataValue, colorClasses, extraClasses = "", id = null, dataType = "guess") { const idAttribute = id ? `id="${id}"` : ""; return `<button ${idAttribute} data-${dataType}="${dataValue}" class="px-5 py-2 rounded-md font-semibold shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out ${colorClasses} ${extraClasses}">${text}</button>`; }
-        function createRound1Controls() { return createRoundButton("Roja", "Red", "bg-red-500 hover:bg-red-600 text-white focus:ring-red-400") + createRoundButton("Negra", "Black", "bg-gray-700 hover:bg-gray-800 text-white focus:ring-gray-500"); }
-        function createRound2Controls() { return createRoundButton("Mayor", "Higher", "bg-indigo-500 hover:bg-indigo-600 text-white focus:ring-indigo-400") + createRoundButton("Menor", "Lower", "bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-400"); }
-        function createRound3Controls() { return createRoundButton("Dentro", "In", "bg-purple-500 hover:bg-purple-600 text-white focus:ring-purple-400 disabled:opacity-50", "", "guess-in-btn") + createRoundButton("Fuera", "Out", "bg-orange-500 hover:bg-orange-600 text-white focus:ring-orange-400"); }
-        function createRound4Controls() { const baseSuitClasses = "w-12 h-12 rounded-lg font-bold shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out text-3xl flex items-center justify-center"; const redSuitClasses = "bg-red-100 text-red-600 border border-red-300 hover:bg-red-200 focus:ring-red-300"; const blackSuitClasses = "bg-gray-200 text-gray-800 border border-gray-400 hover:bg-gray-300 focus:ring-gray-400"; return createRoundButton("♥", "♥", `${baseSuitClasses} ${redSuitClasses}`, "p-0") + createRoundButton("♦", "♦", `${baseSuitClasses} ${redSuitClasses}`, "p-0") + createRoundButton("♣", "♣", `${baseSuitClasses} ${blackSuitClasses}`, "p-0") + createRoundButton("♠", "♠", `${baseSuitClasses} ${blackSuitClasses}`, "p-0"); }
-        function disableRoundButtons(disabled) { roundControls.querySelectorAll('button').forEach(btn => btn.disabled = disabled); }
-        function displayStats() { statPlayed.textContent = stats.gamesPlayed; statWon.textContent = stats.gamesWon; statMaxWin.textContent = `${stats.highestWin} €`; statMaxStreak.textContent = stats.longestStreak; statMaxBalance.textContent = `${stats.maxBalance} €`; }
-
-        // --- Main `updateUI` Function ---
-        function updateUI() {
-            playerBalanceDisplaySpan.textContent = playerBalance.toLocaleString('es-ES'); // Format balance
-            const maxPossibleBet = Math.max(MIN_BET, playerBalance);
-            const noBalance = playerBalance < MIN_BET;
-
-            if (betSlider && betAmountInput && betSliderValue) {
-                betSlider.max = maxPossibleBet; betAmountInput.max = maxPossibleBet;
-                let currentVal = parseInt(betAmountInput.value) || lastBetAmount;
-                currentVal = Math.max(MIN_BET, Math.min(currentVal, maxPossibleBet));
-                if (currentRound === 0 || parseInt(betAmountInput.value) > maxPossibleBet || isNaN(parseInt(betAmountInput.value))) { betAmountInput.value = currentVal; betSlider.value = currentVal; betSliderValue.textContent = `${currentVal} €`; }
-                else { if (betSlider.value != betAmountInput.value){ betSlider.value = betAmountInput.value; betSliderValue.textContent = `${betAmountInput.value} €`; } }
-                betSlider.disabled = noBalance; betAmountInput.disabled = noBalance; startGameBtn.disabled = noBalance;
-            } else if (betAmountInput) { betAmountInput.max = maxPossibleBet; if (currentRound === 0) { betAmountInput.value = Math.max(MIN_BET, Math.min(lastBetAmount, maxPossibleBet)); } betAmountInput.disabled = noBalance; startGameBtn.disabled = noBalance; }
-
-            currentRoundDisplay.textContent = currentRound === 5 ? '5 (Final)' : (currentRound > 0 ? `${currentRound}` : '-');
-            initialBetDisplay.textContent = `${currentBet.toLocaleString('es-ES')} €`; // Format bet
-
-            // --- Round Control Logic ---
-            roundControls.innerHTML = '';
-             if(messageDiv.classList.contains('visible')) {
-                 messageDiv.style.opacity = 0;
-                 setTimeout(() => { messageDiv.classList.remove('visible'); messageDiv.className = 'text-center font-medium'; }, 300);
-             }
-
-
-            if (currentRound !== 5 && !inRound5ChoicePhase && !gameOver && currentRound > 0) {
-                const currentRetireAmount = currentRound > 1 ? (currentBet * CUMULATIVE_ROUND_MULTIPLIERS[currentRound - 1]) : currentBet;
-                 let messageText = ""; let controlsHtml = "";
-                 let previousCardRank = cardsOnTable.length > 0 ? cardsOnTable[cardsOnTable.length - 1].rank : '';
-                 let prevCard1Value = cardsOnTable.length > 1 ? cardsOnTable[cardsOnTable.length - 2].value : 0;
-                 let prevCard2Value = cardsOnTable.length > 0 ? cardsOnTable[cardsOnTable.length - 1].value : 0;
-                 switch (currentRound) {
-                     case 1: controlsHtml = createRound1Controls(); messageText = "Ronda 1: ¿Roja o Negra?"; break;
-                     case 2: controlsHtml = createRound2Controls(); messageText = `Ronda 2: ¿Mayor o Menor que ${previousCardRank}? (Empate Pierde)`; break;
-                     case 3: const minV=Math.min(prevCard1Value, prevCard2Value); const maxV=Math.max(prevCard1Value, prevCard2Value); const minR=RANKS[minV - 2] || '?'; const maxR=RANKS[maxV - 2] || '?'; controlsHtml=createRound3Controls(); messageText=(prevCard1Value === prevCard2Value) ? `Ronda 3: Iguales (${previousCardRank}). Elige 'Fuera'.` : `Ronda 3: ¿Dentro o Fuera (${minR} - ${maxR})?`; break;
-                     case 4: controlsHtml = createRound4Controls(); messageText = "Ronda 4: Adivina el Palo"; break;
-                 }
-                 const retireButtonHtml = createRoundButton(`Retirarse (${currentRetireAmount.toLocaleString('es-ES')} €)`, "Retire", "bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500", "retire-btn");
-                 roundControls.innerHTML = `<p class="text-lg font-semibold text-gray-700 mb-3">${messageText.split(':')[1]?.trim() || messageText}</p><div class="controls-container">${controlsHtml}${retireButtonHtml}</div>`;
-                 roundControls.querySelectorAll('button[data-guess]:not(.retire-btn)').forEach(btn => btn.addEventListener('click', handleGuess));
-                 const retireBtn = roundControls.querySelector('.retire-btn');
-                 if (retireBtn) { retireBtn.addEventListener('click', handleRetire); retireBtn.disabled = !(currentRetireAmount >= currentBet && currentRound > 0); retireBtn.dataset.guess = "Retire"; }
-                 if (currentRound === 3) { const inBtn=roundControls.querySelector('#guess-in-btn'); if (inBtn && prevCard1Value === prevCard2Value) { inBtn.disabled = true; inBtn.title = "No se puede elegir 'Dentro' con cartas iguales"; } }
-                 showMessage(messageText.split(':')[0], "info");
-
-            } else if (currentRound === 5 && !inRound5ChoicePhase && !gameOver) {
-                 roundControls.innerHTML = `<p class="text-lg font-semibold text-gray-700 mb-3">¿Superará tu carta a la del banquero?</p><div class="controls-container">${createRoundButton(`¡Revelar Cartas!`, 'reveal', 'bg-purple-600 hover:bg-purple-700 text-white focus:ring-purple-500', '', 'reveal-r5-btn')}</div>`;
-                 const revealBtn = roundControls.querySelector('#reveal-r5-btn'); if (revealBtn) { revealBtn.addEventListener('click', playRound5); }
-                 showMessage("Ronda 5: ¡Duelo Final!", "info");
-            } else if (inRound5ChoicePhase) {
-                const winningsR4 = currentBet * CUMULATIVE_ROUND_MULTIPLIERS[4]; const grandPrizeR5 = currentBet * ROUND_5_MULTIPLIER;
-                roundControls.innerHTML = `<p class="text-lg font-semibold text-gray-700 mb-3">Ronda Final: ¡Todo o Nada!</p><div class="controls-container">${createRoundButton(`Cobrar ${winningsR4.toLocaleString('es-ES')} €`, 'collect', 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500', 'r5-choice-btn', null, 'choice')}${createRoundButton(`¡Arriesgar TODO por ${grandPrizeR5.toLocaleString('es-ES')} €!`, 'gamble', 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500', 'r5-choice-btn', null, 'choice')}</div>`;
-                roundControls.querySelectorAll('.r5-choice-btn').forEach(btn => btn.addEventListener('click', handleRound5Choice));
-                 showMessage("¡Decisión Final!", "info");
-            } else {
-                 if (currentRound === 0 && !gameOver && !noBalance) {
-                     showMessage("Coloca tu apuesta para iniciar una nueva partida.", "info");
-                 } else if (noBalance && currentRound === 0){
-                     showMessage("¡Te has quedado sin saldo!.", "error");
-                 }
-            }
-
-            const showBetting = (currentRound === 0 && !gameOver);
-            bettingSection.classList.toggle('hidden', !showBetting);
-            gameSection.classList.toggle('hidden', showBetting);
-            newGameBtn.classList.toggle('hidden', !gameOver);
-
-            displayStats();
-        }
-
-        // --- Main Game Logic ---
-        function startGame() {
-            const bet = parseInt(betAmountInput.value);
-            if (isNaN(bet) || bet < MIN_BET) { showMessage(`Apuesta inválida. Mínimo ${MIN_BET} €.`, "error"); betAmountInput.focus(); betAmountInput.classList.add('border-red-500', 'animate-shake'); setTimeout(() => betAmountInput.classList.remove('border-red-500', 'animate-shake'), 600); return; }
-            if (bet > playerBalance) { showMessage("Saldo insuficiente.", "error"); betAmountInput.focus(); betAmountInput.classList.add('border-red-500', 'animate-shake'); setTimeout(() => betAmountInput.classList.remove('border-red-500', 'animate-shake'), 600); return; }
-
-            betAmountInput.classList.remove('border-red-500');
-            lastBetAmount = bet;
-            startGameBtn.disabled = true; betAmountInput.disabled = true; if(betSlider) betSlider.disabled = true;
-            shuffleAnimationOverlay.classList.add('visible');
-
-            setTimeout(() => {
-                shuffleAnimationOverlay.classList.remove('visible');
-                const oldCardElements = cardsArea.querySelectorAll('.card-container');
-                oldCardElements.forEach(el => el.classList.add('card-exit'));
-
-                setTimeout(() => {
-                    oldCardElements.forEach(el => el.remove());
-                    deck = createDeck(); shuffleDeck(deck);
-                    currentBet = bet; potentialWinnings = bet; currentRound = 1;
-                    cardsOnTable = []; cardElementsOnTable = [];
-                    gameOver = false; inRound5ChoicePhase = false; currentGameStreak = 0;
-                    playerBalance -= currentBet;
-                    // DO NOT save balance here yet, it's saved at the end of the game
-                    updateMaxBalance(); // Update max balance stat *before* potential achievement rewards
-                    if (nextGameIsGuided) { guidedGameInProgress = true; nextGameIsGuided = false; console.log("Modo guiado iniciado."); }
-                    else { guidedGameInProgress = false; }
-
-                    updateUI();
-                }, oldCardElements.length > 0 ? EXIT_ANIMATION_DURATION : 0);
-
-            }, SHUFFLE_ANIMATION_DURATION);
-        }
-
-
-        // --- handleGuess Function (Modified for Slide & Flip & Achievements) ---
-        function handleGuess(event) {
-            if (gameOver || inRound5ChoicePhase) return;
-            const targetButton = event.target.closest('button');
-            if (!targetButton || targetButton.disabled) return;
-
-            disableRoundButtons(true);
-            const guess = targetButton.dataset.guess;
-            let drawnCard = null;
-
-            // Guided mode logic (unchanged)
-            if (guidedGameInProgress) {
-                 console.log(`Modo Guiado activo para Ronda ${currentRound}`);
-                 try {
-                     switch (currentRound) {
-                         case 1: drawnCard = forceNextCard(card => card.color === 'Red'); break;
-                         case 2: const prevValueR2 = cardsOnTable[0]?.value; drawnCard = (prevValueR2 && prevValueR2 > 2) ? forceNextCard(card => card.value < prevValueR2) : drawCard(); break;
-                         case 3: const val1R3 = cardsOnTable[0]?.value; const val2R3 = cardsOnTable[1]?.value; if (val1R3 && val2R3 && val1R3 !== val2R3) { const minValR3 = Math.min(val1R3, val2R3); const maxValR3 = Math.max(val1R3, val2R3); drawnCard = (maxValR3 - minValR3 > 1) ? forceNextCard(card => card.value > minValR3 && card.value < maxValR3) : drawCard(); } else { drawnCard = drawCard(); } break;
-                         case 4: drawnCard = forceNextCard(card => card.suit === '♥'); break;
-                         default: drawnCard = drawCard();
-                     }
-                 } catch (e) { console.error("Error en modo guiado:", e); drawnCard = drawCard(); }
-             } else {
-                 drawnCard = drawCard();
-             }
-
-            if (!drawnCard) { showMessage("Error: La baraja está vacía.", "error"); gameOver = true; updateUI(); return; }
-
-            const cardElementWrapper = createCardElement(drawnCard);
-            const flipper = cardElementWrapper.flipper;
-            const cardFront = cardElementWrapper.cardFront;
-            cardsArea.appendChild(cardElementWrapper);
-            cardElementsOnTable.push(cardElementWrapper);
-
-            // 1. Animate Slide
-            requestAnimationFrame(() => {
-                cardElementWrapper.classList.add('card-enter-active');
-            });
-
-            // 2. Wait for slide end and Flip
-            setTimeout(() => {
-                flipper.classList.add('is-flipped');
-
-                // 3. Wait for flip end and Evaluate
-                setTimeout(() => {
-                    let correctGuess = false;
-                    const lastCardOnTable = cardsOnTable.length > 0 ? cardsOnTable[cardsOnTable.length - 1] : null;
-                    const secondLastCardOnTable = cardsOnTable.length > 1 ? cardsOnTable[cardsOnTable.length - 2] : null;
-
-                    // Evaluation logic (unchanged)
-                    switch (currentRound) {
-                        case 1: correctGuess = (drawnCard.color === guess); break;
-                        case 2: const pV2 = lastCardOnTable?.value ?? 0; const cV2=drawnCard.value; correctGuess = (guess === 'Higher') ? cV2 > pV2 : cV2 < pV2; if (cV2 === pV2) correctGuess = false; break;
-                        case 3: const v1=secondLastCardOnTable?.value ?? 0; const v2=lastCardOnTable?.value ?? 0; const v3=drawnCard.value; const minV=Math.min(v1, v2); const maxV=Math.max(v1, v2); if (v1 === v2 || !v1 || !v2) { correctGuess = (guess === 'Out'); } else { correctGuess = (guess === 'In') ? (v3 > minV && v3 < maxV) : (v3 < minV || v3 > maxV); } break;
-                        case 4: correctGuess = (drawnCard.suit === guess); break;
-                    }
-
-                    cardsOnTable.push(drawnCard);
-                    if (guidedGameInProgress && !correctGuess) { guidedGameInProgress = false; console.log("Modo Guiado desactivado por fallo.");}
-
-                    // 4. Apply Highlight and Continue
-                    if (correctGuess) {
-                        currentGameStreak++; updateLongestStreak();
-                        potentialWinnings = currentBet * CUMULATIVE_ROUND_MULTIPLIERS[currentRound];
-                        cardFront.classList.add('card-highlight-success');
-                        setTimeout(() => cardFront.classList.remove('card-highlight-success'), HIGHLIGHT_DURATION);
-
-                        if (currentRound === 4) {
-                            inRound5ChoicePhase = true;
-                            showMessage(`¡Ronda 4 SUPERADA! Acumulado: ${potentialWinnings.toLocaleString('es-ES')} €. ¿Arriesgar?`, "info");
-                            updateUI();
-                        } else {
-                            currentRound++;
-                            showMessage(`¡Correcto! Ronda ${currentRound}...`, "success");
-                            updateUI();
-                            setTimeout(() => disableRoundButtons(false), 50);
-                        }
-                    } else {
-                        cardFront.classList.add('card-highlight-error');
-                        setTimeout(() => cardFront.classList.remove('card-highlight-error'), HIGHLIGHT_DURATION);
-                        endGameStatsUpdate(0, false);
-                        // Check achievements even on loss, as balance might still meet a target
-                        const achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
-                        let lossMessage = `Incorrecto: Salió ${drawnCard.rank}${drawnCard.suit}. Perdiste ${currentBet.toLocaleString('es-ES')} €. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
-                        if (achievementResult.newlyUnlocked.length > 0) {
-                             lossMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
-                        }
-                        showMessage(lossMessage, "error");
-                        potentialWinnings = 0; gameOver = true; guidedGameInProgress = false;
-                        // FIX: Save game data (balance and stats) reliably on loss
-                        saveGameData();
-                        updateUI();
-                    }
-
-                }, FLIP_ANIMATION_DURATION + 50);
-
-            }, SLIDE_ANIMATION_DURATION);
-        }
-
-
-        // --- Round 5 Functions (Modified for Slide & Flip & Achievements) ---
-        function handleRound5Choice(event) {
-            if (!inRound5ChoicePhase) return;
-            const targetButton = event.target.closest('button');
-            if (!targetButton) return;
-            roundControls.querySelectorAll('.r5-choice-btn').forEach(btn => btn.disabled = true);
-            const choice = targetButton.dataset.choice;
-            inRound5ChoicePhase = false;
-            if (choice === 'collect') {
-                const winningsR4 = currentBet * CUMULATIVE_ROUND_MULTIPLIERS[4];
-                playerBalance += winningsR4; // Add winnings first
-                potentialWinnings = winningsR4;
-                // Check achievements AFTER adding winnings
-                const achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
-                updateMaxBalance(); // Update max balance stat *after* potential rewards
-                endGameStatsUpdate(winningsR4, true); // Log game win stat
-
-                let successMessage = `¡Felicidades! Cobraste ${winningsR4.toLocaleString('es-ES')} €. Saldo final: ${playerBalance.toLocaleString('es-ES')} €`;
-                 if (achievementResult.newlyUnlocked.length > 0) {
-                      successMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
-                 }
-                showMessage(successMessage, "success");
-                gameOver = true; guidedGameInProgress = false;
-                // FIX: Save game data (balance and stats) reliably when collecting
-                saveGameData();
-                updateUI();
-            } else if (choice === 'gamble') {
-                startRound5();
-            }
-        }
-        function startRound5() {
-            currentRound = 5;
-            showMessage("Ronda 5: Corte Alto/Bajo. Tu carta vs Banquero.", "info");
-            updateUI();
-        }
-
-        function playRound5() {
-            const revealBtn = roundControls.querySelector('#reveal-r5-btn'); if (revealBtn) revealBtn.disabled = true;
-            roundControls.innerHTML = '';
-            messageDiv.style.opacity = 0;
-
-            const oldCardElements = cardsArea.querySelectorAll('.card-container');
-            oldCardElements.forEach(el => el.classList.add('card-exit'));
-
-            setTimeout(() => {
-                oldCardElements.forEach(el => el.remove());
-                cardsOnTable = [];
-                cardElementsOnTable = [];
-
-                if (deck.length < 2) {
-                    const wR4=currentBet*CUMULATIVE_ROUND_MULTIPLIERS[4];
-                    showMessage("Error: No quedan cartas. Cobrando R4.", "error");
-                    potentialWinnings=wR4;
-                    playerBalance+=potentialWinnings; // Add winnings
-                    // Check achievements
-                    checkAndUnlockAchievements(); // Updates balance variable if needed
-                    updateMaxBalance();
-                    endGameStatsUpdate(potentialWinnings, true);
-                    gameOver=true; guidedGameInProgress=false;
-                    // FIX: Save game data (balance and stats) reliably on error
-                    saveGameData();
-                    updateUI();
-                    return;
-                }
-
-                const playerCard = drawCard(); const dealerCard = drawCard();
-                const playerCardElementWrapper = createCardElement(playerCard, "Jugador");
-                const dealerCardElementWrapper = createCardElement(dealerCard, "Banquero");
-                const playerFlipper = playerCardElementWrapper.flipper; const dealerFlipper = dealerCardElementWrapper.flipper;
-                const playerFront = playerCardElementWrapper.cardFront; const dealerFront = dealerCardElementWrapper.cardFront;
-                cardsArea.appendChild(playerCardElementWrapper); cardsArea.appendChild(dealerCardElementWrapper);
-
-                // 1. Animate Slide (with stagger)
-                let slideDelay = 0;
-                [playerCardElementWrapper, dealerCardElementWrapper].forEach(el => {
-                    setTimeout(() => {
-                        requestAnimationFrame(() => {
-                             el.classList.add('card-enter-active');
-                        });
-                    }, slideDelay);
-                    slideDelay += 150;
-                });
-
-                // 2. Wait for slide end and Flip (with stagger)
-                let flipDelay = SLIDE_ANIMATION_DURATION + 50;
-                [playerFlipper, dealerFlipper].forEach(flipper => {
-                     setTimeout(() => {
-                          flipper.classList.add('is-flipped');
-                     }, flipDelay);
-                     flipDelay += 150;
-                });
-
-                // 3. Wait for last flip end and Evaluate/Highlight
-                const timeUntilEvaluation = flipDelay + FLIP_ANIMATION_DURATION;
-                setTimeout(() => {
-                    const playerValue = playerCard.value; const dealerValue = dealerCard.value; const winR5 = playerValue > dealerValue;
-                    let finalMessage = ""; let messageType = "info";
-                    let achievementResult = { newlyUnlocked: [], totalRewardAdded: 0 }; // Default
-
-                    if (winR5) {
-                        const grandPrize = currentBet * ROUND_5_MULTIPLIER;
-                        playerBalance += grandPrize; // Add winnings
-                        potentialWinnings = grandPrize;
-                        // Check achievements AFTER adding winnings
-                        achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
-                        updateMaxBalance(); // Update max balance stat *after* potential rewards
-                        endGameStatsUpdate(grandPrize, true); // Log game win stat
-
-                        finalMessage = `¡CORTE GANADOR! (${playerCard.rank}${playerCard.suit} > ${dealerCard.rank}${dealerCard.suit}). ¡Premio gordo de ${grandPrize.toLocaleString('es-ES')} €! Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
-                        messageType = "success";
-                        playerFront.classList.add('card-highlight-success'); dealerFront.classList.add('card-highlight-error');
-                    } else {
-                        endGameStatsUpdate(0, false);
-                        potentialWinnings = 0;
-                        // Check achievements even on loss
-                        achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
-                        updateMaxBalance(); // Update max balance stat *after* potential rewards
-
-                        const reason = playerValue === dealerValue ? `¡Empate!` : `${playerCard.rank}${playerCard.suit} no supera a ${dealerCard.rank}${dealerCard.suit}.`;
-                        finalMessage = `¡Fin del juego! ${reason} Perdiste ${currentBet.toLocaleString('es-ES')} €. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
-                        messageType = "error";
-                        playerFront.classList.add('card-highlight-error'); if (playerValue < dealerValue) { dealerFront.classList.add('card-highlight-success'); }
-                    }
-
-                     // Append achievement message if any
-                     if (achievementResult.newlyUnlocked.length > 0) {
-                          finalMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
-                          // Ensure message type reflects win if only achievement was gained
-                          if (messageType === 'error' && achievementResult.totalRewardAdded > 0) messageType = 'info';
-                          else if (messageType !== 'success') messageType = 'success';
-                     }
-
-                    setTimeout(() => { playerFront.classList.remove('card-highlight-success', 'card-highlight-error'); dealerFront.classList.remove('card-highlight-success', 'card-highlight-error'); }, HIGHLIGHT_DURATION);
-                    gameOver = true; guidedGameInProgress = false; showMessage(finalMessage, messageType);
-                    // FIX: Save game data (balance and stats) reliably at the end of Round 5
-                    saveGameData();
-                    updateUI();
-                }, timeUntilEvaluation);
-
-            }, oldCardElements.length > 0 ? EXIT_ANIMATION_DURATION : 0);
-        }
-
-
-        // --- handleRetire and resetGame (Modified for .card-container & Achievements) ---
-        function handleRetire(event) {
-            if (gameOver || currentRound === 0 || inRound5ChoicePhase) return;
-            const targetButton = event.target.closest('button'); if (!targetButton || targetButton.disabled) return;
-            disableRoundButtons(true);
-            const winningsToCollect = currentRound > 1 ? (currentBet * CUMULATIVE_ROUND_MULTIPLIERS[currentRound - 1]) : currentBet;
-            const cardElements = cardsArea.querySelectorAll('.card-container');
-            cardElements.forEach(el => el.classList.add('card-exit'));
-
-            setTimeout(() => {
-                let achievementResult = { newlyUnlocked: [], totalRewardAdded: 0 };
-                if (winningsToCollect >= currentBet) {
-                    playerBalance += winningsToCollect; // Add winnings
-                    potentialWinnings = winningsToCollect;
-                    // Check achievements
-                    achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
-                    updateMaxBalance(); // Update max balance stat *after* potential rewards
-                    endGameStatsUpdate(winningsToCollect, false); // Not a full game win, but record winnings
-
-                    let retireMessage = `Te retiras. Cobras ${winningsToCollect.toLocaleString('es-ES')} €. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
-                    if (achievementResult.newlyUnlocked.length > 0) {
-                         retireMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
-                    }
-                    showMessage(retireMessage, "success");
-                } else {
-                    endGameStatsUpdate(0, false);
-                    // Check achievements even if retiring with 0
-                    achievementResult = checkAndUnlockAchievements(); // Updates balance variable if needed
-                    updateMaxBalance();
-                    let errorMessage = `Error al retirar. Saldo: ${playerBalance.toLocaleString('es-ES')} €`;
-                    if (achievementResult.newlyUnlocked.length > 0) {
-                         errorMessage += ` ¡Logro desbloqueado: ${achievementResult.newlyUnlocked[0].name} (+${achievementResult.totalRewardAdded.toLocaleString('es-ES')}€)!`;
-                    }
-                    showMessage(errorMessage, "error");
-                }
-                gameOver = true; guidedGameInProgress = false;
-                // FIX: Save game data (balance and stats) reliably on retire
-                saveGameData();
-                cardElements.forEach(el => el.remove());
-                cardsOnTable = []; cardElementsOnTable = [];
-                roundControls.innerHTML = '';
-                updateUI();
-            }, EXIT_ANIMATION_DURATION);
-        }
-
-        function resetGame() {
-            const cardElements = cardsArea.querySelectorAll('.card-container');
-            cardElements.forEach(el => el.classList.add('card-exit'));
-
-            setTimeout(() => {
-                currentBet = 0; potentialWinnings = 0; currentRound = 0;
-                cardsOnTable = []; cardElementsOnTable = [];
-                gameOver = false; inRound5ChoicePhase = false; currentGameStreak = 0; guidedGameInProgress = false;
-                cardElements.forEach(el => el.remove());
-                roundControls.innerHTML = '';
-                showMessage("Coloca tu apuesta para iniciar una nueva partida.", "info");
-                updateUI();
-            }, cardElements.length > 0 ? EXIT_ANIMATION_DURATION : 0);
-        }
-
-        // --- Static Event Listeners ---
-        startGameBtn.addEventListener('click', startGame);
-        newGameBtn.addEventListener('click', resetGame);
-        toggleStatsBtn.addEventListener('click', () => { statsSection.classList.toggle('hidden'); toggleStatsBtn.textContent = statsSection.classList.contains('hidden') ? '⚙️' : '❌'; });
-        playerBalanceDisplayContainer.addEventListener('dblclick', () => { if (currentRound === 0 && !gameOver) { nextGameIsGuided = true; console.log("Modo guiado secreto activado."); playerBalanceDisplayContainer.style.transition = 'transform 0.1s ease-in-out'; playerBalanceDisplayContainer.style.transform = 'scale(1.05)'; setTimeout(() => { playerBalanceDisplayContainer.style.transform = 'scale(1)'; }, 100); } });
-
-        // --- Event Listeners for Slider/Input Sync ---
-         if (betSlider && betAmountInput && betSliderValue) {
-             betSlider.addEventListener('input', () => { const value = betSlider.value; betAmountInput.value = value; betSliderValue.textContent = `${value} €`; });
-             betAmountInput.addEventListener('input', () => { let value = parseInt(betAmountInput.value); const min = parseInt(betSlider.min); const max = parseInt(betSlider.max); if (isNaN(value)) value = min; if (value < min) value = min; if (value > max) value = max; betSlider.value = value; betSliderValue.textContent = `${value} €`; });
-             betAmountInput.addEventListener('change', () => { let value = parseInt(betAmountInput.value); const min = parseInt(betSlider.min); const max = parseInt(betSlider.max); if (isNaN(value) || value < min) { value = min; } else if (value > max) { value = max; } betAmountInput.value = value; betSlider.value = value; betSliderValue.textContent = `${value} €`; lastBetAmount = value; });
-         }
-
-        // <<< NEW: Event Listeners for External Storage/Focus Updates >>>
-        window.addEventListener('storage', (event) => {
-            if (event.key === BALANCE_LOCAL_STORAGE_KEY) {
-                console.log('Balance changed externally. Reloading.');
-                loadGameData(); // Reloads balance, stats, and achievements
-                updateUI();
-            }
-            if (event.key === STATS_LOCAL_STORAGE_KEY) {
-                console.log('Stats changed externally. Reloading.');
-                loadGameData(); // Reloads balance, stats, and achievements
-                updateUI();
-            }
-              if (event.key === ACHIEVEMENTS_LOCAL_STORAGE_KEY) {
-                 console.log('Achievements changed externally. Reloading.');
-                 loadUnlockedAchievements(); // Just reload achievements
-                 // No need to updateUI unless balance changed, which would trigger the other listener
-              }
-        });
-        window.addEventListener('focus', () => {
-            console.log('Window focused, reloading game data.');
-            loadGameData(); // Reloads balance, stats, and achievements
-            updateUI();
-        });
-
-        // --- Initialization ---
-        loadGameData();
-        updateUI();
-
-    </script>
-
+        case 4: return forceNextCard((c) => c.suit === "♥");
+      }
+    } catch (e) {}
+    return drawCard();
+  }
+  const potNow = () => (S.round > 1 ? S.bet * MULT[S.round - 1] : S.bet);
+
+  /* ================================================================ DOM */
+  const table = $("table"), center = $("center"), deckEl = $("deck"), dock = $("dock");
+  const slots = [...document.querySelectorAll(".slot")];
+  const steps = [...document.querySelectorAll(".step")];
+  const dslotP = $("dslotP"), dslotD = $("dslotD");
+  const potEl = $("pot"), potAmt = $("potAmt"), nextAmt = $("nextAmt"), potLbl = $("potLbl"), nextLbl = $("nextLbl");
+  const fan = $("fan");
+
+  const stage = $("stage"), statsBtn = $("statsBtn");
+  const hud = AX.hud({ title: "ADIVINA", back: "../index.html" });
+  statsBtn.addEventListener("click", () => { sfx.play("tap"); AX.haptic("light"); openStats(); });
+
+  // Fondo: palos flotando
+  (function ambient() {
+    const bg = $("bg");
+    const n = innerWidth < 500 ? 12 : 18;
+    for (let i = 0; i < n; i++) {
+      const s = SUITS[i % 4];
+      const sp = AX.el("span", "suit" + (isRed(s) ? " r" : ""), T(s));
+      sp.style.left = AX.rand(0, 100) + "%";
+      sp.style.fontSize = AX.rand(18, 46) + "px";
+      sp.style.animationDuration = AX.rand(14, 28) + "s";
+      sp.style.animationDelay = -AX.rand(0, 28) + "s";
+      sp.style.setProperty("--dx", AX.rand(-80, 80) + "px");
+      sp.style.setProperty("--rot", AX.rand(-260, 260) + "deg");
+      bg.appendChild(sp);
+    }
+  })();
+
+  // Mazo
+  for (let i = 0; i < 6; i++) {
+    const dc = AX.el("div", "deck-card", `<div class="face"></div>`);
+    dc.style.transform = `translate(${-i * 1.2}px, ${-i * 1.6}px)`;
+    deckEl.insertBefore(dc, $("deckCount"));
+  }
+  const deckTop = () => deckEl.querySelectorAll(".deck-card")[5];
+  function updateDeckCount() {
+    const n = S.phase === "bet" ? 52 : S.deck.length;
+    $("deckCount").textContent = n + " cartas";
+  }
+
+  /* ================================================================ CARTAS */
+  function frontHTML(c) {
+    const s = T(c.suit);
+    const ace = c.rank === "A", court = ["J", "Q", "K"].includes(c.rank);
+    const cls = "face front" + (isRed(c.suit) ? " red" : "") + (ace ? " ace" : "") + (court ? " court" : "");
+    const pip = court ? `<div class="pip"><span class="crown">${c.rank === "J" ? "⚜︎" : "♛︎"}</span><em>${c.rank}</em><i>${s}</i></div>` : `<div class="pip">${s}</div>`;
+    return `<div class="${cls}"><div class="corner">${c.rank}<i>${s}</i></div>${pip}<div class="corner br">${c.rank}<i>${s}</i></div></div>`;
+  }
+  function makeCard(c, faceUp) {
+    const n = AX.el("div", "card", `<div class="glow"></div><div class="tilt"><div class="inner"><div class="face back"></div>${frontHTML(c)}</div></div><div class="ring"></div><div class="badge"></div>`);
+    if (faceUp) n.querySelector(".inner").style.transform = "perspective(900px) rotateY(180deg)";
+    n._card = c;
+    return n;
+  }
+  function centerOf(node) { const r = node.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; }
+  /** Transformación (relativa al hueco) que coloca la carta sobre el mazo. */
+  function deckXf(slot, rot = -10) {
+    const a = centerOf(deckTop()), b = centerOf(slot);
+    return `translate(${a.x - b.x}px, ${a.y - b.y}px) scale(${(a.w / b.w).toFixed(3)}) rotate(${rot}deg)`;
+  }
+  /** Del mazo a su sitio (la carta se dibuja a su tamaño real: nítida). */
+  async function flyFromDeck(card, slot, dur = 520) {
+    slot.classList.add("lift");
+    sfx.play("card"); AX.haptic("light");
+    await anim(card, [
+      { transform: deckXf(slot), opacity: 0.9 },
+      { transform: "translate(0px, -18px) scale(1.04) rotate(3deg)", opacity: 1, offset: 0.7 },
+      { transform: "translate(0px, 0px) scale(1) rotate(0deg)", opacity: 1 },
+    ], { duration: dur, easing: "cubic-bezier(.2,.9,.25,1)" });
+    card.style.transform = "";
+  }
+  /** Del escenario (carta grande) a su hueco en la fila, y se reubica allí. */
+  async function settleTo(card, slot, dur = 440) {
+    const a = centerOf(card), b = centerOf(slot);
+    await anim(card, [
+      { transform: "translate(0px, 0px) scale(1)" },
+      { transform: `translate(${b.x - a.x}px, ${b.y - a.y}px) scale(${(b.w / a.w).toFixed(4)})` },
+    ], { duration: dur, easing: "cubic-bezier(.45,.05,.3,1)" });
+    card.style.transform = "";
+    slot.appendChild(card);
+    sfx.play("card");
+    const p = AX.center(slot);
+    AX.fx.burst(p.x, p.y, { count: 10, speed: 160, gravity: 0, colors: "gold", life: 0.5 });
+  }
+  async function flip(card, heavy) {
+    const inner = card.querySelector(".inner");
+    sfx.play("flip"); AX.haptic("tap");
+    await anim(inner, [
+      { transform: "perspective(900px) rotateY(0deg) scale(1)" },
+      { transform: "perspective(900px) rotateY(100deg) scale(1.14)", offset: 0.55 },
+      { transform: "perspective(900px) rotateY(180deg) scale(1)" },
+    ], { duration: heavy ? 720 : 560, easing: "cubic-bezier(.3,.7,.2,1)" });
+    const p = AX.center(card);
+    AX.fx.glow(p.x, p.y, { size: card.getBoundingClientRect().width * 1.3, color: "rgba(255,255,255,.75)", life: 0.35 });
+    if (heavy) { sfx.play("impact"); crash(); }
+  }
+  async function suspense(card, ms, heavy) {
+    if (RM) ms = Math.min(ms, 400);
+    card.classList.add("charging");
+    drumroll(ms);
+    if (heavy) {
+      AX.fx.slowmo(ms + 700);
+      const beats = Math.max(1, Math.floor(ms / 650));
+      for (let i = 0; i < beats; i++) setTimeout(heartbeat, i * 650);
+    }
+    const tilt = card.querySelector(".tilt");
+    const frames = [];
+    const k = heavy ? 2.4 : 1.4;
+    for (let i = 0; i <= 12; i++) {
+      const g = (i / 12) * k;
+      frames.push({ transform: i === 12 ? "none" : `translate(${AX.rand(-1, 1) * g}px, ${AX.rand(-1, 1) * g}px) rotate(${AX.rand(-1, 1) * g * 0.8}deg)` });
+    }
+    tilt.animate(frames, { duration: ms, easing: "linear" });
+    await sleep(ms);
+    card.classList.remove("charging");
+  }
+  function stamp(card, text, kind) {
+    const s = AX.el("div", "stamp " + kind, text);
+    card.appendChild(s);
+    requestAnimationFrame(() => s.classList.add("show"));
+  }
+  async function flyToDeck(card, i) {
+    await sleep(i * 70);
+    const slot = card.parentElement; if (!slot) return;
+    sfx.play("card");
+    const inner = card.querySelector(".inner");
+    if (inner.style.transform.includes("180")) anim(inner, [{ transform: "perspective(900px) rotateY(180deg)" }, { transform: "perspective(900px) rotateY(0deg)" }], { duration: 360 });
+    card.classList.remove("win", "lose");
+    await anim(card, [{ transform: card.style.transform || "none", opacity: 1 }, { transform: deckXf(slot, 14), opacity: 0.2 }], { duration: 420, easing: "cubic-bezier(.5,0,.3,1)" });
+    card.remove();
+  }
+  async function clearTable() {
+    table.classList.remove("deck-hidden", "focus");
+    stage.innerHTML = "";
+    const cards = [...table.querySelectorAll(".slot .card, .dslot .card")];
+    if (cards.length) await Promise.all(cards.map(flyToDeck));
+    slots.forEach((s) => s.classList.remove("lift", "next"));
+    [dslotP, dslotD].forEach((s) => s.classList.remove("lift"));
+  }
+  function setMode(mode) {
+    table.classList.remove("mode-bet", "mode-play", "mode-duel");
+    table.classList.add("mode-" + mode);
+    if (mode !== "duel") table.classList.remove("deck-hidden");
+    requestAnimationFrame(layout);
+  }
+  function markNextSlot() {
+    slots.forEach((s, i) => s.classList.toggle("next", S.phase === "play" && i === S.cards.length));
+  }
+
+  async function shuffleAnim() {
+    const c = center.getBoundingClientRect();
+    const cw = parseFloat(getComputedStyle(table).getPropertyValue("--cw")) || 70;
+    const w = cw * 0.82, h = cw * 1.19;
+    const wrap = AX.el("div", "shuffle");
+    wrap.style.cssText = `left:${c.width / 2 - w / 2}px;top:${c.height * 0.46 - h / 2}px;width:${w}px;height:${h}px;--cw:${cw}px`;
+    center.appendChild(wrap);
+    const wc = { x: c.left + c.width / 2, y: c.top + c.height * 0.46 };
+    const dt = centerOf(deckTop());
+    const dx = dt.x - wc.x, dy = dt.y - wc.y;
+    const n = 8;
+    const cards = [];
+    for (let i = 0; i < n; i++) { const d = AX.el("div", "deck-card", `<div class="face"></div>`); d.style.inset = "0"; wrap.appendChild(d); cards.push(d); }
+    sfx.play("whoosh");
+    await Promise.all(cards.map((d, i) => anim(d, [
+      { transform: `translate(${dx}px, ${dy}px) rotate(0deg)` },
+      { transform: `translate(0px, ${-i * 1.3}px) rotate(0deg) scale(1.15)` },
+    ], { duration: 380, delay: i * 28, easing: "cubic-bezier(.2,.8,.3,1)" })));
+    for (let k = 0; k < 2; k++) {
+      riffle(); AX.haptic("light");
+      await Promise.all(cards.map((d, i) => {
+        const side = i % 2 ? 1 : -1;
+        return anim(d, [
+          { transform: `translate(0px, ${-i * 1.3}px) rotate(0deg) scale(1.15)` },
+          { transform: `translate(${side * w * 0.78}px, ${-i * 1.6 - 8}px) rotate(${side * 16}deg) scale(1.15)`, offset: 0.45 },
+          { transform: `translate(0px, ${-((i * 3) % n) * 1.3}px) rotate(0deg) scale(1.15)` },
+        ], { duration: 430, delay: (i % 4) * 30, easing: "cubic-bezier(.5,0,.3,1)" });
+      }));
+    }
+    const p = AX.center(wrap);
+    AX.fx.sparks(p.x, p.y, { count: 22, colors: "ice", speed: 420 });
+    sfx.play("swoosh");
+    await Promise.all(cards.map((d, i) => anim(d, [
+      { transform: d.style.transform || "none" },
+      { transform: `translate(${dx}px, ${dy}px) rotate(0deg) scale(1)` },
+    ], { duration: 320, delay: i * 22, easing: "cubic-bezier(.5,0,.3,1)" })));
+    wrap.remove();
+  }
+
+  /* ================================================================ LAYOUT */
+  function layout() {
+    const r = table.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const slotsVisible = !table.classList.contains("mode-duel");
+    const wBased = (r.width - 20 - 3 * 8) / 4;
+    const hBased = (r.height * 0.33) / 1.45;
+    const cw = clamp(Math.min(wBased, hBased), 40, 100);
+    table.style.setProperty("--cw", cw.toFixed(1) + "px");
+    const gap = clamp((r.width - 20 - cw * 4) / 3, 6, 14);
+    table.style.setProperty("--gap", gap.toFixed(1) + "px");
+    // abanico
+    const cH = slotsVisible ? r.height - (cw * 1.45 + 12) : r.height;
+    const fw = clamp(Math.min((cH * 0.5) / 1.45, r.width * 0.22), 40, 104);
+    fan.style.setProperty("--fw", fw.toFixed(1) + "px");
+    $("fanCap").style.setProperty("--fw", fw.toFixed(1) + "px");
+    // escenario de revelado (carta grande, tamaño real)
+    const cR = center.getBoundingClientRect();
+    const sh = clamp(cR.height * 0.84, cw * 1.45 * 1.1, 330);
+    const sw = Math.min(sh / 1.45, r.width * 0.55);
+    table.style.setProperty("--sw", sw.toFixed(1) + "px");
+    // duelo
+    const dw = clamp(Math.min((r.width - 92) / 2, (r.height - 120) / 1.45), 60, 150);
+    table.style.setProperty("--dw", dw.toFixed(1) + "px");
+  }
+  if (window.ResizeObserver) new ResizeObserver(() => layout()).observe(table);
+  addEventListener("resize", layout);
+
+  /* ================================================================ HUD DE MESA */
+  let potShown = 0;
+  function setPot(main, mainLbl, next, nextLblTxt, animate) {
+    potLbl.textContent = mainLbl;
+    nextLbl.textContent = nextLblTxt;
+    nextAmt.textContent = money(next);
+    if (animate && main !== potShown) {
+      AX.countUp(potAmt, potShown, main, 700, (v) => money(v));
+      potEl.classList.remove("bump"); void potEl.offsetWidth; potEl.classList.add("bump");
+    } else potAmt.textContent = money(main);
+    potShown = main;
+  }
+  function updatePot(animate) {
+    potEl.classList.toggle("hot", S.phase === "choice" || S.phase === "r5");
+    switch (S.phase) {
+      case "bet": return setPot(S.betInput, "Apuesta", S.betInput * R5_MULT, "Premio máx.", false);
+      case "play": return setPot(potNow(), S.round > 1 ? "Bote" : "Apuesta", S.bet * MULT[S.round], "Si aciertas", animate);
+      case "choice": return setPot(S.bet * MULT[4], "Bote", S.bet * R5_MULT, "Duelo x50", animate);
+      case "r5": return setPot(S.bet * MULT[4], "En juego", S.bet * R5_MULT, "Si ganas", animate);
+      case "over": {
+        const L = S.last || { kind: "even" };
+        const lbl = L.kind === "win" ? "Cobrado" : L.kind === "lose" ? "Perdido" : "Devuelto";
+        return setPot(L.gross || 0, lbl, AX.getBalance(), "Saldo", animate);
+      }
+    }
+  }
+  function updateLadder(popRound) {
+    const passed = S.phase === "bet" ? 0 : S.streak;
+    const active = S.phase === "play" ? S.round : S.phase === "choice" || S.phase === "r5" ? 5 : 0;
+    steps.forEach((st, i) => {
+      const r = i + 1;
+      st.classList.toggle("done", r <= passed);
+      st.classList.toggle("active", r === active && r > passed);
+      st.classList.toggle("fail", S.phase === "over" && r === S.lostAt);
+    });
+    if (popRound) {
+      const st = steps[popRound - 1];
+      st.classList.remove("pop"); void st.offsetWidth; st.classList.add("pop");
+      const p = AX.center(st);
+      AX.fx.stars(p.x, p.y, { count: 10, speed: 200, size: 7 });
+    }
+  }
+
+  /* ================================================================ DOCK */
+  function setDock(html) {
+    dock.classList.remove("enter", "locked");
+    dock.innerHTML = html;
+    void dock.offsetWidth;
+    dock.classList.add("enter");
+  }
+  function lockDock(v = true) {
+    dock.classList.toggle("locked", v);
+    dock.querySelectorAll("button").forEach((b) => (b.disabled = v && !b.classList.contains("picked")));
+  }
+  function render() {
+    switch (S.phase) {
+      case "bet": return renderBet();
+      case "play": return renderPlay();
+      case "choice": return renderChoice();
+      case "r5": return renderDuel();
+      case "over": return renderOver();
+    }
+  }
+
+  // ---------------------------------------------------- apuesta
+  function niceStep(v) {
+    if (v < 10) return 1; if (v < 100) return 5; if (v < 1000) return 50;
+    const p = Math.pow(10, Math.floor(Math.log10(v)) - 1);
+    return p * 5;
+  }
+  function setBetInput(v, fromTyping) {
+    const bal = AX.getBalance();
+    v = Math.floor(+v || 0);
+    if (!fromTyping) v = clamp(v, MIN_BET, Math.max(MIN_BET, bal));
+    S.betInput = v;
+    const inp = $("betIn");
+    if (inp && !fromTyping) inp.value = money(v);
+    const deal = $("dealBtn");
+    if (deal) deal.disabled = bal < MIN_BET;
+    updatePot();
+  }
+  function badBet(msg) {
+    const box = dock.querySelector(".bet-box");
+    if (box) { box.classList.remove("bad"); void box.offsetWidth; box.classList.add("bad"); }
+    sfx.play("error"); AX.haptic("error");
+    AX.toast(msg, "error");
+  }
+  function renderBet() {
+    const bal = AX.getBalance();
+    const none = bal < MIN_BET;
+    setDock(`
+      <div class="bet-row">
+        <button class="ax-btn ax-btn-ghost sq" data-a="minus" aria-label="Bajar apuesta">−</button>
+        <label class="bet-box"><span>TU APUESTA</span><div><input id="betIn" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="go" aria-label="Apuesta"></div></label>
+        <button class="ax-btn ax-btn-ghost sq" data-a="plus" aria-label="Subir apuesta">+</button>
+      </div>
+      <div class="chips">
+        <button class="bchip" data-c="half" aria-label="Mitad">½</button>
+        <button class="bchip" data-c="double" aria-label="Doble">×2</button>
+        <button class="bchip" data-c="10">+10</button>
+        <button class="bchip" data-c="100">+100</button>
+        <button class="bchip" data-c="1000">+1K</button>
+        <button class="bchip" data-c="max">MÁX</button>
+      </div>
+      <button class="ax-btn ax-btn-gold ax-btn-block deal" id="dealBtn" ${none ? "disabled" : ""}>${none ? "SIN SALDO" : "¡REPARTIR!"}</button>`);
+    setBetInput(S.betInput);
+    const inp = $("betIn");
+    inp.addEventListener("focus", () => { inp.value = String(S.betInput); setTimeout(() => inp.select(), 0); });
+    inp.addEventListener("input", () => { const d = inp.value.replace(/\D/g, "").slice(0, 12); inp.value = d; setBetInput(d, true); });
+    inp.addEventListener("blur", () => setBetInput(S.betInput));
+    inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { inp.blur(); deal(); } });
+    dock.querySelectorAll("[data-a]").forEach((b) => b.addEventListener("click", () => {
+      const v = S.betInput, st = niceStep(b.dataset.a === "minus" ? Math.max(1, v - 1) : v);
+      setBetInput(b.dataset.a === "minus" ? v - st : v + st);
+      sfx.play("click"); AX.haptic("light");
+    }));
+    dock.querySelectorAll(".bchip").forEach((b) => b.addEventListener("click", () => {
+      const v = S.betInput, c = b.dataset.c;
+      const nv = c === "half" ? Math.floor(v / 2) : c === "double" ? v * 2 : c === "max" ? AX.getBalance() : v + +c;
+      setBetInput(nv);
+      sfx.play("chip"); AX.haptic("tap");
+      const p = AX.center(b); AX.fx.sparks(p.x, p.y, { count: 8, speed: 220, colors: "gold" });
+    }));
+    $("dealBtn").addEventListener("click", deal);
+  }
+  function deal() {
+    if (S.busy) return;
+    const v = Math.floor(S.betInput);
+    if (!(v >= MIN_BET)) return badBet(`Apuesta mínima: ${money(MIN_BET)}`);
+    if (v > AX.getBalance()) return badBet("Saldo insuficiente");
+    startGame(v);
+  }
+
+  // ---------------------------------------------------- partida
+  async function startGame(bet) {
+    if (S.busy) return;
+    bet = Math.floor(bet);
+    const bal = AX.getBalance();
+    if (!(bet >= MIN_BET)) return badBet(`Apuesta mínima: ${money(MIN_BET)}`);
+    if (bet > bal) { AX.toast("Saldo insuficiente", "error"); sfx.play("error"); return; }
+    S.busy = true;
+    lockDock(true);
+    bumpMaxBalance();
+    // Se cobra la apuesta YA y se guarda (antes se restaba sólo en memoria)
+    if (!AX.spend(bet)) { S.busy = false; lockDock(false); AX.toast("Saldo insuficiente", "error"); return; }
+    sfx.play("chip"); AX.haptic("medium");
+    saveLastBet(bet);
+    AX.fx.coinsTo(hud.center(), AX.center(potEl), { count: 6 });
+
+    S.bet = bet; S.round = 1; S.cards = []; S.deck = shuffle(createDeck()); S.streak = 0; S.duel = null; S.lostAt = 0; S.last = null;
+    S.guided = S.nextGuided; S.nextGuided = false;
+    S.phase = "play";
+    saveSession();
+
+    await clearTable();
+    setMode("play");
+    updatePot(true); updateLadder(); updateDeckCount();
+    setDock(`<div class="q"><h3>BARAJANDO…</h3><p>Apuesta: <b>${money(bet)}</b></p></div>`);
+    await sleep(60);
+    await shuffleAnim();
+    markNextSlot();
+    roundBanner(1);
+    await sleep(RM ? 100 : 450);
+    render();
+    S.busy = false;
+  }
+  function roundBanner(r) {
+    const i = ROUND_INFO[r];
+    AX.cine.banner(i.title, { sub: i.sub, color: i.color, duration: 1400 });
+  }
+
+  function renderPlay() {
+    const R = S.round, last = S.cards[S.cards.length - 1], prev = S.cards[S.cards.length - 2];
+    let q = "", sub = "", btns = [], four = false;
+    if (R === 1) {
+      q = "¿ROJA O NEGRA?"; sub = `Acierta el color y llévate <b>${money(S.bet * MULT[1])}</b>`;
+      btns = [{ g: "Red", cls: "red", ico: T("♥") + T("♦"), lbl: "ROJA" }, { g: "Black", cls: "black", ico: T("♣") + T("♠"), lbl: "NEGRA" }];
+    } else if (R === 2) {
+      q = `¿MAYOR O MENOR QUE ${last.rank}?`; sub = "El empate pierde";
+      btns = [{ g: "Higher", cls: "up", ico: "▲", lbl: "MAYOR" }, { g: "Lower", cls: "down", ico: "▼", lbl: "MENOR" }];
+    } else if (R === 3) {
+      const eq = prev.value === last.value;
+      const lo = rankName(Math.min(prev.value, last.value)), hi = rankName(Math.max(prev.value, last.value));
+      q = eq ? "¡CARTAS GEMELAS!" : `¿DENTRO O FUERA DE ${lo}–${hi}?`;
+      sub = eq ? `Dos ${last.rank}: ¡FUERA gana seguro!` : "Si sale un extremo, pierdes";
+      btns = [{ g: "In", cls: "in", ico: "→←", lbl: "DENTRO", dis: eq }, { g: "Out", cls: "out", ico: "←→", lbl: "FUERA" }];
+    } else if (R === 4) {
+      q = "¿QUÉ PALO SALDRÁ?"; sub = `¡Acierta y multiplica <b>x24</b>!`; four = true;
+      btns = SUITS.map((s) => ({ g: s, cls: "suit" + (isRed(s) ? " rs" : ""), ico: T(s), lbl: "" }));
+    }
+    const retireAmt = potNow();
+    setDock(`
+      <div class="q"><h3>${q}</h3><p>${sub}</p></div>
+      <div class="choices${four ? " four" : ""}">
+        ${btns.map((b) => `<button class="ax-btn cbtn ${b.cls}" data-g="${b.g}" ${b.dis ? "disabled" : ""} aria-label="${b.lbl || b.g}">
+            <span class="row"><span class="ico">${b.ico}</span>${b.lbl ? `<span class="lbl">${b.lbl}</span>` : ""}</span>
+            <span class="pr">${pct(prob(R, b.g))}</span></button>`).join("")}
+      </div>
+      <button class="ax-btn ax-btn-ghost ax-btn-block retire" id="retireBtn">${R === 1 ? "↩ RETIRARSE" : "💰 RETIRARSE"} · <b>${money(retireAmt)}</b></button>`);
+    dock.querySelectorAll(".cbtn").forEach((b) => b.addEventListener("click", () => guess(b.dataset.g, b)));
+    $("retireBtn").addEventListener("click", retire);
+  }
+
+  async function guess(g, btn) {
+    if (S.busy || S.phase !== "play") return;
+    const R = S.round;
+    const last = S.cards[S.cards.length - 1], prev = S.cards[S.cards.length - 2];
+    if (R === 3 && g === "In" && prev && last && prev.value === last.value) return;
+    S.busy = true;
+    btn.classList.add("picked");
+    lockDock(true);
+    sfx.play("click"); AX.haptic("tap");
+
+    const card = drawFor(R);
+    if (!card) { AX.toast("La baraja está vacía", "error"); S.busy = false; return; }
+    const ok = isCorrect(R, g, card, prev, last);
+    const idx = S.cards.length;
+    S.cards.push(card);
+    // Se resuelve y guarda el resultado ANTES de animar (recargar no permite repetir)
+    if (ok) {
+      S.streak++;
+      stats.longestStreak = Math.max(stats.longestStreak, S.streak); saveStats();
+      if (R === 4) S.phase = "choice"; else S.round++;
+      saveSession();
+    } else {
+      if (S.guided) S.guided = false;
+      S.phase = "over"; S.lostAt = R;
+      clearSession();
+      endStats(0, false);
+      S.last = { kind: "lose", amount: -S.bet, gross: S.bet, text: `Salió ${card.rank}${T(card.suit)} en la ronda ${R}` };
+    }
+
+    updateDeckCount();
+    const slot = slots[idx];
+    slot.classList.remove("next");
+    const el = makeCard(card, false);
+    stage.appendChild(el);
+    table.classList.add("focus");
+    await flyFromDeck(el, stage, 560);
+    const ms = { 1: 420, 2: 700, 3: 950, 4: 1300 }[R];
+    await suspense(el, ms, R >= 3);
+    await flip(el, R >= 3);
+    const p = AX.center(el);
+
+    if (ok) {
+      el.classList.add("win");
+      celebrateRound(p, R);
+      await sleep(R === 4 ? 900 : 520);
+      table.classList.remove("focus");
+      await settleTo(el, slot);
+      updatePot(true);
+      updateLadder(R);
+      if (R === 4) {
+        AX.cine.banner("¡PERFECTO!", { sub: "4 de 4 · ¿cobras o duelo?", color: "rgba(255, 47, 179, 0.92)", duration: 1600, sound: "powerup" });
+        await sleep(RM ? 100 : 600);
+      } else {
+        markNextSlot();
+        roundBanner(S.round);
+        await sleep(RM ? 100 : 450);
+      }
+      render();
+    } else {
+      el.classList.add("lose");
+      stamp(el, "FALLO", "lose");
+      sfx.play("impact"); sfx.play("error"); AX.haptic("heavy");
+      AX.fx.shake(14, 500); AX.fx.flash("#ff0030", 380, 0.35);
+      AX.fx.burst(p.x, p.y, { count: 40, colors: "blood", speed: 520 });
+      updateLadder();
+      await sleep(1000);
+      const subs = { 1: "El color no acompañó", 2: "La carta te traicionó", 3: "Se escapó del rango", 4: "El palo era otro" };
+      await AX.cine.defeat({ title: "¡FALLASTE!", subtitle: `${subs[R]} · −${money(S.bet)}`, duration: 2000 });
+      table.classList.remove("focus");
+      await settleTo(el, slot);
+      render();
+    }
+    S.busy = false;
+  }
+
+  function celebrateRound(p, R) {
+    sfx.play("win"); sfx.play("coin");
+    AX.haptic(R >= 3 ? "win" : "success");
+    AX.fx.shockwave(p.x, p.y, { color: "#2bff88", radius: 120 + R * 40, width: 8, rings: R >= 3 ? 2 : 1 });
+    AX.fx.sparks(p.x, p.y, { colors: "green", count: 24 + R * 10, speed: 560 + R * 60 });
+    AX.fx.floatText(p.x, p.y - 30, `¡ACIERTO! x${MULT[R]}`, { color: R === 4 ? "#ffcc33" : "#2bff88", size: R === 4 ? 34 : 28 });
+    if (R >= 3) AX.fx.stars(p.x, p.y, { count: 14 });
+    if (R === 4) {
+      sfx.play("bigwin");
+      AX.fx.flash("#ffd23f", 450, 0.4);
+      AX.fx.cannons({ count: 55 });
+      AX.fx.shake(10, 500);
+    }
+  }
+
+  /** Abona `amount` al saldo de forma inmediata (persistente) pero retrasa la animación del HUD. */
+  function creditNow(amount) {
+    const prev = AX.getBalance();
+    const before = AX.getUnlocked();
+    AX.addBalance(amount, { silent: true, notify: false });
+    const after = AX.getUnlocked();
+    const fresh = AX.ACHIEVEMENTS.filter((a) => after.includes(a.id) && !before.includes(a.id));
+    hud.setBalance(prev, false);
+    return fresh;
+  }
+  async function payout(amount, fresh, label) {
+    const from = AX.center(potEl);
+    if (amount > S.bet) await AX.cine.bigWin(amount, { bet: S.bet, label });
+    else { AX.toast("Apuesta devuelta", "info"); }
+    AX.fx.coinBurst(from.x, from.y, { count: 16 });
+    sfx.play("coin");
+    await AX.fx.coinsTo(from, hud.center(), { count: clamp(Math.round(6 + Math.log10(Math.max(10, amount)) * 3), 8, 24) });
+    hud.setBalance(AX.getBalance(), true);
+    const hc = hud.center();
+    AX.fx.glow(hc.x, hc.y, { size: 90, life: 0.5 });
+    AX.fx.sparks(hc.x, hc.y, { count: 16, speed: 300 });
+    sfx.play("cash"); AX.haptic("success");
+    if (fresh && fresh.length) AX.achievementQueue(fresh);
+  }
+
+  async function retire() {
+    if (S.busy || S.phase !== "play") return;
+    S.busy = true;
+    lockDock(true);
+    sfx.play("tap"); AX.haptic("medium");
+    const amount = potNow();
+    const roundAt = S.round;
+    S.phase = "over"; S.lostAt = 0;
+    clearSession();
+    const fresh = creditNow(amount);
+    stats.cashouts++;
+    endStats(amount > S.bet ? amount : 0, false);
+    S.last = amount > S.bet
+      ? { kind: "win", amount: amount - S.bet, gross: amount, text: `Te retiraste antes de la ronda ${roundAt}` }
+      : { kind: "even", amount: 0, gross: amount, text: "Recuperaste tu apuesta" };
+    markNextSlot(); updateLadder();
+    await payout(amount, fresh, `Te retiras con ${money(amount)}`);
+    render();
+    S.busy = false;
+  }
+
+  // ---------------------------------------------------- decisión final
+  function renderChoice() {
+    const pool = S.deck;
+    const pw = duelProb(pool);
+    setDock(`
+      <div class="q"><h3>¿TODO O NADA?</h3><p>Tu carta contra la de la banca · prob. <b>${pct(pw)}</b></p></div>
+      <div class="offer">
+        <button class="ax-btn ax-btn-green" id="collectBtn"><small>COBRAR x24</small><span class="big">${money(S.bet * MULT[4])}</span></button>
+        <button class="ax-btn gamble" id="gambleBtn"><small>⚔ DUELO x50</small><span class="big">${money(S.bet * R5_MULT)}</span></button>
+      </div>`);
+    $("collectBtn").addEventListener("click", collect);
+    $("gambleBtn").addEventListener("click", startDuel);
+  }
+  async function collect() {
+    if (S.busy || S.phase !== "choice") return;
+    S.busy = true; lockDock(true);
+    sfx.play("tap"); AX.haptic("medium");
+    const amount = S.bet * MULT[4];
+    S.phase = "over"; clearSession();
+    const fresh = creditNow(amount);
+    stats.cashouts++;
+    endStats(amount, true);
+    S.last = { kind: "win", amount: amount - S.bet, gross: amount, text: "Cobraste el premio de la ronda 4" };
+    updateLadder();
+    await payout(amount, fresh, "Premio de la ronda 4");
+    render();
+    S.busy = false;
+  }
+  async function startDuel() {
+    if (S.busy || S.phase !== "choice") return;
+    S.busy = true; lockDock(true);
+    sfx.play("boom"); AX.haptic("heavy");
+    AX.fx.flash("#ff2fb3", 400, 0.35);
+    if (S.deck.length < 2) { // salvaguarda original: se cobra la ronda 4
+      S.busy = false; AX.toast("No quedan cartas: se cobra la ronda 4", "error"); return collect();
+    }
+    S.round = 5; S.phase = "r5";
+    S.duel = { p: drawCard(), d: drawCard() };
+    saveSession();
+    updateLadder(); updatePot(true); updateDeckCount();
+    await clearTable();
+    setMode("duel");
+    await sleep(30);
+    AX.cine.banner("DUELO FINAL", { sub: "x50 · Todo o nada", color: "rgba(255, 47, 179, 0.92)", duration: 1600 });
+    await sleep(500);
+    await dealDuel();
+    render();
+    S.busy = false;
+  }
+  async function dealDuel(instant) {
+    const pc = makeCard(S.duel.p, false), dc = makeCard(S.duel.d, false);
+    pc.classList.add("duel-p"); dc.classList.add("duel-d");
+    dslotP.appendChild(pc); dslotD.appendChild(dc);
+    if (!instant) {
+      await flyFromDeck(pc, dslotP, 480); dslotP.classList.remove("lift");
+      await flyFromDeck(dc, dslotD, 480); dslotD.classList.remove("lift");
+    }
+    table.classList.add("deck-hidden");
+  }
+  function renderDuel() {
+    const pw = duelProb(S.deck.concat([S.duel.p, S.duel.d]));
+    setDock(`
+      <div class="q"><h3>⚔ DUELO FINAL</h3><p>Tu carta debe ser <b>MAYOR</b> · empate pierde · prob. <b>${pct(pw)}</b></p></div>
+      <button class="ax-btn ax-btn-gold ax-btn-block hold" id="holdBtn"><span class="fill"></span><span class="txt">MANTÉN PARA REVELAR</span></button>`);
+    const b = $("holdBtn");
+    let raf = 0, t0 = 0, fired = false, lastTick = -1;
+    const HOLD = 950;
+    const reset = () => { cancelAnimationFrame(raf); b.classList.remove("holding"); b.style.setProperty("--p", 0); };
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / HOLD);
+      b.style.setProperty("--p", p.toFixed(3));
+      const tk = Math.floor(p * 8);
+      if (tk !== lastTick) { lastTick = tk; holdTick(p); AX.haptic(8 + Math.round(p * 20)); }
+      if (p >= 1) { fired = true; b.classList.remove("holding"); revealDuel(); return; }
+      raf = requestAnimationFrame(step);
+    };
+    b.addEventListener("pointerdown", (e) => {
+      if (fired || S.busy) return;
+      e.preventDefault();
+      try { b.setPointerCapture(e.pointerId); } catch (err) {}
+      t0 = performance.now(); lastTick = -1;
+      b.classList.add("holding");
+      raf = requestAnimationFrame(step);
+    });
+    const release = () => {
+      if (fired || !b.classList.contains("holding")) return;
+      reset();
+      b.querySelector(".txt").textContent = "¡MANTÉN PULSADO!";
+      sfx.play("tick");
+    };
+    b.addEventListener("pointerup", release);
+    b.addEventListener("pointercancel", release);
+    b.addEventListener("contextmenu", (e) => e.preventDefault());
+    b.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && !fired) { e.preventDefault(); fired = true; revealDuel(); } });
+  }
+  async function revealDuel() {
+    if (S.busy || S.phase !== "r5") return;
+    S.busy = true; lockDock(true);
+    const { p, d } = S.duel;
+    const win = p.value > d.value, tie = p.value === d.value;
+    const prize = S.bet * R5_MULT;
+    // resolver y persistir antes de animar
+    S.phase = "over"; clearSession();
+    stats.duelsPlayed++;
+    let fresh = [];
+    if (win) {
+      fresh = creditNow(prize);
+      S.streak = 5;
+      stats.duelsWon++;
+      endStats(prize, true);
+      S.last = { kind: "win", amount: prize - S.bet, gross: prize, text: `¡Duelo ganado! ${p.rank}${T(p.suit)} contra ${d.rank}${T(d.suit)}` };
+    } else {
+      S.lostAt = 5;
+      endStats(0, false);
+      S.last = { kind: "lose", amount: -S.bet, gross: S.bet, text: `${tie ? "Empate" : "La banca gana"}: ${p.rank}${T(p.suit)} contra ${d.rank}${T(d.suit)}` };
+    }
+    const hb = $("holdBtn"); if (hb) { hb.style.setProperty("--p", 1); hb.querySelector(".txt").textContent = "REVELANDO…"; }
+    const pc = dslotP.querySelector(".card"), dc = dslotD.querySelector(".card");
+    table.classList.add("focus");
+    dslotP.classList.add("lift");
+    await suspense(pc, 650, false);
+    await flip(pc, true);
+    const pp = AX.center(pc);
+    AX.fx.floatText(pp.x, pp.y - pc.offsetHeight * 0.55, `${p.rank}${T(p.suit)}`, { color: "#22e4ff", size: 30 });
+    AX.fx.sparks(pp.x, pp.y, { colors: "ice", count: 26 });
+    await sleep(500);
+    dslotD.classList.add("lift");
+    dc.style.setProperty("--gc", "rgba(255,47,179,.95)");
+    await suspense(dc, 1900, true);
+    await flip(dc, true);
+    const dp = AX.center(dc);
+    if (win) {
+      pc.classList.add("win"); dc.classList.add("lose");
+      stamp(pc, "¡GANAS!", "win");
+      sfx.play("boom"); sfx.play("jackpot");
+      AX.haptic("bigwin");
+      AX.fx.flash("#ffffff", 500, 0.7);
+      AX.fx.shake(18, 700);
+      AX.fx.shockwave(pp.x, pp.y, { color: "#ffcc33", radius: Math.max(innerWidth, innerHeight), width: 18, rings: 3 });
+      AX.fx.sparks(pp.x, pp.y, { count: 90, speed: 1100 });
+      AX.fx.fireworks({ count: 6, duration: 1600 });
+      updateLadder(5);
+      await sleep(1400);
+      table.classList.remove("focus");
+      await payout(prize, fresh, "¡DUELO GANADO! x50");
+    } else {
+      pc.classList.add("lose");
+      if (!tie) { dc.classList.add("win"); }
+      stamp(pc, tie ? "EMPATE" : "PIERDES", "lose");
+      sfx.play("impact"); AX.haptic("heavy");
+      AX.fx.shake(16, 550); AX.fx.flash("#ff0030", 400, 0.4);
+      AX.fx.burst(dp.x, dp.y, { count: 46, colors: ["#ff2fb3", "#8b5cff", "#fff"], speed: 600 });
+      updateLadder();
+      await sleep(1100);
+      await AX.cine.defeat({ title: tie ? "¡EMPATE!" : "¡GANA LA BANCA!", subtitle: `Se esfuma un bote de ${money(S.bet * MULT[4])}`, duration: 2200 });
+      table.classList.remove("focus");
+    }
+    dslotP.classList.remove("lift"); dslotD.classList.remove("lift");
+    render();
+    S.busy = false;
+  }
+
+  // ---------------------------------------------------- fin
+  function renderOver() {
+    const L = S.last || { kind: "even", amount: 0, text: "" };
+    updatePot(true);
+    const bal = AX.getBalance();
+    const again = Math.min(S.bet, bal);
+    const res = L.kind === "win" ? `+${money(L.amount)}` : L.kind === "lose" ? `−${money(-L.amount)}` : "±0 €";
+    setDock(`
+      <div class="over"><div class="res ${L.kind}">${res}</div><p>${L.text}${S.streak ? ` · ${S.streak} acierto${S.streak > 1 ? "s" : ""}` : ""}</p></div>
+      <div class="row2">
+        <button class="ax-btn ax-btn-ghost" id="changeBtn">APUESTA</button>
+        <button class="ax-btn ax-btn-gold again" id="againBtn" ${again < MIN_BET ? "disabled" : ""}>${again < MIN_BET ? "SIN SALDO" : `REPETIR<small>${money(again)}</small>`}</button>
+      </div>`);
+    $("againBtn").addEventListener("click", () => { if (S.busy) return; sfx.play("tap"); startGame(again); });
+    $("changeBtn").addEventListener("click", async () => {
+      if (S.busy) return;
+      S.busy = true; sfx.play("tap");
+      S.phase = "bet";
+      S.betInput = Math.max(MIN_BET, Math.min(S.bet || S.betInput, Math.max(MIN_BET, AX.getBalance())));
+      await clearTable();
+      setMode("bet"); updateLadder(); updatePot(); updateDeckCount();
+      render();
+      S.busy = false;
+    });
+  }
+
+  // ---------------------------------------------------- estadísticas / reglas
+  function openStats() {
+    stats = Object.assign(loadStats(), { longestStreak: Math.max(loadStats().longestStreak, stats.longestStreak) });
+    const rate = stats.gamesPlayed ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) + "%" : "—";
+    AX.modal({
+      title: "ESTADÍSTICAS",
+      html: `
+        <div class="stats-grid">
+          <div class="stat"><small>Partidas</small><b>${AX.fmt(stats.gamesPlayed)}</b></div>
+          <div class="stat"><small>Ganadas</small><b>${AX.fmt(stats.gamesWon)} <span style="font-size:12px;color:var(--ax-muted)">${rate}</span></b></div>
+          <div class="stat"><small>Mayor premio</small><b>${money(stats.highestWin)}</b></div>
+          <div class="stat"><small>Mejor racha</small><b>${AX.fmt(stats.longestStreak)}</b></div>
+          <div class="stat"><small>Duelos ganados</small><b>${AX.fmt(stats.duelsWon)} / ${AX.fmt(stats.duelsPlayed)}</b></div>
+          <div class="stat"><small>Saldo máximo</small><b>${money(stats.maxBalance)}</b></div>
+        </div>
+        <div class="modal-h">Cómo se juega</div>
+        <ul class="rules">
+          <li><b>x2</b><span><strong>Ronda 1:</strong> ¿la carta será roja o negra?</span></li>
+          <li><b>x3</b><span><strong>Ronda 2:</strong> ¿mayor o menor que la anterior? El empate pierde.</span></li>
+          <li><b>x4</b><span><strong>Ronda 3:</strong> ¿dentro o fuera del rango de las dos cartas? Los extremos pierden; con cartas iguales, «Fuera» gana.</span></li>
+          <li><b>x24</b><span><strong>Ronda 4:</strong> adivina el palo.</span></li>
+          <li><b class="m">x50</b><span><strong>Duelo:</strong> cobra x24 o arriésgalo todo: tu carta contra la de la banca. Si la superas, x50.</span></li>
+          <li><b>💰</b><span>Antes de cada ronda puedes <strong>retirarte</strong> con el bote. Tu partida se guarda si sales.</span></li>
+        </ul>`,
+      buttons: [{ label: "¡A jugar!", kind: "gold", value: true }],
+    });
+  }
+
+  /* ================================================================ MODO GUIADO SECRETO */
+  // Igual que el original: doble toque sobre el saldo antes de apostar.
+  (function secret() {
+    const chip = hud.balanceEl; if (!chip) return;
+    let lastTap = 0;
+    const trigger = () => {
+      if (S.phase !== "bet" || S.busy) return;
+      S.nextGuided = true;
+      AX.haptic("light");
+      chip.animate([{ transform: "scale(1)" }, { transform: "scale(1.07)" }, { transform: "scale(1)" }], { duration: 220 });
+    };
+    chip.addEventListener("pointerup", () => { const t = Date.now(); if (t - lastTap < 350) { trigger(); lastTap = 0; } else lastTap = t; });
+  })();
+
+  /* ================================================================ SINCRONIZACIÓN */
+  addEventListener("storage", (e) => {
+    if (e.key === STATS_KEY && !S.busy) stats = loadStats();
+    if (e.key === AX.KEYS.BALANCE && S.phase === "bet" && !S.busy) setBetInput(S.betInput);
+  });
+  AX.onBalance(() => { if (S.phase === "bet" && !S.busy && $("betIn") && document.activeElement !== $("betIn")) setBetInput(S.betInput); });
+
+  /* ================================================================ INICIO */
+  function buildFan() {
+    fan.innerHTML = "";
+    ["♠", "♥", "♣", "♦"].forEach((s) => fan.appendChild(makeCard(mk("A", s), true)));
+  }
+  function restoreSession() {
+    const o = readSession();
+    if (!o) return false;
+    Object.assign(S, { phase: o.phase, bet: o.bet, round: o.round, streak: o.streak, guided: o.guided, cards: o.cards, deck: o.deck, duel: o.duel, lostAt: 0 });
+    if (o.phase === "r5") {
+      setMode("duel");
+      dealDuel(true);
+    } else {
+      setMode("play");
+      S.cards.forEach((c, i) => { const n = makeCard(c, true); n.classList.add("win"); slots[i].appendChild(n); });
+      markNextSlot();
+    }
+    updatePot(); updateLadder(); updateDeckCount();
+    return true;
+  }
+
+  buildFan();
+  layout();
+  const resumed = restoreSession();
+  if (!resumed) { setMode("bet"); updatePot(); updateLadder(); updateDeckCount(); }
+  render();
+  S.busy = true;
+  lockDock(true);
+  AX.cine.intro({ title: "Adivina la Carta", subtitle: "5 rondas · hasta x50", icon: "🃏", color: "#22e4ff", once: true }).then(() => {
+    S.busy = false;
+    lockDock(false);
+    render();
+    if (resumed) { AX.toast("Partida recuperada", "gold"); sfx.play("shimmer"); }
+  });
+
+  // Gancho para pruebas automatizadas (no afecta al juego)
+  window.__AC = { S, stats: () => stats };
+})();
+</script>
 </body>
 </html>
