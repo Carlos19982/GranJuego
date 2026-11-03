@@ -1030,6 +1030,8 @@ function buildTvCams() {
       if ((!ok || q + 5 > s + 150) && w0 !== null) { const w1 = ok ? q : prevQ; if (!best || w1 - w0 > best[1] - best[0]) best = [w0, w1]; w0 = null; }
       prevQ = q;
     }
+    // si nuestra comprobación de visibilidad no encuentra tramo, se usa el que declara el decorado
+    if ((!best || best[1] - best[0] <= 60) && c.w0 != null && c.w1 != null && c.w1 - c.w0 > 60) best = [c.w0, c.w1];
     if (best && best[1] - best[0] > 60) out.push({ pos: cp.clone(), w0: best[0], w1: best[1], s, occ });
   }
   W.tv = out;
