@@ -2042,7 +2042,7 @@ ui.betInput.addEventListener('input', () => { const raw = ui.betInput.value.repl
 ui.betInput.addEventListener('blur', () => setBet(bet));
 ui.betInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') ui.betInput.blur(); });
 ui.startBtn.addEventListener('click', () => startRace());
-AX.onBalance(() => { if (state === 'garage') setBet(bet); });
+AX.onBalance(() => { if (state === 'garage' && !stake) setBet(bet); });
 
 /* =====================================================================
    TWEENS
@@ -2705,10 +2705,13 @@ async function startRace() {
   if (bet < 1) { AX.toast('La apuesta mínima es 1 €', 'error'); AX.sfx.play('error'); return; }
   if (bet > bal) { AX.toast('Saldo insuficiente', 'error'); AX.sfx.play('error'); AX.haptic('error'); return; }
   const odds = oddsOf(sel);
-  if (!AX.spend(bet)) { AX.toast('Saldo insuficiente', 'error'); return; }
+  // Fijar la cantidad ANTES de cobrar: AX.spend dispara onBalance, que en el garaje reajusta `bet` al saldo restante
+  const amount = bet, car = sel, kind = betKind;
+  if (!AX.spend(amount)) { AX.toast('Saldo insuficiente', 'error'); return; }
+  bet = amount;
   AUD.init();
   const seed = pickSeed();
-  stake = { car: sel, kind: betKind, bet, odds, payout: Math.floor(bet * odds), credited: false, settled: false };
+  stake = { car, kind, bet: amount, odds, payout: Math.floor(amount * odds), credited: false, settled: false };
   savePending({ v: 2, id: market.id, seed, cond: market.cond, form: market.form, grid: market.grid, stake: Object.assign({}, stake) });
   store.del(K_MARKET);
   store.set('coches_bet_v2', bet); store.set('coches_car_v2', sel);
