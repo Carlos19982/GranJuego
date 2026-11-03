@@ -561,7 +561,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     const panel = new THREE.PlaneGeometry(5.4, 3.4).translate(0, 0, 0.07);
     const frame = new THREE.PlaneGeometry(5.4, 3.4).rotateY(Math.PI).translate(0, 0, -0.07);
     const pole = new THREE.BoxGeometry(0.32, 3.2, 0.32, 1, 1, 1).translate(0, -1.75, -0.2);
-    const parts = [panel, frame, pole].map((g) => g.toNonIndexed());
+    const parts = [panel, frame, pole].map((g) => (g.index ? g.toNonIndexed() : g));
     const geo = mergeGeometries(parts.map((g) => { for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k); return g; }));
     parts.forEach((g) => g.dispose()); panel.dispose(); frame.dispose(); pole.dispose();
     const n = geo.attributes.position.count, isM = new Float32Array(n), pa = geo.attributes.position.array, na = geo.attributes.normal.array;
@@ -1462,13 +1462,13 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
   {
     const prof = []; for (let k = 0; k <= 12; k++) { const t = k / 12, a = t * Math.PI; const r = Math.sin(a) ** 0.9 * (t > 0.5 ? 1 : 0.62 + 0.38 * Math.sin(a)) * 9; prof.push(new THREE.Vector2(Math.max(0.6, r), -9 + 22 * (1 - Math.cos(a * 0.92)) * 0.5)); }
     prof.reverse();
-    const env = new THREE.LatheGeometry(prof, 16).toNonIndexed();
+    const env = (() => { const lg = new THREE.LatheGeometry(prof, 16); return lg.index ? lg.toNonIndexed() : lg; })();
     const mask = new Float32Array(env.attributes.position.count);
     const pa = env.attributes.position.array;
     for (let i = 0; i < mask.length; i += 3) { const cx = (pa[i * 3] + pa[i * 3 + 3] + pa[i * 3 + 6]) / 3, cz = (pa[i * 3 + 2] + pa[i * 3 + 5] + pa[i * 3 + 8]) / 3, cy = (pa[i * 3 + 1] + pa[i * 3 + 4] + pa[i * 3 + 7]) / 3; const a = Math.atan2(cz, cx); const g = Math.floor(((a + Math.PI) / (Math.PI * 2)) * 16) % 2; const m = cy > 9.5 ? 1 : g; mask[i] = mask[i + 1] = mask[i + 2] = m; }
     env.setAttribute('aMask', new THREE.BufferAttribute(mask, 1));
     for (const k of Object.keys(env.attributes)) if (!['position', 'normal', 'aMask'].includes(k)) env.deleteAttribute(k);
-    const basket = new THREE.BoxGeometry(2.4, 1.8, 2.4).translate(0, -13.5, 0).toNonIndexed();
+    const basket = new THREE.BoxGeometry(2.4, 1.8, 2.4).translate(0, -13.5, 0).toNonIndexed(); // Box es indexada
     for (const k of Object.keys(basket.attributes)) if (!['position', 'normal'].includes(k)) basket.deleteAttribute(k);
     basket.setAttribute('aMask', new THREE.BufferAttribute(new Float32Array(basket.attributes.position.count).fill(2), 1));
     const geo = mergeGeometries([env, basket]); env.dispose(); basket.dispose();
@@ -1498,7 +1498,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
       for (let k = 0; k < 70; k++) { x.lineWidth = 1 + r() * 2.2; x.beginPath(); let px = r() * w, py = r() * h; x.moveTo(px, py); for (let s = 0; s < 3; s++) { px += (r() - 0.5) * 50; py += (r() - 0.5) * 50; x.lineTo(px, py); } x.stroke(); }
     }));
     const g1 = new THREE.IcosahedronGeometry(0.75, 1), g2 = new THREE.IcosahedronGeometry(0.5, 0);
-    const geo = mergeGeometries([g1, g2].map((g) => g.toNonIndexed())); g1.dispose(); g2.dispose();
+    const geo = mergeGeometries([g1, g2].map((g) => (g.index ? g.toNonIndexed() : g))); g1.dispose(); g2.dispose();
     const mat = own(patch(new THREE.MeshLambertMaterial({ map: twig, alphaTest: 0.4, side: THREE.DoubleSide, color: 0xc8a070 }), 'tumble'));
     tumble = new THREE.InstancedMesh(geo, mat, Q.tumble);
     for (let k = 0; k < Q.tumble; k++) TUM.push({ x: 0, z: 0, y: 0, a: 0, r: R(0.8, 1.3), sp: R(3.5, 7), ph: R(0, 6), alive: false });

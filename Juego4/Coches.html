@@ -664,14 +664,11 @@ const garageEnv = makeEnvMap('garage');
 /* =====================================================================
    UTILIDADES
    ===================================================================== */
-const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _p = new THREE.Vector3();
+const _m = new THREE.Matrix4(), _s = new THREE.Vector3();
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _v4 = new THREE.Vector3();
-const linColor = (c, k = 1) => { const col = new THREE.Color(c); return [col.r * k, col.g * k, col.b * k]; };
 const TP = {};
 /** Línea central a una distancia s (cualquier valor; se envuelve). */
 const trackAt = (s, o = TP) => sampleTrack(W.T, s, o);
-const yawAt = (o) => Math.atan2(o.tx, o.tz);
-const latM = (s, lat) => CIRC.lateralToMetres(W.T, s, lat);
 function hexA(hex, a) { const c = new THREE.Color(hex); return `rgba(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)},${a})`; }
 function segHitsBox(p, q, b) {
   let t0 = 0, t1 = 1;
@@ -879,7 +876,7 @@ const cars = CARS.map((def, i) => ({
   pos: new THREE.Vector3(), vel: new THREE.Vector3(), prev: new THREE.Vector3(), yaw: 0,
   s: 0, v: 0, lat: 0, gear: 1, rpm: 0.15, throttle: 0, slip: 0, brake: 0, draft: 0, state: 'run', flameT: 0, lod: 0, visible: true, dmg: 0, err: 0, lamps: 0,
 }));
-const SC = { brake: 0, state: 'run', m: null, pose: null, pos: new THREE.Vector3(), vel: new THREE.Vector3(), prev: new THREE.Vector3(), yaw: 0, v: 0, lastDist: null, visible: false, bar: null, barMats: null, restY: 0, rc: { dist: 0, lateral: 0, v: 0, throttle: 0.5, brake: 0, slip: 0, gear: 4, rpm: 0.5, state: 'run', cond: 1, error: 0 } };
+const SC = { brake: 0, state: 'run', m: null, pose: null, pos: new THREE.Vector3(), vel: new THREE.Vector3(), prev: new THREE.Vector3(), yaw: 0, v: 0, lastDist: null, visible: false, restY: 0, rc: { dist: 0, lateral: 0, v: 0, throttle: 0.5, brake: 0, slip: 0, gear: 4, rpm: 0.5, state: 'run', cond: 1, error: 0 } };
 let carGlow = null, glowSlots = [];
 const ALLC = cars.concat([SC]);
 
@@ -887,8 +884,6 @@ function disposeModel(m) { if (!m) return; try { m.root.parent && m.root.parent.
 function disposeWorld() {
   cars.forEach((c) => { disposeModel(c.m); c.m = null; });
   disposeModel(SC.m); SC.m = null;
-  if (SC.bar) { SC.bar.geometry.dispose(); SC.barGeo.dispose(); SC.barMats.forEach((m) => m.dispose()); SC.bar = null; SC.barGeo = null; }
-  SC.barMats = null;
   if (carGlow) { scene.remove(carGlow); carGlow.geometry.dispose(); carGlow.material.dispose(); carGlow = null; }
   if (W.scenery) { try { W.scenery.dispose(); } catch (e) { console.warn(e); } if (W.scenery.group && W.scenery.group.parent) W.scenery.group.parent.remove(W.scenery.group); W.scenery = null; }
   if (W.surface) { try { W.surface.dispose(); } catch (e) { console.warn(e); } if (W.surface.group && W.surface.group.parent) W.surface.group.parent.remove(W.surface.group); W.surface = null; }
@@ -912,26 +907,18 @@ function applyEnv(env = {}) {
   syncFog();
   W.exposure = env.exposure != null ? env.exposure : 1.05;
   W.bloom = Object.assign({ strength: 0.55, radius: 0.32, threshold: 1.0 }, env.bloom || {});
-  const A = env.ambient || {};
+  applyAmbient(env.ambient);
+  // el decorado puede cambiar la luz con el tiempo (tormenta de arena…): avisa con onChange
+  try { env.onChange = () => { applyAmbient(env.ambient); syncFog(); }; } catch (e) {}
+}
+function applyAmbient(A = {}) {
+  A = A || {};
   const h = A.hemi || {}, s = A.sun || {};
   hemi.color.set(h.sky != null ? h.sky : 0x5b4bb0); hemi.groundColor.set(h.ground != null ? h.ground : 0x1a0b28); hemi.intensity = h.intensity != null ? h.intensity : 0.9;
   sun.color.set(s.color != null ? s.color : 0xa8b8ff); sun.intensity = s.intensity != null ? s.intensity : 0.85;
   if (Array.isArray(s.dir) && s.dir.length === 3) SUN_DIR.set(s.dir[0], s.dir[1], s.dir[2]).normalize(); else SUN_DIR.set(-0.45, 0.8, 0.3).normalize();
   // humo acorde con la luz del escenario
   SMOKE_COL.value.copy(hemi.color).lerp(new THREE.Color(0.55, 0.52, 0.6), 0.6).multiplyScalar(0.55 + 0.35 * Math.min(1.6, hemi.intensity));
-}
-function makeLightBar() {
-  // barra de luces del coche de seguridad (ámbar), 1 malla con dos materiales que parpadean
-  const g = new THREE.BoxGeometry(0.42, 0.11, 0.2);
-  const a = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 1.3, 0), toneMapped: false });
-  const b = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 1.3, 0), toneMapped: false });
-  const grp = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.07, 0.26), new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.5 }));
-  const l = new THREE.Mesh(g, a), r = new THREE.Mesh(g, b);
-  l.position.set(0.3, 0.08, 0); r.position.set(-0.3, 0.08, 0);
-  grp.add(base, l, r);
-  SC.barMats = [a, b, base.material];
-  return { grp, geo: g, base };
 }
 function setupCarModel(c, def, index, envMap) {
   const m = MODELOS.createCarModel(def, { tier: TIER, envMap, index });
@@ -993,22 +980,13 @@ function setHeadlights() {
   SC.m && SC.m.setHeadlights(k);
 }
 function makeSafetyCar() {
-  let m = null;
-  const mk = MODELOS.createSafetyCar || MODELOS.createSafetyCarModel;
-  try { if (typeof mk === 'function') m = mk({ tier: TIER, envMap: W.carEnv }); } catch (e) { console.warn(e); m = null; }
-  if (!m) {
-    m = MODELOS.createCarModel(SC_DEF, { tier: TIER, envMap: W.carEnv, index: 1 });
-    const lb = makeLightBar();
-    const h = (m.dims && m.dims.height) || 1.25;
-    lb.grp.position.set(0, h + 0.02, -0.25);
-    (m.body || m.root).add(lb.grp);
-    SC.bar = lb.base; SC.barGrp = lb.grp; SC.barGeo = lb.geo;
-  }
+  // coche de seguridad de coches-modelo.js (GT de calle con barra ámbar y setBeacon)
+  const m = typeof MODELOS.createSafetyCar === 'function' ? MODELOS.createSafetyCar({ tier: TIER, envMap: W.carEnv }) : MODELOS.createCarModel(SC_DEF, { tier: TIER, envMap: W.carEnv, index: 1, safety: true });
   m.root.rotation.order = 'YXZ';
   m.root.visible = false;
   SC.m = m; SC.restY = m.body ? m.body.position.y : 0; SC.visible = false;
   if (Q.shadows) m.root.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-  scene.add(m.root);
+  if (!m.root.parent) scene.add(m.root);
 }
 
 /* ---------------- Cámaras de TV (del decorado) con línea de visión ---------------- */
@@ -1687,7 +1665,7 @@ function springRel(st, key, anchor, target, omega, dt) {
   return _v4.set(anchor.x + o.x, anchor.y + o.y, anchor.z + o.z);
 }
 const localToWorld = (origin, yaw, x, y, z, out) => { const c = Math.cos(yaw), s = Math.sin(yaw); return out.set(origin.x + x * c + z * s, origin.y + y, origin.z - x * s + z * c); };
-const subjectPos = new THREE.Vector3(), packPos = new THREE.Vector3();
+const packPos = new THREE.Vector3();
 function packCenter(out) {
   out.set(0, 0, 0); let n = 0, sAvg = 0;
   cars.forEach((c) => { if (c.visible && c.state !== 'dnf') { out.add(c.pos); sAvg += c.s; n++; } });
@@ -1847,10 +1825,13 @@ function evalShot(sh, dt, P, L) {
     }
     case 'podium': {
       const pd = W.pod, c0 = podCenter(_sp);
-      const a = (pd ? pd.yaw : 0) + Math.sin(now * 0.25) * 0.4, r = clamp(9 * pk, 10, 12); // más lejos, las barreras de la pista entran en plano
-      P.set(c0.x + Math.sin(a) * r, c0.y + 3.6 + Math.sin(now * 0.3) * 0.3, c0.z + Math.cos(a) * r);
+      // distancia según el formato: en vertical hay que alejarse para que quepan los tres; la altura crece con ella (mira por encima de las barreras)
+      const span = podSpan() + 4, hf = 2 * Math.atan(Math.tan((34 * Math.PI) / 180) * aspect());
+      const r = clamp(span / (2 * 0.92 * Math.tan(hf / 2)), 11, 30);
+      const a = (pd ? pd.yaw : 0) + Math.sin(now * 0.25) * 0.35;
+      P.set(c0.x + Math.sin(a) * r, c0.y + 2.2 + r * 0.16 + Math.sin(now * 0.3) * 0.3, c0.z + Math.cos(a) * r);
       L.set(c0.x, c0.y + 0.9, c0.z);
-      fov = fitFov(r, 17, 5, 0.95);
+      fov = fitFov(P.distanceTo(L), span, 5, 0.92);
       break;
     }
   }
@@ -1883,6 +1864,11 @@ const INSIDE_SHOTS = { chase: 1, side: 1, front: 1, battle: 1, victory: 1, sc: 1
 function poseShake(c) {
   const p = c.pose; if (!p) return 0;
   return 0.05 * clamp(p.onKerb || 0, 0, 1) + 0.006 * Math.min(4, Math.abs(p.latG || 0)) + 0.008 * Math.min(4, Math.abs(p.lonG || 0)) + 0.04 * clamp(p.offTrack || 0, 0, 1);
+}
+function podSpan() {
+  const sl = W.pod && W.pod.slots; if (!sl || sl.length < 2) return 13;
+  let m = 0; for (let i = 0; i < sl.length; i++) for (let j = i + 1; j < sl.length; j++) m = Math.max(m, Math.hypot(sl[i].x - sl[j].x, sl[i].z - sl[j].z));
+  return m + 5;
 }
 function podCenter(out) {
   const pd = W.pod;
@@ -2141,6 +2127,7 @@ function setupRace(seed) {
   skids.clear(); sparks.clear(); smoke.clear();
   const wx = market.cond.weather;
   try { W.scenery.setWeather(wx); } catch (e) { console.warn(e); }
+  if (W.scenery.env) applyAmbient(W.scenery.env.ambient);
   W.wetTarget = wx === 'humedo' ? 1 : 0;
   $('#raceHud').classList.remove('sc'); document.body.classList.remove('scflag'); $('#scBanner').classList.remove('on');
 }
@@ -2224,11 +2211,6 @@ function updateSafetyCar(dt, simDt) {
   if (!SC.visible) { SC.visible = true; SC.m.root.visible = true; }
   // barra de luces: destellos alternos
   if (typeof SC.m.setBeacon === 'function') SC.m.setBeacon(sc.lights !== false, TIME.value);
-  if (SC.barMats) {
-    const ph = Math.floor(TIME.value * 6) % 2, k = sc.lights === false ? 0.6 : 3.2;
-    SC.barMats[0].color.setRGB(ph ? k : 0.25, ph ? k * 0.42 : 0.1, 0);
-    SC.barMats[1].color.setRGB(ph ? 0.25 : k, ph ? 0.1 : k * 0.42, 0);
-  }
 }
 const RUNOFF_FX = { asfalto: [0.8, 0.95, 0.0], arena: [1.0, 1.15, 1.0], hierba: [0.85, 0.75, 0.45], grava: [0.95, 1.0, 0.55] };
 const RUNOFF_KINDS = CIRC.RUNOFF_KINDS || ['asfalto', 'arena', 'hierba', 'grava'];
@@ -2632,6 +2614,7 @@ async function podium(faded = false) {
   hideCaption();
   const order = res.order;
   try { W.scenery.setWeather('seco'); } catch (e) {}
+  if (W.scenery.env) applyAmbient(W.scenery.env.ambient);
   cars.forEach((c) => { c.visible = false; c.m.root.visible = false; c.m.setFlame(0); });
   SC.visible = false; SC.m.root.visible = false;
   const pd = W.pod;
