@@ -1047,7 +1047,16 @@
           const balance = AX.getBalance();
           const amounts = [100, 1000, 5000, 10000];
           let selected = null;
-          const html = `
+          let active = null;
+          try {
+            active = JSON.parse(localStorage.getItem("stockSimActiveGame_v3") || "null");
+          } catch (e) {}
+          const resumeUrl = active && active.mode === "estrategia" ? "./Juego6/juego6b.html" : "./Juego6/juego6.html";
+          const resumeHtml = active
+            ? `<button class="ax-btn ax-btn-cyan ax-btn-block" id="inv-resume" style="margin-bottom:14px">▶ Reanudar partida${active.parked ? ` (${AX.money(active.parked)})` : ""}</button>
+               <p style="text-align:center;margin:0 0 10px;font-size:13px;color:var(--ax-muted)">o empieza una nueva:</p>`
+            : "";
+          const html = resumeHtml + `
             <p style="text-align:center;margin:0 0 12px">Elige tu inversión inicial. Saldo disponible: <b style="color:#ffe9a6">${AX.money(balance)}</b></p>
             <div class="inv-grid">
               ${amounts
@@ -1066,7 +1075,13 @@
               { label: "Cancelar", kind: "ghost", value: null },
               { label: "Invertir", kind: "green", value: "go" },
             ],
-            onOpen(root) {
+            onOpen(root, close) {
+              const resume = root.querySelector("#inv-resume");
+              if (resume)
+                resume.addEventListener("click", () => {
+                  close(null);
+                  launch(card, resumeUrl);
+                });
               const go = root.querySelectorAll(".ax-modal-actions button")[1];
               go.disabled = true;
               root.querySelectorAll(".inv-opt").forEach((b) =>
@@ -1091,7 +1106,6 @@
               return;
             }
             try {
-              sessionStorage.removeItem("stockSimGameState_v2");
               sessionStorage.setItem(GAME6_INVESTMENT_SESSION_KEY, String(selected));
             } catch (e) {
               AX.toast("No se pudo guardar la selección", "error");

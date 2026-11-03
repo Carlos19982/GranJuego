@@ -377,7 +377,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: !Q.bloom || TIER === 'high
 renderer.setPixelRatio(pixelRatio);
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = Q.shadows;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.appendChild(renderer.domElement);
@@ -396,9 +396,9 @@ const TIME = { value: 0 };
 const PSCALE = { value: 400 };
 
 // Luces
-const hemi = new THREE.HemisphereLight(0x7a63d6, 0x26103a, 1.6);
+const hemi = new THREE.HemisphereLight(0x5b4bb0, 0x1a0b28, 0.85);
 scene.add(hemi);
-const moon = new THREE.DirectionalLight(0xb0c0ff, 1.5);
+const moon = new THREE.DirectionalLight(0xa8b8ff, 0.9);
 moon.position.set(-60, 120, 40);
 scene.add(moon, moon.target);
 if (Q.shadows) {
@@ -409,7 +409,7 @@ if (Q.shadows) {
   moon.shadow.bias = -0.0008;
   moon.shadow.normalBias = 0.04;
 }
-const spot = new THREE.PointLight(0xffffff, 0, 30, 1.4);
+const spot = new THREE.PointLight(0xffffff, 0, 26, 1.6);
 spot.position.set(0, 8, 0);
 scene.add(spot);
 
@@ -422,12 +422,12 @@ let envTex;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide }));
     m.position.set(x, y, z); m.lookAt(0, 0, 0); es.add(m);
   };
-  panel(14, 3, new THREE.Color(2.6, 2.4, 2.8), 0, 9, 0);
+  panel(8, 1.6, new THREE.Color(2.2, 2.1, 2.4), 0, 9, 0);
   panel(10, 2, new THREE.Color(2.6, 0.25, 1.6), -9, 2, -3);
   panel(10, 2, new THREE.Color(0.2, 1.9, 2.8), 9, 2, 3);
   panel(8, 1.5, new THREE.Color(1.2, 0.6, 3), 0, 3, -10);
   panel(8, 1.5, new THREE.Color(2.8, 1.6, 0.4), 0, 2, 10);
-  panel(30, 30, new THREE.Color(0.12, 0.04, 0.2), 0, -8, 0);
+  panel(30, 30, new THREE.Color(0.05, 0.02, 0.09), 0, -8, 0);
   const pm = new THREE.PMREMGenerator(renderer);
   envTex = pm.fromScene(es, 0.03).texture;
   pm.dispose();
@@ -539,7 +539,7 @@ const asphaltTex = canvasTex(256, 512, (x, w, h) => {
 });
 asphaltTex.wrapT = THREE.RepeatWrapping;
 asphaltTex.wrapS = THREE.ClampToEdgeWrapping;
-const trackMat = new THREE.MeshStandardMaterial({ map: asphaltTex, roughness: 0.5, metalness: 0.2, envMap: envTex, envMapIntensity: 0.55 });
+const trackMat = new THREE.MeshStandardMaterial({ map: asphaltTex, roughness: 0.55, metalness: 0.15, envMap: envTex, envMapIntensity: 0.3 });
 const track = new THREE.Mesh(ribbonGeo(-13, 0.02, 13, 0.02, 0, PER, 2, 16), trackMat);
 track.receiveShadow = Q.shadows;
 scene.add(track);
@@ -855,7 +855,7 @@ scene.add(sky);
           float w = step(0.22, f.x) * step(f.x, 0.78) * step(0.3, f.y) * step(f.y, 0.78);
           float lit = step(0.66, hash(id + vSeed * 97.0));
           vec3 wc = mix(vec3(1.0, 0.62, 0.3), vec3(0.3, 0.85, 1.0), step(0.55, fract(vSeed * 7.31)));
-          win = wc * w * lit * 1.6;
+          win = wc * w * lit * 0.95;
           col += vec3(0.06, 0.02, 0.12) * smoothstep(0.0, 60.0, vW.y) * 0.4;
         }
         float f = 1.0 - exp(-uFogDensity * uFogDensity * vD * vD);
@@ -932,16 +932,16 @@ const ttDiscTex = canvasTex(512, 512, (x, w, h) => {
   STRUCT.add(new THREE.CylinderGeometry(5.6, 5.9, 0.12, 48), { x: TT_POS.x, y: 0.06, z: TT_POS.z }, '#0e0b1a');
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2;
-    const px = TT_POS.x + Math.cos(a) * 10, pz = TT_POS.z + Math.sin(a) * 10;
+    const px = TT_POS.x + Math.cos(a) * 13, pz = TT_POS.z + Math.sin(a) * 13;
     STRUCT.add(new THREE.BoxGeometry(0.5, 7, 0.5), { x: px, y: 3.5, z: pz }, '#191431');
     NEON.add(new THREE.BoxGeometry(0.16, 6.6, 0.56), { x: px, y: 3.5, z: pz, ry: -a }, i % 2 ? [0.6, 2.6, 4] : [4, 0.6, 2.8]);
   }
   const cone = new THREE.CylinderGeometry(0.6, 5.2, 11, 32, 1, true);
   const p = cone.attributes.position, c = new Float32Array(p.count * 3);
-  for (let i = 0; i < p.count; i++) { const k = (0.5 - p.getY(i) / 11) * 0.09 + 0.01; c[i * 3] = k; c[i * 3 + 1] = k; c[i * 3 + 2] = k * 1.15; }
+  for (let i = 0; i < p.count; i++) { const k = (0.5 - p.getY(i) / 11) * 0.035 + 0.004; c[i * 3] = k; c[i * 3 + 1] = k; c[i * 3 + 2] = k * 1.15; }
   cone.setAttribute('color', new THREE.BufferAttribute(c, 3));
   ADD.add(cone, { x: TT_POS.x, y: 5.6, z: TT_POS.z });
-  ADD.add(glowPlane(16, 16, 10, 10, (u, v) => { const d = Math.max(0, 1 - Math.sqrt(u * u + v * v)); const k = d * d * 0.35; return [k * 0.8, k * 0.7, k]; }), { x: TT_POS.x, y: 0.14, z: TT_POS.z });
+  ADD.add(glowPlane(16, 16, 10, 10, (u, v) => { const d = Math.max(0, 1 - Math.sqrt(u * u + v * v)); const k = d * d * d * 0.07; return [k * 0.8, k * 0.7, k]; }), { x: TT_POS.x, y: 0.14, z: TT_POS.z });
 }
 const ttRingMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.2, 2, 3), toneMapped: false });
 const ttRing = new THREE.Mesh(new THREE.TorusGeometry(4.75, 0.07, 6, 80), ttRingMat);
@@ -983,14 +983,14 @@ function drawPodiumNums() {
   scene.add(nums);
   const cone = new THREE.CylinderGeometry(1, 9, 14, 32, 1, true);
   const p = cone.attributes.position, c = new Float32Array(p.count * 3);
-  for (let i = 0; i < p.count; i++) { const k = (0.5 - p.getY(i) / 14) * 0.07 + 0.008; c[i * 3] = k * 1.1; c[i * 3 + 1] = k; c[i * 3 + 2] = k * 0.8; }
+  for (let i = 0; i < p.count; i++) { const k = (0.5 - p.getY(i) / 14) * 0.03 + 0.004; c[i * 3] = k * 1.1; c[i * 3 + 1] = k; c[i * 3 + 2] = k * 0.8; }
   cone.setAttribute('color', new THREE.BufferAttribute(c, 3));
   ADD.add(cone, { x: POD_POS.x, y: 7, z: POD_POS.z });
   ADD.add(glowPlane(22, 16, 10, 10, (u, v) => { const d = Math.max(0, 1 - Math.sqrt(u * u + v * v)); const k = d * d * 0.3; return [k, k * 0.85, k * 0.6]; }), { x: POD_POS.x, y: 0.05, z: POD_POS.z });
 }
 
 /* ---------------- Mallas fusionadas estáticas ---------------- */
-const structMesh = STRUCT.build(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.3, envMap: envTex, envMapIntensity: 0.35, side: THREE.DoubleSide }));
+const structMesh = STRUCT.build(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.2, envMap: envTex, envMapIntensity: 0.12, side: THREE.DoubleSide }));
 structMesh.receiveShadow = Q.shadows;
 scene.add(structMesh);
 scene.add(NEON.build(new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: THREE.DoubleSide })));
@@ -1007,7 +1007,7 @@ const GLOW_VS = `attribute float aSize; attribute vec3 aColor; attribute vec2 aB
     float b = aBlink.x > 0.0 ? pow(0.5 + 0.5 * sin(uTime * aBlink.x + aBlink.y), 6.0) : 1.0;
     float fog = exp(-uFogDensity * uFogDensity * d * d * 0.6);
     vColor = aColor * b * fog;
-    gl_PointSize = clamp(aSize * uScale / max(d, 0.5), 0.0, 400.0);
+    gl_PointSize = clamp(aSize * uScale / max(d, 0.5), 0.0, 220.0);
     gl_Position = projectionMatrix * mv;
   }`;
 const GLOW_FS = `varying vec3 vColor;
@@ -1232,16 +1232,16 @@ function wheelGeo(def) {
 function fxGeo(def) {
   const cc = linColor(def.color, 1);
   const parts = [];
-  parts.push(glowPlane(3.4, 6.2, 8, 12, (u, v) => { const d = Math.max(0, 1 - (u * u + v * v)); const k = d * d * 0.9; return [cc[0] * k, cc[1] * k, cc[2] * k]; }).translate(0, 0.05, 0));
+  parts.push(glowPlane(3.4, 6.2, 8, 12, (u, v) => { const d = Math.max(0, 1 - (u * u + v * v)); const k = d * d * 0.5; return [cc[0] * k, cc[1] * k, cc[2] * k]; }).translate(0, 0.05, 0));
   parts.push(glowPlane(7, 15, 8, 14, (u, v) => {
     const t = (v + 1) / 2; // 0 = morro, 1 = lejos  (z negativa = cerca por la rotación) -> se recalcula abajo
     const w = 1 - Math.min(1, Math.abs(u) / (0.35 + 0.65 * (1 - t)));
-    const k = Math.max(0, w) * Math.pow(1 - t, 1.4) * 0.5; return [k, k * 0.95, k * 0.85];
+    const k = Math.max(0, w) * Math.pow(1 - t, 1.6) * 0.2; return [k, k * 0.95, k * 0.85];
   }).translate(0, 0.06, 2.4 + 7.5));
   [-0.62, 0.62].forEach((x) => {
     const g = new THREE.ConeGeometry(1.5, 11, 12, 1, true);
     const p = g.attributes.position, c = new Float32Array(p.count * 3);
-    for (let i = 0; i < p.count; i++) { const t = p.getY(i) / 11 + 0.5; const k = t * 0.09; c[i * 3] = k; c[i * 3 + 1] = k; c[i * 3 + 2] = k * 1.1; }
+    for (let i = 0; i < p.count; i++) { const t = p.getY(i) / 11 + 0.5; const k = t * t * 0.045; c[i * 3] = k; c[i * 3 + 1] = k; c[i * 3 + 2] = k * 1.1; }
     g.setAttribute('color', new THREE.BufferAttribute(c, 3));
     g.rotateX(-Math.PI / 2).rotateX(0.06).translate(x, 0.62, 2.35 + 5.5);
     parts.push(g);
@@ -1300,8 +1300,8 @@ function updateCarGlows() {
       _v3.subVectors(camPos, _v).normalize();
       const facing = l[3] ? _v2.dot(_v3) : -_v2.dot(_v3);
       const k = vis ? clamp(facing, 0, 1) : 0;
-      if (l[3]) { P.aColor.setXYZ(idx, 1.3 * k * k, 1.3 * k * k, 1.5 * k * k); P.aSize.setX(idx, 2.6); }
-      else { const b = 0.5 + c.brake * 1.2; P.aColor.setXYZ(idx, 1.6 * k * b, 0.05 * k, 0.1 * k); P.aSize.setX(idx, 1.4 + c.brake); }
+      if (l[3]) { P.aColor.setXYZ(idx, 0.7 * k * k, 0.7 * k * k, 0.8 * k * k); P.aSize.setX(idx, 0.85); }
+      else { const b = 0.45 + c.brake * 0.9; P.aColor.setXYZ(idx, 1.2 * k * b, 0.04 * k, 0.08 * k); P.aSize.setX(idx, 0.6 + c.brake * 0.5); }
     });
   });
   P.position.needsUpdate = true; P.aColor.needsUpdate = true; P.aSize.needsUpdate = true;
@@ -1344,7 +1344,7 @@ async function setupBloom() {
     composer.setPixelRatio(pixelRatio);
     composer.setSize(innerWidth, innerHeight);
     composer.addPass(new RenderPass(scene, camera));
-    bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.5, 0.92);
+    bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.32, 1.0);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
   } catch (e) {
@@ -1519,7 +1519,7 @@ function tween(ms, fn, ease = AX.ease.inOutCubic) {
 }
 function updateTweens(now) {
   for (const tw of tweens) {
-    const k = Math.min(1, (now - tw.t0) / tw.ms);
+    const k = clamp((now - tw.t0) / tw.ms, 0, 1);
     tw.fn(tw.ease(k), k);
     if (k >= 1) { tweens.delete(tw); tw.res(); }
   }
@@ -1561,7 +1561,7 @@ function updateShot(dt) {
     case 'manual': return;
     case 'garage': {
       garage.ang += dt * 0.12 + garage.vel; garage.vel *= Math.pow(0.9, dt * 60);
-      const r = garage.r * pk;
+      const r = garage.r;
       _cp.set(TT_POS.x + Math.sin(garage.ang) * r, 2.2 + Math.sin(now * 0.4) * 0.3, TT_POS.z + Math.cos(garage.ang) * r);
       _cl.set(TT_POS.x, 0.85, TT_POS.z); k = 4; hf = 56;
       break;
@@ -1691,7 +1691,7 @@ function computeViewOffset() {
     const cy = (top + bottom) / 2;
     viewOff = { x: 0, y: H / 2 - cy };
     const vis = Math.max(120, bottom - top);
-    garage.r = clamp(6.8 * Math.pow(H / vis, 0.55), 6.5, 12.5);
+    garage.r = clamp(5.6 * Math.pow(H / vis, 0.3), 6, 9);
   }
 }
 
@@ -2134,7 +2134,7 @@ async function podium() {
   });
   spot.position.set(POD_POS.x, 9, POD_POS.z - 3);
   spot.color.set(0xfff0d0);
-  spot.intensity = 60;
+  spot.intensity = 18;
   cut('podium');
   timeScale = timeScaleTarget = 1;
   SND.engine(0.1, 0.0);
@@ -2206,7 +2206,7 @@ async function backToGarage() {
   garage.current = -1;
   putOnTurntable(sel, false);
   spot.position.set(TT_POS.x, 7, TT_POS.z + 2);
-  spot.intensity = 45;
+  spot.intensity = 14;
   state = 'garage';
   CROWD_EXCITE.value = 0.12;
   SND.crowdLevel(0.04, 1);
@@ -2436,7 +2436,7 @@ async function boot() {
   cars.forEach((c) => parkOnGrid(c));
   putOnTurntable(sel, false);
   spot.position.set(TT_POS.x, 7, TT_POS.z + 2);
-  spot.intensity = 45;
+  spot.intensity = 14;
   renderCard();
   setBet(Math.min(bet, Math.max(1, AX.getBalance())));
   garageJumbo();
@@ -2462,7 +2462,7 @@ async function boot() {
   state = 'garage';
   computeViewOffset();
   const a0 = CAM.pos.clone(), b0 = CAM.look.clone();
-  const r = garage.r * portraitK();
+  const r = garage.r;
   const end = new THREE.Vector3(TT_POS.x + Math.sin(garage.ang) * r, 2.2, TT_POS.z + Math.cos(garage.ang) * r);
   const curve = new THREE.CatmullRomCurve3([a0, new THREE.Vector3(-20, 30, 70), new THREE.Vector3(TT_POS.x + 10, 8, TT_POS.z + 22), end]);
   const lookEnd = new THREE.Vector3(TT_POS.x, 0.85, TT_POS.z);

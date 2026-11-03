@@ -1197,14 +1197,14 @@
     const W = H.cards.clientWidth - 8;
     const ch = cw * 1.4;
     const hasDbl = H.cardEls.some((e) => e.classList.contains("dbl"));
-    const extra = hasDbl ? (ch - cw) * 0.7 : 0;
+    const extra = hasDbl ? ch - cw : 0; // la carta girada ocupa (ch - cw) más de ancho
     const off = n > 1 ? Math.max(8, Math.min(cw * 0.6, (W - cw - extra) / (n - 1))) : 0;
     const total = cw + off * (n - 1) + extra;
     const start = (W - total) / 2 + 4;
     H.cardEls.forEach((e, i) => {
       const k = i - (n - 1) / 2;
       const dbl = e.classList.contains("dbl");
-      e.style.left = start + i * off + (dbl ? extra * 0.85 : 0) + "px";
+      e.style.left = start + i * off + (dbl ? extra / 2 : 0) + "px";
       e.style.top = (dbl ? 2 : Math.abs(k) * Math.abs(k) * 0.9) + "px";
       e.style.rotate = dbl ? "90deg" : (H.dealer ? k * 1.5 : k * 2.4) + "deg";
       e.style.zIndex = 10 + i;
@@ -1481,11 +1481,10 @@
     sfx.play("chip");
     AX.haptic("tap");
     const H = HANDS[0];
-    const target = S.pending;
     await flyChip(AX.center(btn), spotCenter(H), v, { size: 42 * (CW / 76) + 6 });
     if (S.phase !== "bet") return;
     sfx.play("stack");
-    renderStack(H, Math.max(target, S.pending), true);
+    renderStack(H, S.pending, true);
     const c = spotCenter(H);
     AX.fx.sparks(c.x, c.y, { count: 8, speed: 220, life: 0.35 });
   }
@@ -2051,6 +2050,7 @@
   async function bustFX(i) {
     const H = HANDS[i];
     H.el.classList.add("busted");
+    H.el.classList.remove("active");
     sfx.play("crack");
     AX.haptic("error");
     H.cardEls.forEach((e, k) => setTimeout(() => e.classList.add("cracked"), k * 60));

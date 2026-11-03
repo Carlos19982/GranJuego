@@ -484,8 +484,10 @@
   .help-list { margin: 12px 0 0; padding-left: 18px; color: #cfc8f2; font-size: 14px; }
   .help-list li { margin: 4px 0; }
   .stats-grid { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 14px; }
-  .stats-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
-  .stats-row .k { width: 92px; font-size: 12px; font-weight: 800; color: var(--ax-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .stats-k { margin: 12px 0 6px; font-size: 11px; font-weight: 800; color: var(--ax-muted); text-transform: uppercase; letter-spacing: 0.14em; }
+  .stats-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .stats-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px; border-radius: 99px; background: rgba(255, 255, 255, 0.06); font-size: 12px; font-weight: 800; color: #ffe9a6; }
+  .stats-pill.c { color: #bff6ff; }
   .stats-bars { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px; align-items: center; font-size: 13px; font-weight: 700; }
   .stats-bars .bar { height: 8px; border-radius: 9px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
   .stats-bars .bar i { display: block; height: 100%; background: var(--ax-gold-grad); }
@@ -707,9 +709,13 @@
   /* Protección local: en el kit, la primera iteración del bucle de partículas
      puede tener dt < 0 (marca de tiempo de rAF anterior a performance.now()),
      lo que da un radio negativo en las ondas expansivas y detiene el bucle.
-     Lanzarlas desde un callback de rAF evita ese primer frame problemático. */
+     Arrancamos antes el bucle con una partícula invisible y añadimos la onda
+     dos frames después, cuando el bucle ya calcula dt entre frames reales. */
   const _shockwave = AX.fx.shockwave;
-  AX.fx.shockwave = (x, y, o) => requestAnimationFrame(() => _shockwave(x, y, o));
+  AX.fx.shockwave = (x, y, o) => {
+    AX.fx.burst(-60, -60, { count: 1, speed: 1, gravity: 0, life: 0.6, colors: ["rgba(0,0,0,0)"] });
+    requestAnimationFrame(() => requestAnimationFrame(() => _shockwave(x, y, o)));
+  };
 
   /* =====================================================================
      HUD
@@ -1578,7 +1584,7 @@
   let lastT = performance.now(), frameSkip = 0;
   function frame(now) {
     requestAnimationFrame(frame);
-    const dt = Math.min(0.05, (now - lastT) / 1000);
+    const dt = clamp((now - lastT) / 1000, 0, 0.1);
     lastT = now;
     for (const tw of tweens) {
       const k = Math.min(1, (now - tw.t0) / tw.ms);
@@ -1944,7 +1950,7 @@
     }
     const strip = $("#histStrip");
     const rest = history.slice(1, 12);
-    strip.innerHTML = rest.length ? rest.map((n, i) => badge(n, fresh && i === 0 ? "fresh" : "")).join("") : '<span class="empty">Sin tiradas todavía</span>';
+    strip.innerHTML = rest.length ? rest.map((n, i) => badge(n, fresh && i === 0 ? "fresh" : "")).join("") : `<span class="empty">${history.length ? "Sin tiradas anteriores" : "Sin tiradas todavía"}</span>`;
     const hc = hotCold();
     const enough = history.length >= 5;
     $("#hot").innerHTML = enough ? hc.hot.slice(0, 3).map((n) => badge(n, "hot")).join("") : '<span class="empty" style="font-size:10px;color:var(--ax-muted)">—</span>';
@@ -1979,10 +1985,12 @@
     AX.modal({
       title: "Estadísticas",
       html: h.length
-        ? `<div class="stats-row"><span class="k">Últimas ${h.length}</span></div>
+        ? `<div class="stats-k">Últimas ${h.length} tiradas</div>
            <div class="stats-grid">${h.map((n) => badge(n)).join("")}</div>
-           <div class="stats-row"><span class="k">🔥 Calientes</span>${hc.hot.slice(0, 5).map((n) => badge(n, "hot") + `<small style="color:var(--ax-muted);margin-right:6px">×${hc.counts[n]}</small>`).join("")}</div>
-           <div class="stats-row"><span class="k">❄️ Fríos</span>${hc.cold.slice(0, 5).map((n) => badge(n, "cold")).join("")}</div>
+           <div class="stats-k">🔥 Calientes</div>
+           <div class="stats-row">${hc.hot.slice(0, 5).map((n) => `<span class="stats-pill">${badge(n, "hot")}×${hc.counts[n]}</span>`).join("")}</div>
+           <div class="stats-k">❄️ Fríos (sin salir hace más)</div>
+           <div class="stats-row">${hc.cold.slice(0, 5).map((n) => `<span class="stats-pill c">${badge(n, "cold")}${hc.lastSeen[n] === Infinity ? "nunca" : hc.lastSeen[n] + " tiradas"}</span>`).join("")}</div>
            <div class="stats-bars" style="margin-top:12px">${rows.map(([k, v]) => `<span>${k}</span><div class="bar"><i style="width:${pct(v)}%"></i></div><span>${pct(v)}%</span>`).join("")}</div>`
         : "<p>Todavía no hay tiradas. ¡Haz tu primera apuesta!</p>",
       buttons: [{ label: "Cerrar", kind: "gold", value: true }],

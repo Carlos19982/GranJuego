@@ -165,17 +165,14 @@
   const ssDel = (k) => { try { sessionStorage.removeItem(k); } catch (e) {} };
   const ssSet = (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} };
 
-  /* ------------------------------------------------------------ PARTÍCULAS SEGURAS
-     El bucle de partículas del kit puede arrancar con un dt negativo en su primer
-     fotograma; con las ondas expansivas ("ring") eso da un radio negativo y una
-     excepción que congela las partículas. Mantenemos el bucle vivo con una
-     partícula invisible y esperamos dos fotogramas antes de lanzar ondas. */
-  function fxGuard(ms = 2500) {
-    AX.fx.glow(-80, -80, { size: 1, life: ms / 1000, grow: 0, color: "rgba(0,0,0,0)" });
-    return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  }
-  function ring(x, y, o) {
-    fxGuard(1500).then(() => AX.fx.shockwave(x, y, o));
+  const ring = (x, y, o) => AX.fx.shockwave(x, y, o);
+
+  /* Cola de cinemáticas: noticias, crash/rally, SL/TP e hitos se suceden sin solaparse
+     (el dinero se mueve al instante; sólo el espectáculo espera su turno). */
+  let fxQ = Promise.resolve();
+  function queueFx(fn) {
+    fxQ = fxQ.then(() => (settled || locked ? null : fn())).catch((e) => console.error(e));
+    return fxQ;
   }
 
   /* ------------------------------------------------------------ SONIDOS PROPIOS */
@@ -466,7 +463,7 @@
     st.stats.peak = Math.max(st.stats.peak, eq);
     st.stats.low = Math.min(st.stats.low, eq);
     save();
-    if (ev) showEvent(ev);
+    if (ev) queueFx(() => showEvent(ev));
     checkMilestones();
     checkBroke();
   }
@@ -575,22 +572,24 @@
     const pnl = r2((p - pos.avg) * q);
     sell(sym, q, kind, true);
     save();
-    const c = AX.center($("#bx-pos"));
-    if (kind === "SL") {
-      AX.cine.banner("STOP-LOSS", { sub: `${sym} · ${q} acc. a ${money(p)} · ${smoney(pnl)}`, color: "rgba(255, 59, 92, 0.94)", sound: "error", duration: 1900 });
-      AX.haptic("error");
-      AX.fx.shake(7, 380);
-      AX.fx.flash("#ff0030", 300, 0.25);
-      AX.fx.burst(c.x, c.y, { colors: "blood", count: 30 });
-    } else {
-      AX.cine.banner("TAKE-PROFIT", { sub: `${sym} · ${q} acc. a ${money(p)} · ${smoney(pnl)}`, color: "rgba(10, 163, 88, 0.94)", sound: "win", duration: 1900 });
+    bumpEq();
+    updateLive(true);
+    const sub = `${sym} · ${AX.fmt(q)} acc. a ${money(p)} · ${smoney(pnl)}`;
+    queueFx(() => {
+      const c = AX.center($("#bx-pos"));
+      if (kind === "SL") {
+        AX.haptic("error");
+        AX.fx.shake(7, 380);
+        AX.fx.flash("#ff0030", 300, 0.25);
+        AX.fx.burst(c.x, c.y, { colors: "blood", count: 30 });
+        return AX.cine.banner("STOP-LOSS", { sub, color: "rgba(255, 59, 92, 0.94)", sound: "error", duration: 1900 });
+      }
       AX.haptic("win");
       S.play("sell");
       AX.fx.coinBurst(c.x, c.y, { count: 22 });
       AX.fx.stars(c.x, c.y, { count: 14 });
-    }
-    bumpEq();
-    updateLive(true);
+      return AX.cine.banner("TAKE-PROFIT", { sub, color: "rgba(10, 163, 88, 0.94)", sound: "win", duration: 1900 });
+    });
   }
 
   function deny(which, msg) {
@@ -619,7 +618,7 @@
       if (r >= m.r && !st.milestones.includes(m.id)) {
         st.milestones.push(m.id);
         save();
-        celebrate(m);
+        queueFx(() => celebrate(m));
         return;
       }
     }
@@ -627,7 +626,7 @@
       if (r <= m.r && !st.milestones.includes(m.id)) {
         st.milestones.push(m.id);
         save();
-        celebrate(m, true);
+        queueFx(() => celebrate(m, true));
         return;
       }
     }
@@ -653,7 +652,9 @@
       if (tier >= 2) AX.fx.cannons({ count: 60 + tier * 15 });
       if (tier >= 3) { AX.fx.fireworks({ count: 6 + tier * 2, duration: 2400 }); AX.fx.coinRain({ count: 50 * (tier - 1), duration: 1800 }); }
     }
-    setTimeout(() => { l.classList.add("out"); setTimeout(() => l.remove(), 450); }, neg ? 1500 : 2000);
+    return new Promise((resolve) =>
+      setTimeout(() => { l.classList.add("out"); setTimeout(() => { l.remove(); resolve(); }, 450); }, neg ? 1500 : 2000)
+    );
   }
   let brokeShown = false;
   function checkBroke() {
@@ -732,8 +733,7 @@
       if (!crash) AX.fx.confetti({ count: 70, colors: "green" });
       hitCard(crash ? "neg" : "pos");
       CH.shake = crash ? 1 : 0.6;
-      setTimeout(() => { l.classList.add("out"); setTimeout(() => l.remove(), 400); }, 1900);
-      return;
+      return new Promise((resolve) => setTimeout(() => { l.classList.add("out"); setTimeout(() => { l.remove(); resolve(); }, 400); }, 1900));
     }
     // ÚLTIMA HORA
     const pos = ev.trend_modifier >= 0;
@@ -767,6 +767,7 @@
       l.classList.add("out");
       setTimeout(() => l.remove(), 400);
     }, life);
+    return AX.sleep(1100); // la noticia sigue en pantalla, pero deja pasar al siguiente efecto
   }
   function hitCard(kind) {
     const card = $("#bx-chart-card");
@@ -784,7 +785,6 @@
     coin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 8.5a4 4 0 1 0 0 7M7 10.5h6M7 13.5h6"/></svg>',
     candle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3v4M7 15v6M17 2v5M17 13v4"/><rect x="4.5" y="7" width="5" height="8" rx="1" fill="currentColor" fill-opacity=".35"/><rect x="14.5" y="7" width="5" height="6" rx="1"/></svg>',
     area: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 4-7 5 5" /><path d="M3 21h18" opacity=".5"/></svg>',
-    cmp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l5-5 4 3 9-8"/><path d="M3 20l6-3 4 1 8-6" opacity=".55"/></svg>',
   };
 
   function buildDOM() {
@@ -1873,7 +1873,6 @@
     const p100 = (pnl / inv) * 100;
     if (pnl >= 1) {
       const tier = p100 >= 300 ? "epic" : p100 >= 100 ? "mega" : p100 >= 40 ? "big" : "win";
-      await fxGuard(4000);
       await AX.cine.bigWin(Math.round(pnl), { tier, label: `Beneficio neto · ${pct(p100)}` });
     } else if (pnl <= -1) {
       await AX.cine.defeat({ title: p100 <= -50 ? "¡Desplome!" : "Pérdidas", subtitle: `${smoney(pnl)} · ${pct(p100)}`, duration: 2200 });
@@ -2021,7 +2020,6 @@
     updateLive(true);
     updatePauseUI();
     if (isNew) {
-      await fxGuard(3500);
       await AX.cine.intro({ title: CFG.title, subtitle: CFG.subtitle, icon: CFG.icon, color: CFG.color, once: true, key: "bolsa-" + MODE });
       await bellCine(`Inversión: <b style="color:#ffe9a6">${AX.money(st.investment)}</b>`);
       busy = false;
