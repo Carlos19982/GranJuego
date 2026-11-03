@@ -46,6 +46,7 @@
   const CFG = {
     pro: {
       label: "Bolsa Pro",
+      short: "Bolsa Pro",
       title: "Bolsa Pro",
       subtitle: "Suena la campana de apertura",
       icon: "🔔",
@@ -59,6 +60,7 @@
     },
     estrategia: {
       label: "Estrategia avanzada",
+      short: "Estrategia 100",
       title: "Estrategia",
       subtitle: "Modo avanzado · señales más fuertes",
       icon: "♟️",
@@ -162,6 +164,19 @@
   const ssGet = (k) => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
   const ssDel = (k) => { try { sessionStorage.removeItem(k); } catch (e) {} };
   const ssSet = (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} };
+
+  /* ------------------------------------------------------------ PARTÍCULAS SEGURAS
+     El bucle de partículas del kit puede arrancar con un dt negativo en su primer
+     fotograma; con las ondas expansivas ("ring") eso da un radio negativo y una
+     excepción que congela las partículas. Mantenemos el bucle vivo con una
+     partícula invisible y esperamos dos fotogramas antes de lanzar ondas. */
+  function fxGuard(ms = 2500) {
+    AX.fx.glow(-80, -80, { size: 1, life: ms / 1000, grow: 0, color: "rgba(0,0,0,0)" });
+    return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }
+  function ring(x, y, o) {
+    fxGuard(1500).then(() => AX.fx.shockwave(x, y, o));
+  }
 
   /* ------------------------------------------------------------ SONIDOS PROPIOS */
   const S = AX.sfx;
@@ -632,7 +647,7 @@
       S.play(tier >= 3 ? "jackpot" : tier === 2 ? "bigwin" : "win");
       AX.haptic(tier >= 2 ? "bigwin" : "win");
       AX.fx.flash(tier >= 3 ? "#ffd23f" : "#2bff88", 450, 0.35);
-      AX.fx.shockwave(cx, cy, { radius: Math.max(innerWidth, innerHeight) * 0.7, rings: tier, width: 14 });
+      ring(cx, cy, { radius: Math.max(innerWidth, innerHeight) * 0.7, rings: tier, width: 14 });
       AX.fx.stars(cx, cy, { count: 24 });
       if (tier === 1) AX.fx.confetti({ count: 90 });
       if (tier >= 2) AX.fx.cannons({ count: 60 + tier * 15 });
@@ -679,7 +694,7 @@
       [0, 0.42, 0.84].forEach((d) => S.play("bell", d));
       AX.haptic([30, 380, 30, 380, 30]);
       setTimeout(() => {
-        AX.fx.shockwave(innerWidth / 2, innerHeight * 0.42, { color: "#ffd23f", radius: Math.max(innerWidth, innerHeight) * 0.6, rings: 3, width: 10 });
+        ring(innerWidth / 2, innerHeight * 0.42, { color: "#ffd23f", radius: Math.max(innerWidth, innerHeight) * 0.6, rings: 3, width: 10 });
         AX.fx.confetti({ count: 140, colors: ["#ffffff", "#fff3b0", "#ffd23f", "#d9fbff", "#ffffff"], duration: 900 });
       }, 120);
       const t0 = Date.now();
@@ -713,7 +728,7 @@
       const cx = chartRect.left + chartRect.width / 2, cy = chartRect.top + chartRect.height / 2;
       AX.fx.burst(cx, cy, { colors: crash ? "blood" : "green", count: 70, speed: 700 });
       AX.fx.sparks(cx, cy, { colors: crash ? ["#ff3b5c", "#ffb3c0", "#fff"] : "green", count: 50, speed: 900 });
-      AX.fx.shockwave(cx, cy, { color: crash ? "#ff3b5c" : "#2bff88", radius: Math.max(innerWidth, innerHeight) * 0.7, rings: 2 });
+      ring(cx, cy, { color: crash ? "#ff3b5c" : "#2bff88", radius: Math.max(innerWidth, innerHeight) * 0.7, rings: 2 });
       if (!crash) AX.fx.confetti({ count: 70, colors: "green" });
       hitCard(crash ? "neg" : "pos");
       CH.shake = crash ? 1 : 0.6;
@@ -790,7 +805,7 @@
               <button class="bx-tg" data-tg="ma" aria-label="Medias móviles"><span>MA</span></button>
               <button class="bx-tg" data-tg="rsi" aria-label="Panel RSI"><span>RSI</span></button>
               <button class="bx-tg" data-tg="type" aria-label="Tipo de gráfico"><span>${ICONS.candle}</span></button>
-              <button class="bx-tg" data-tg="cmp" aria-label="Comparar valores"><span>${ICONS.cmp}</span></button>
+              <button class="bx-tg" data-tg="cmp" aria-label="Comparar valores"><span>VS</span></button>
             </div>
           </div>
           <div class="bx-chart-wrap" id="bx-chart-wrap">
@@ -1005,7 +1020,6 @@
     const info = INFO[s.sym];
     // cotización principal
     const p = px(s);
-    const prevClose = s.candles.length ? s.candles[s.candles.length - 1].c : s.open;
     const ch = ((p - s.dayOpen) / s.dayOpen) * 100;
     const qp = $("#q-price");
     const txt = money(p);
@@ -1023,7 +1037,7 @@
     $("#q-sym").textContent = s.sym;
     $("#q-name").textContent = info.name;
     const qc = $("#q-chg");
-    qc.textContent = `${p >= prevClose ? "▲" : "▼"} ${pct(ch)}`;
+    qc.textContent = `${ch >= 0 ? "▲" : "▼"} ${pct(ch)}`;
     qc.className = "bx-q-chg " + cls(ch);
     const tr = $("#q-trend");
     tr.textContent = s.trendState === "bullish" ? "Alcista ↗" : s.trendState === "bearish" ? "Bajista ↘" : "Neutral";
@@ -1382,8 +1396,10 @@
         cx.save();
         cx.strokeStyle = col;
         cx.fillStyle = up ? "rgba(43,255,136,0.85)" : "rgba(255,59,92,0.9)";
-        cx.shadowColor = col;
-        cx.shadowBlur = c.live ? 16 : 5;
+        if (c.live) {
+          cx.shadowColor = col;
+          cx.shadowBlur = 16;
+        }
         cx.lineWidth = 1.2;
         cx.beginPath();
         cx.moveTo(Math.round(x) + 0.5, Y(c.h));
@@ -1804,7 +1820,11 @@
       html: `<p class="bx-lock-msg">${why === "other" ? "Esta cartera se está usando en otra pestaña o ventana. Solo una puede operar a la vez." : "Esta partida ya se liquidó o se cerró en otra pestaña."}</p>`,
       buttons: [{ label: "Menú", kind: "ghost", value: "menu" }, { label: why === "other" ? "Continuar aquí" : "Recargar", kind: "gold", value: "here" }],
       dismissable: false,
-    }).then((v) => (v === "here" ? location.reload() : AX.go("../index.html")));
+    }).then((v) => {
+      if (v !== "here") return AX.go("../index.html");
+      if (why === "other") ssSet("bx_takeover", "1");
+      location.reload();
+    });
   }
 
   /* ------------------------------------------------------------ LIQUIDAR */
@@ -1853,6 +1873,7 @@
     const p100 = (pnl / inv) * 100;
     if (pnl >= 1) {
       const tier = p100 >= 300 ? "epic" : p100 >= 100 ? "mega" : p100 >= 40 ? "big" : "win";
+      await fxGuard(4000);
       await AX.cine.bigWin(Math.round(pnl), { tier, label: `Beneficio neto · ${pct(p100)}` });
     } else if (pnl <= -1) {
       await AX.cine.defeat({ title: p100 <= -50 ? "¡Desplome!" : "Pérdidas", subtitle: `${smoney(pnl)} · ${pct(p100)}`, duration: 2200 });
@@ -2000,6 +2021,7 @@
     updateLive(true);
     updatePauseUI();
     if (isNew) {
+      await fxGuard(3500);
       await AX.cine.intro({ title: CFG.title, subtitle: CFG.subtitle, icon: CFG.icon, color: CFG.color, once: true, key: "bolsa-" + MODE });
       await bellCine(`Inversión: <b style="color:#ffe9a6">${AX.money(st.investment)}</b>`);
       busy = false;
@@ -2037,7 +2059,7 @@
     busy = "boot";
     LEGACY_KEYS.forEach(ssDel); // estados del formato antiguo (no tenían dinero retenido)
     hud = AX.hud({
-      title: `<div class="bx-hud-t"><span class="bx-hud-k">${CFG.label}</span><span class="bx-hud-eq" id="bx-eq">—</span><span class="bx-hud-pnl" id="bx-pnl"></span></div>`,
+      title: `<div class="bx-hud-t"><span class="bx-hud-k">${CFG.short}</span><span class="bx-hud-eq" id="bx-eq">—</span><span class="bx-hud-pnl" id="bx-pnl"></span></div>`,
       back: "../index.html",
       onBack,
     });
@@ -2067,7 +2089,9 @@
         location.replace(FILES[stored.mode]);
         return;
       }
-      const live = !stored.parked && stored.owner && stored.owner !== ME && Date.now() - (stored.savedAt || 0) < 6000;
+      const forced = ssGet("bx_takeover") === "1";
+      ssDel("bx_takeover");
+      const live = !forced && !stored.parked && stored.owner && stored.owner !== ME && Date.now() - (stored.savedAt || 0) < 6000;
       if (live) {
         busy = false;
         return AX.modal({

@@ -704,6 +704,13 @@
   const totalOf = (b) => Object.values(b).reduce((a, v) => a + v, 0);
   const payoutOf = (b, n) => Object.keys(b).reduce((a, k) => a + (BETS[k].wins(n) ? b[k] * BETS[k].mult : 0), 0);
 
+  /* Protección local: en el kit, la primera iteración del bucle de partículas
+     puede tener dt < 0 (marca de tiempo de rAF anterior a performance.now()),
+     lo que da un radio negativo en las ondas expansivas y detiene el bucle.
+     Lanzarlas desde un callback de rAF evita ese primer frame problemático. */
+  const _shockwave = AX.fx.shockwave;
+  AX.fx.shockwave = (x, y, o) => requestAnimationFrame(() => _shockwave(x, y, o));
+
   /* =====================================================================
      HUD
      ===================================================================== */
@@ -1414,7 +1421,7 @@
     const wp = rnd(2.1, 2.6), td = 8.5, ta = 0.7;
     const theta = (t) => th0 + wp * td * (1 - Math.exp(-t / td)) - (wp - wi) * ta * (1 - Math.exp(-t / ta));
     const omega = (t) => wp * Math.exp(-t / td) - (wp - wi) * Math.exp(-t / ta);
-    const t2 = rnd(5.0, 5.6), t1 = t2 - 1.25;
+    const t2 = rnd(4.7, 5.3), t1 = t2 - 1.25;
     // Rebotes entre casillas (en unidades de casilla; negativo = contra el rotor)
     const hops = [{ s: -rndi(2, 4), d: rnd(0.34, 0.42), h: 0.055, first: true }];
     const nh = rndi(1, 4);
@@ -2168,6 +2175,7 @@
         delete bets[k];
         sweepStack(k, i * 40, slotG);
       });
+      refreshUI(false);
       await sleep(winners.length ? 450 : 650);
     }
 

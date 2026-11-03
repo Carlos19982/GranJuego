@@ -654,10 +654,10 @@
   flex-direction: column;
   gap: 10px;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.2, 1.2, 0.3, 1);
 }
-.panel.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.panel.on { opacity: 1; visibility: visible; transform: translate(-50%, 0); pointer-events: auto; transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.2, 1.2, 0.3, 1); }
 .panel .row { display: grid; gap: 8px; }
 #pBet .row { grid-template-columns: 1fr 2.1fr 1fr; }
 #pPlay .row { grid-template-columns: 1fr 1fr; }
@@ -1194,13 +1194,13 @@
   }
   function positionCards(H, cw) {
     const n = H.cardEls.length;
-    const W = H.cards.clientWidth;
+    const W = H.cards.clientWidth - 8;
     const ch = cw * 1.4;
     const hasDbl = H.cardEls.some((e) => e.classList.contains("dbl"));
     const extra = hasDbl ? (ch - cw) * 0.7 : 0;
     const off = n > 1 ? Math.max(8, Math.min(cw * 0.6, (W - cw - extra) / (n - 1))) : 0;
     const total = cw + off * (n - 1) + extra;
-    const start = (W - total) / 2;
+    const start = (W - total) / 2 + 4;
     H.cardEls.forEach((e, i) => {
       const k = i - (n - 1) / 2;
       const dbl = e.classList.contains("dbl");
@@ -1975,7 +1975,8 @@
       await coinsHome(10 + Math.min(20, Math.round(mult * 4) + S.streak * 2));
       await streakFX(true);
     } else if (net === 0 && R.totalRet > 0) {
-      AX.cine.banner("EMPATE", { sub: "Recuperas tu apuesta", color: "rgba(110,100,170,.92)", sound: "push", duration: 1400 });
+      if (insRet > 0) AX.cine.banner("¡SEGURO COBRADO!", { sub: "El seguro cubre tu apuesta", color: "rgba(10,143,184,.92)", sound: "coin", duration: 1500 });
+      else AX.cine.banner("EMPATE", { sub: "Recuperas tu apuesta", color: "rgba(110,100,170,.92)", sound: "push", duration: 1400 });
       AX.haptic("light");
       await wait(450);
       await coinsHome(6);
@@ -2000,7 +2001,7 @@
     await wait(i * 260);
     const txt = { bj: "BLACKJACK", win: "GANA +" + AX.fmt(r.ret - bet), push: "EMPATE", lose: "PIERDE", bust: "SE PASA" }[r.o];
     H.tag.textContent = txt;
-    H.tag.className = "tag on " + r.o;
+    H.tag.className = r.o === "bust" ? "tag" : "tag on " + r.o;
     if (r.o === "win" || r.o === "bj") {
       H.cardEls.forEach((e) => e.classList.add("win"));
       // la banca paga: fichas desde el crupier
@@ -2231,6 +2232,7 @@
 
   /* ================================================================ DEPURACIÓN (pruebas) */
   window.BJ = {
+    clearRig: () => (rigQ.length = 0),
     rig: (...codes) => { codes.flat().forEach((c) => { if (validCode(c)) rigQ.push(c); }); return rigQ.length; },
     state: () => JSON.parse(JSON.stringify(S)),
     busy: () => busy,

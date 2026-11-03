@@ -351,6 +351,7 @@ body { overflow: hidden; }
 .bx-q-row { display: flex; align-items: baseline; gap: 8px; margin-top: 1px; white-space: nowrap; overflow: hidden; }
 .bx-q-full { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 @media (max-width: 440px) { .bx-q-full { display: none; } }
+@media (max-width: 380px) { #q-rsi { display: none; } }
 .bx-q-price {
   white-space: nowrap;
   font-size: 23px;
