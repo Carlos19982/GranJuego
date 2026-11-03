@@ -216,6 +216,9 @@
 
   sfx.ctx = function () {
     if (!actx) {
+      // No crear el AudioContext antes del primer gesto (evita avisos de autoplay)
+      const ua = navigator.userActivation;
+      if (ua && !ua.hasBeenActive) return null;
       const C = global.AudioContext || global.webkitAudioContext;
       if (!C) return null;
       actx = new C();
