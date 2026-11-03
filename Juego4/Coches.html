@@ -879,7 +879,7 @@ const cars = CARS.map((def, i) => ({
   pos: new THREE.Vector3(), vel: new THREE.Vector3(), prev: new THREE.Vector3(), yaw: 0,
   s: 0, v: 0, lat: 0, gear: 1, rpm: 0.15, throttle: 0, slip: 0, brake: 0, draft: 0, state: 'run', flameT: 0, lod: 0, visible: true, dmg: 0, err: 0, lamps: 0,
 }));
-const SC = { m: null, pose: null, pos: new THREE.Vector3(), vel: new THREE.Vector3(), prev: new THREE.Vector3(), yaw: 0, v: 0, lastDist: null, visible: false, bar: null, barMats: null, restY: 0, rc: { dist: 0, lateral: 0, v: 0, throttle: 0.5, brake: 0, slip: 0, gear: 4, rpm: 0.5, state: 'run', cond: 1, error: 0 } };
+const SC = { brake: 0, state: 'run', m: null, pose: null, pos: new THREE.Vector3(), vel: new THREE.Vector3(), prev: new THREE.Vector3(), yaw: 0, v: 0, lastDist: null, visible: false, bar: null, barMats: null, restY: 0, rc: { dist: 0, lateral: 0, v: 0, throttle: 0.5, brake: 0, slip: 0, gear: 4, rpm: 0.5, state: 'run', cond: 1, error: 0 } };
 let carGlow = null, glowSlots = [];
 const ALLC = cars.concat([SC]);
 
@@ -975,6 +975,7 @@ async function buildWorld(id, prog = () => {}) {
   // halos de faros / pilotos / luz de freno
   glowSlots = [];
   cars.forEach((c, ci) => { const L = c.m.lamps || {}; (L.head || []).forEach((p) => glowSlots.push({ c, p, kind: 0 })); (L.tail || []).forEach((p) => glowSlots.push({ c, p, kind: 1 })); (L.brake || []).forEach((p) => glowSlots.push({ c, p, kind: 2 })); });
+  { const L = SC.m.lamps || {}; (L.head || []).forEach((p) => glowSlots.push({ c: SC, p, kind: 0 })); (L.tail || []).forEach((p) => glowSlots.push({ c: SC, p, kind: 1 })); (L.beacon || []).forEach((p, k) => glowSlots.push({ c: SC, p, kind: 3, k })); }
   carGlow = makeGlowPoints(Math.max(1, glowSlots.length));
   scene.add(carGlow);
   W.occ = [].concat(W.surface.occluders || [], W.scenery.occluders || []);
@@ -2161,7 +2162,7 @@ function pickSeed() {
 }
 function updateLod(c) {
   const d = camera.position.distanceTo(c.pos);
-  const far = TIER === 'high' ? 140 : TIER === 'med' ? 70 : 45;
+  const far = TIER === 'high' ? 90 : TIER === 'med' ? 60 : 45;
   const want = c.lod ? (d > far * 0.85 ? 1 : 0) : (d > far ? 1 : 0);
   if (want !== c.lod) { c.lod = want; c.m.setLod(want); }
 }
@@ -2312,7 +2313,11 @@ function updateCarFx() {
     const hl = W.night ? 1 : 0.35;
     if (g.kind === 0) { const q = kk * kk * hl * (c.state === 'dnf' ? 0.2 : 1); P.aColor.setXYZ(k, 0.42 * q, 0.42 * q, 0.5 * q); P.aSize.setX(k, 0.7); }
     else if (g.kind === 1) { const b = (0.45 + c.brake * 1.1) * (W.night ? 1 : 0.6); P.aColor.setXYZ(k, 1.2 * kk * b, 0.04 * kk, 0.08 * kk); P.aSize.setX(k, 0.55 + c.brake * 0.6); }
-    else { const b = c.brake; P.aColor.setXYZ(k, 1.6 * kk * b, 0.05 * kk * b, 0.1 * kk * b); P.aSize.setX(k, 0.5); }
+    else if (g.kind === 2) { const b = c.brake; P.aColor.setXYZ(k, 1.6 * kk * b, 0.05 * kk * b, 0.1 * kk * b); P.aSize.setX(k, 0.5); }
+    else { // destellos ámbar de la barra del coche de seguridad
+      const sc = race.sim && race.sim.sc, on = sc && sc.lights !== false && ((Math.floor(TIME.value * 6) + g.k) % 2 === 0);
+      const q = on ? clamp(dist / 4, 0.4, 1) : 0; P.aColor.setXYZ(k, 1.8 * q, 0.75 * q, 0); P.aSize.setX(k, 0.9);
+    }
   }
   P.position.needsUpdate = true; P.aColor.needsUpdate = true; P.aSize.needsUpdate = true;
   for (let i = 0; i < ALLC.length; i++) {
@@ -2868,14 +2873,14 @@ $('#camBtn').addEventListener('click', (e) => {
 });
 // Indicadores «TÚ» / «2º»: etiquetas DOM proyectadas (tamaño fijo en pantalla)
 const meTagEl = $('#meTag'), meTagEl2 = $('#meTag2');
-const tagVis = { on1: false, on2: false };
+const tagVis = { on1: false, on2: false }, tagXY = { x: 0, y: 0, w: 0 };
 const _mt = new THREE.Vector3();
 function updateMeTag(c, posTxt, el, key) {
   let show = !!c && c.visible && (state === 'race' || state === 'lights' || state === 'finish');
   if (show && (shot.type === 'onboard' || shot.type === 'tcam') && shot.target === c.i) show = false;
   if (show && camera.position.distanceTo(c.pos) < 12) show = false;
   if (show) {
-    _mt.copy(c.pos); _mt.y += 1.7;
+    _mt.copy(c.pos); _mt.y += ((c.m && c.m.dims && c.m.dims.height) || 1.2) + 0.55;
     for (const b of W.occ) if (segHitsBox(camera.position, _mt, b)) { show = false; break; }
   }
   if (show) {
@@ -2884,7 +2889,11 @@ function updateMeTag(c, posTxt, el, key) {
   }
   if (show !== tagVis[key]) { tagVis[key] = show; el.classList.toggle('on', show); }
   if (!show) return;
-  const x = (_mt.x * 0.5 + 0.5) * innerWidth, y = (-_mt.y * 0.5 + 0.5) * innerHeight;
+  const x = (_mt.x * 0.5 + 0.5) * innerWidth;
+  let y = (-_mt.y * 0.5 + 0.5) * innerHeight;
+  // si las dos etiquetas (exacta) se pisan, la del 2º se apila encima
+  if (key === 'on1') tagXY.x = x, tagXY.y = y, tagXY.w = el.offsetWidth;
+  else if (tagVis.on1 && Math.abs(x - tagXY.x) < (tagXY.w + el.offsetWidth) / 2 + 4 && Math.abs(y - tagXY.y) < 34) y = tagXY.y - 36;
   el.style.transform = `translate(${Math.round(x - el.offsetWidth / 2)}px, ${Math.round(y - 40)}px)`;
   const sp = el.lastElementChild; if (sp.textContent !== posTxt) sp.textContent = posTxt;
 }

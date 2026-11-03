@@ -740,10 +740,10 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     bagStatic.add(new THREE.BoxGeometry(23, 1.9, 1.3), M(gx, beamY, gz, yaw), C('#2a2320'));
     for (const lat of [-9, 9]) bagStatic.add(new THREE.CylinderGeometry(0.08, 0.08, 24 * Math.sin(Math.PI * (latL - lat) / (latL - latR)) ** 0.8 - 10.3, 4), M(gx + nx * lat, beamY + 1 + (24 * Math.sin(Math.PI * (latL - lat) / (latL - latR)) ** 0.8 - 10.3) / 2, gz + nz * lat), C('#3a3330'));
     for (let c = 0; c < 5; c++) for (let r = 0; r < 2; r++) {
-      const lat = -4.4 + c * 2.2;
+      const lat = 4.4 - c * 2.2; // columna 0 a la izquierda del piloto
       const px = gx + nx * lat - tx * 0.72, pz = gz + nz * lat - tz * 0.72, py = beamY + 0.45 - r * 0.95;
-      GANTRY.push(GLOW(px, py, pz, 1.25, 0.12, 0.01, 0.02));
-      bagEmis.add(new THREE.CircleGeometry(0.36, 10), M(px - tx * 0.01, py, pz - tz * 0.01, yaw + Math.PI), new THREE.Color(0.25, 0.02, 0.03));
+      GANTRY.push(GLOW(px - tx * 0.4, py, pz - tz * 0.4, 1.6, 0.12, 0.01, 0.02));
+      bagEmis.add(new THREE.CircleGeometry(0.36, 10), M(px + tx * 0.06, py, pz + tz * 0.06, yaw + Math.PI), new THREE.Color(0.25, 0.02, 0.03));
     }
     GANTRY.meta = { x: gx, y: beamY + 2.4, z: gz, yaw };
     reserved.push({ x: gx + nx * latL, z: gz + nz * latL, r: 5 }, { x: gx + nx * latR, z: gz + nz * latR, r: 5 });
@@ -807,19 +807,19 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     const x0 = PODIUM.x, z0 = PODIUM.z, y0 = 0.3;
     const yaw = 0; // los coches miran hacia +z
     const stone = C('#e7d3b1'), dark = C('#5a3b2a'), gold = C('#e0aa4a');
-    bagStatic.add(new THREE.BoxGeometry(30, 0.6, 15), M(x0, y0 + 0.3, z0 - 1), C('#cdb08a'));
-    const steps = [[0, 2.0], [-7.4, 1.35], [7.4, 0.85]];
+    bagStatic.add(new THREE.BoxGeometry(23, 0.6, 13), M(x0, y0 + 0.3, z0 - 1), C('#cdb08a'));
+    const steps = [[0, 2.0], [-5.4, 1.35], [5.4, 0.85]];
     steps.forEach(([dx, h], k) => {
-      bagStatic.add(new THREE.BoxGeometry(6.6, h, 7.6), M(x0 + dx, y0 + 0.6 + h / 2, z0), k === 0 ? gold : stone);
-      bagEmis.add(new THREE.PlaneGeometry(6.4, 0.18), M(x0 + dx, y0 + 0.6 + h - 0.15, z0 + 3.81), new THREE.Color(2.2, 1.4, 0.6));
+      bagStatic.add(new THREE.BoxGeometry(5.0, h, 7.0), M(x0 + dx, y0 + 0.6 + h / 2, z0), k === 0 ? gold : stone);
+      bagEmis.add(new THREE.PlaneGeometry(4.8, 0.16), M(x0 + dx, y0 + 0.6 + h - 0.15, z0 + 3.51), new THREE.Color(2.0, 1.3, 0.55));
     });
     // fondo: muro con disco solar
-    bagStatic.add(new THREE.BoxGeometry(32, 9, 1.2), M(x0, y0 + 4.5, z0 - 7.6), C('#d9c09a'));
+    bagStatic.add(new THREE.BoxGeometry(26, 9, 1.2), M(x0, y0 + 4.5, z0 - 7.6), C('#d9c09a'));
     bagStatic.add(new THREE.CircleGeometry(7.4, 32, 0, Math.PI), M(x0, y0 + 9.0, z0 - 7.0), gold);
     for (let k = 0; k < 9; k++) { const a = (k + 0.5) / 9 * Math.PI; bagStatic.add(new THREE.BoxGeometry(0.5, 3.2, 0.3), M(x0 + Math.cos(a) * 9.6, y0 + 9 + Math.sin(a) * 9.6, z0 - 7.1, 0, 1, 1, 1, 0, a - Math.PI / 2), gold); }
     bagEmis.add(new THREE.RingGeometry(7.6, 7.85, 40, 1, 0, Math.PI), M(x0, y0 + 9, z0 - 6.95), new THREE.Color(1.3, 0.8, 0.32));
-    for (const dx of [-17, 17]) bagStatic.add(new THREE.BoxGeometry(1.2, 13, 1.2), M(x0 + dx, y0 + 6.5, z0 - 7.4), dark);
-    occ(x0 - 16, y0, z0 - 8.5, x0 + 16, y0 + 17, z0 - 6.8);
+    for (const dx of [-14, 14]) bagStatic.add(new THREE.BoxGeometry(1.2, 13, 1.2), M(x0 + dx, y0 + 6.5, z0 - 7.4), dark);
+    occ(x0 - 13, y0, z0 - 8.5, x0 + 13, y0 + 17, z0 - 6.8);
     reserved.push({ x: x0, z: z0, r: 22 }, { x: x0, z: z0 + 22, r: 12 });
     const slots = steps.map(([dx, h]) => ({ x: x0 + dx, y: y0 + 0.6 + h, z: z0, yaw }));
     return { x: x0, y: y0 + 0.6, z: z0, yaw, slots };
@@ -945,9 +945,9 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     sign(RECTS.meta, 20, 1.9, M(gm.x + gtx * 0.67, gm.y - 0.1, gm.z + gtz * 0.67, gm.yaw));
     // números del podio
     const P = podium;
-    [[-7.4, 1], [0, 0], [7.4, 2]].forEach(([dx, k], q) => {
+    [[-5.4, 1], [0, 0], [5.4, 2]].forEach(([dx, k], q) => {
       const h = [2.0, 1.35, 0.85][k];
-      sign([k === 1 ? 0 : k === 0 ? 342 : 684, 864, 340, 160], 4.2, 1.9, M(P.x + dx, 0.3 + 0.6 + h * 0.5, P.z + 3.82, 0), 1.2);
+      sign([k === 1 ? 0 : k === 0 ? 342 : 684, 864, 340, 160], 3.4, 1.6, M(P.x + dx, 0.3 + 0.6 + h * 0.5, P.z + 3.52, 0), 1.2);
     });
     sign(RECTS.title, 19, 2.4, M(P.x, 0.3 + 7.2, P.z - 6.95, 0));
     // vallas publicitarias a lo largo de las rectas (fuera de la barrera)
@@ -1037,7 +1037,7 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
     }
     // paseo tras la tribuna principal y plaza del podio
     for (let s = MAIN.sA0; s < MAIN.sB; s += 13) { at(s); const lat = MAIN.side * (MAIN.latEnd + 8 + R(0, 3)); tryPalm(tp.x + tp.nx * lat, tp.z + tp.nz * lat, R(1.0, 1.3)); }
-    for (const dx of [-21, -19, 19, 21]) tryPalm(podium.x + dx, podium.z - 4 + R(-2, 2), 1.15);
+    for (const dx of [-17, -15.5, 15.5, 17]) tryPalm(podium.x + dx, podium.z - 4 + R(-2, 2), 1.15);
     // paddock
     for (let k = 0, tries = 0; k < 12 && tries < 100; tries++) { const s = R(PIT.s0, PIT.s1); at(s); const lat = PIT.side * R(55, 80); if (tryPalm(tp.x + tp.nx * lat, tp.z + tp.nz * lat)) k++; }
     while (palmPts.length > want) palmPts.splice(Math.floor(rnd() * palmPts.length), 1);
@@ -1750,9 +1750,10 @@ export function buildScenery({ scene, renderer, track: T, tier = 'med', envMap =
   /* =====================================================================
      API
      ===================================================================== */
+  const _gOn = new THREE.Color(2.4, 0.09, 0.05), _gOff = new THREE.Color(0.1, 0.008, 0.012);
   const gantry = {
     set(n) {
-      const on = new THREE.Color(7, 0.18, 0.12), off = new THREE.Color(0.1, 0.008, 0.012);
+      const on = _gOn, off = _gOff;
       for (let c = 0; c < 5; c++) for (let r = 0; r < 2; r++) glows.setColorAt(GANTRY[c * 2 + r], n >= 0 && c < n ? on : off);
       glows.instanceColor.needsUpdate = true;
     },

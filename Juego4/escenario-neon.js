@@ -1758,13 +1758,13 @@ export function buildScenery(opts = {}) {
         gl_FragColor = vec4(c * (1.0 - vFog), 1.0);
         #include <colorspace_fragment>
       }`,
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, forceSinglePass: true,
   });
   holoMat.toneMapped = false;
   addMesh(HOLO.build(holoMat), 8);
 
   // --- charcos de luz (aditivo)
-  const poolMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  const poolMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, fog: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   addMesh(POOL.build(poolMat), 4);
 
   // --- reflectores y láseres
@@ -1794,7 +1794,7 @@ export function buildScenery(opts = {}) {
         gl_FragColor = vec4(vCol * a * (1.0 - vFog * 0.6), 1.0);
         #include <colorspace_fragment>
       }`,
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, forceSinglePass: true,
   });
   beamMat.toneMapped = false;
   addMesh(BEAM.build(beamMat), 9);
