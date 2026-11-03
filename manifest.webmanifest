@@ -1,0 +1,14 @@
+{
+  "name": "Gran Juego",
+  "short_name": "Gran Juego",
+  "description": "Casino, arcade y bolsa en tu móvil",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07060f",
+  "theme_color": "#07060f",
+  "icons": [
+    { "src": "shared/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
