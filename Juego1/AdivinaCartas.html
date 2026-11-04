@@ -775,7 +775,15 @@ body { overflow: hidden; }
   }
   /** Modo guiado (secreto original): fuerza Roja, Menor, Dentro y Corazones. */
   function drawFor(round) {
-    if (!S.guided) return drawCard();
+    if (!S.guided) {
+      // Patrón oculto (hay que descubrirlo jugando): si las 3 primeras cartas son del
+      // mismo color, la carta del palo (ronda 4) sale de ese mismo color.
+      if (round === 4 && S.cards.length >= 3) {
+        const col = S.cards[0].color;
+        if (S.cards[1].color === col && S.cards[2].color === col) return forceNextCard((c) => c.color === col);
+      }
+      return drawCard();
+    }
     try {
       switch (round) {
         case 1: return forceNextCard((c) => c.color === "Red");
