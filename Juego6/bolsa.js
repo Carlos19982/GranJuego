@@ -6,7 +6,7 @@
    MERCADO
      · 16 activos: 11 acciones ficticias, 2 índices (calculados como media
        ponderada de sus componentes) y 3 materias primas (petróleo, oro, gas).
-     · 1 vela = 20 s a velocidad ×1 (×2 / ×4 opcionales), 80 sub-pasos en directo.
+     · 1 vela = 40 s a velocidad ×1 (×2 / ×4 opcionales), 80 sub-pasos en directo.
      · Dinámica: factor de mercado + regímenes persistentes (sesiones tranquilas
        o volátiles, tendencias por valor) + transmisión del petróleo a los
        sectores sensibles + noticias por valor / sector + crash / rally raros.
@@ -49,15 +49,15 @@
   const ENGINE = 4; // versión del motor guardada en la partida (migración de partidas v3 antiguas)
   const SL_PCT = -4; // stop-loss  (rentabilidad de la posición)
   const TP_PCT = 5; //  take-profit
-  const CANDLE_MS = 20000; // 1 vela = 20 s a velocidad ×1
-  const STEPS = 80; // sub-pasos en directo por vela (250 ms a ×1)
+  const CANDLE_MS = 40000; // 1 vela = 40 s a velocidad ×1 (×2 = 20 s, ×4 = 10 s)
+  const STEPS = 80; // sub-pasos en directo por vela (500 ms a ×1)
   const STEP_MS = CANDLE_MS / STEPS;
   const SPEEDS = [1, 2, 4];
   const HIST = 90; // velas guardadas por activo
   const PREGEN = 70; // velas de la sesión anterior
-  const EVENT_P = 0.22; // prob. de noticia por vela (≈ 1 cada 90 s a ×1)
+  const EVENT_P = 0.3; // prob. de noticia por vela (≈ 1 cada 2 min a ×1)
   const MAX_EVENTS = 2;
-  const SHOCK_P = 0.012; // prob. de crash / rally por vela (≈ 1 cada 28 min a ×1)
+  const SHOCK_P = 0.016; // prob. de crash / rally por vela (≈ 1 cada 40 min a ×1)
   const SHOCK_COOLDOWN = 45;
   const MKT_SIG = 0.004; // volatilidad del factor de mercado por vela
   const SIG_K = 0.85; // escala global del ruido propio de cada activo
@@ -76,9 +76,9 @@
       icon: "🔔",
       color: "#22e4ff",
       accent: "rgba(34, 228, 255, 0.92)",
-      cross: 0.0015, // impulso por vela tras cruce dorado / de la muerte
-      rsiRev: 0.0015, // impulso de rebote RSI
-      exhaust: 0.0006, // presión por sobrecompra / sobreventa
+      mom: 0.05, // momento: deriva por vela = mom · (MA5/MA15 − 1)
+      rsiTurn: 0.003, // giro por vela durante 4 velas cuando el RSI sale de 70 / 30
+      rsiK: 0.007, // corrección por vela con RSI en 100 / 0 (proporcional fuera de 30–70)
       chart: "candles",
       cmp: false,
       arrows: true, // las noticias muestran a quién benefician / perjudican
@@ -91,9 +91,9 @@
       icon: "♟️",
       color: "#ffcc33",
       accent: "rgba(255, 159, 28, 0.92)",
-      cross: 0.002,
-      rsiRev: 0.0019,
-      exhaust: 0.0007,
+      mom: 0.065,
+      rsiTurn: 0.0036,
+      rsiK: 0.0085,
       chart: "area",
       cmp: true,
       arrows: false, // noticias ambiguas: se dice a quién afectan, no hacia dónde
@@ -453,17 +453,22 @@
     return p;
   }
 
-  /** Señales técnicas (cruces de medias, rebotes del RSI): mismas reglas de siempre, impulso más suave. */
+  /** Efecto real (y moderado) de los indicadores, como en los mercados de verdad:
+   *  - Medias móviles: el momento persiste un poco. Si MA5 va por encima de MA15 la
+   *    tendencia tiende a continuar, en proporción a la separación entre ambas
+   *    (cruce dorado = empieza el empuje alcista; cruce de la muerte = el bajista).
+   *  - RSI: por encima de 70 (sobrecompra) aparece una corrección gradual, más fuerte
+   *    cuanto más extremo; por debajo de 30 (sobreventa), un rebote gradual.
+   *  Son ventajas pequeñas frente al ruido de cada vela: ayudan a la larga, no aciertan siempre. */
   function signalDrift(s) {
-    let d = 0;
-    if (s.trendState === "bullish") d += CFG.cross;
-    else if (s.trendState === "bearish") d -= CFG.cross;
-    if (s.rsiRev > 0) { d += CFG.rsiRev; s.rsiRev--; }
-    else if (s.rsiRev < 0) { d -= CFG.rsiRev; s.rsiRev++; }
-    else {
-      if (s.rsi > 70) d -= CFG.exhaust;
-      if (s.rsi < 30) d += CFG.exhaust;
-    }
+    if (s.candles.length < 15 || !(s.ma15 > 0)) return 0;
+    const spread = AX.clamp(s.ma5 / s.ma15 - 1, -0.06, 0.06);
+    let d = CFG.mom * spread;
+    if (s.rsi > 70) d -= (CFG.rsiK * (s.rsi - 70)) / 30;
+    else if (s.rsi < 30) d += (CFG.rsiK * (30 - s.rsi)) / 30;
+    // señal clásica: el RSI sale de la zona extrema → giro durante unas velas
+    if (s.rsiRev > 0) { d += CFG.rsiTurn; s.rsiRev--; }
+    else if (s.rsiRev < 0) { d -= CFG.rsiTurn; s.rsiRev++; }
     return d;
   }
 
@@ -573,8 +578,8 @@
       s.avgLoss = (s.avgLoss * 13 + (ch < 0 ? -ch : 0)) / 14;
       s.rsi = s.avgLoss === 0 ? 100 : 100 - 100 / (1 + s.avgGain / s.avgLoss);
     }
-    if (s.wasOB && s.rsi < 70) { s.rsiRev = -3; sig = sig || "rsiDown"; }
-    if (s.wasOS && s.rsi > 30) { s.rsiRev = 3; sig = sig || "rsiUp"; }
+    if (s.wasOB && s.rsi < 70) { s.rsiRev = -4; sig = sig || "rsiDown"; }
+    if (s.wasOS && s.rsi > 30) { s.rsiRev = 4; sig = sig || "rsiUp"; }
     s.wasOB = s.rsi >= 70;
     s.wasOS = s.rsi <= 30;
     c.r = Math.round(s.rsi * 10) / 10;
